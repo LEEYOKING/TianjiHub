@@ -48,11 +48,15 @@ function classifySW28(thsName: string): string | null {
   if (thsName.includes('服装') || thsName.includes('纺织')) return '纺织服饰';
   if (thsName.includes('造纸') || thsName.includes('包装') || thsName.includes('印刷')) return '轻工制造';
   if (thsName.includes('环保') || thsName.includes('水务') || thsName.includes('环境')) return '环保';
-  if (thsName.includes('电力') || thsName.includes('燃气') || thsName.includes('电网') || thsName.includes('电池') || thsName.includes('光伏') || thsName.includes('风电')) return '公用事业';
+  // v2.0.7gj:电池/光伏/风电/电网/电机 归「电力设备」(原误归公用事业/机械设备)
+  if (thsName.includes('电池') || thsName.includes('光伏') || thsName.includes('风电') || thsName.includes('电网') || thsName.includes('电机') || thsName.includes('电气')) return '电力设备';
+  if (thsName.includes('电力') || thsName.includes('燃气')) return '公用事业';
   if (thsName.includes('航空') || thsName.includes('机场') || thsName.includes('港口') || thsName.includes('航运') || thsName.includes('物流') || thsName.includes('铁路') || thsName.includes('公路') || thsName.includes('交通运输')) return '交通运输';
   if (thsName.includes('零售') || thsName.includes('贸易') || thsName.includes('商业')) return '商贸零售';
-  if (thsName.includes('旅游') || thsName.includes('酒店') || thsName.includes('餐饮') || thsName.includes('教育') || thsName.includes('传媒') || thsName.includes('体育') || thsName.includes('游戏') || thsName.includes('影视') || thsName.includes('互联网')) return '社会服务';
-  if (thsName.includes('机械') || thsName.includes('设备') || thsName.includes('电机') || thsName.includes('自动化') || thsName.includes('专用') || thsName.includes('通用')) return '机械设备';
+  // v2.0.7gj:传媒/游戏/影视/互联网 归「传媒」(原误归社会服务)
+  if (thsName.includes('传媒') || thsName.includes('游戏') || thsName.includes('影视') || thsName.includes('互联网') || thsName.includes('出版') || thsName.includes('广告')) return '传媒';
+  if (thsName.includes('旅游') || thsName.includes('酒店') || thsName.includes('餐饮') || thsName.includes('教育') || thsName.includes('体育')) return '社会服务';
+  if (thsName.includes('机械') || thsName.includes('设备') || thsName.includes('自动化') || thsName.includes('专用') || thsName.includes('通用')) return '机械设备';
   if (thsName.includes('军工') || thsName.includes('国防')) return '国防军工';
   if (thsName.includes('美容') || thsName.includes('护理')) return '美容护理';
   if (thsName.includes('综合')) return '综合';
