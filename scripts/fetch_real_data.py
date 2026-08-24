@@ -1120,7 +1120,11 @@ print("\n[7/7] 板块 + 龙虎榜 + 异动...")
 
 # 行业板块: 用同花顺 summary 拿 90 个细分类(自带 涨跌幅/上涨下跌家数/领涨股/净流入)
 print("  行业板块(同花顺 90 个)...")
-ths_ind_df = ak.stock_board_industry_summary_ths()
+try:
+    ths_ind_df = ak.stock_board_industry_summary_ths()
+except Exception as e:
+    print(f"  行业板块 ths 失败({e}),sectors 置空(核心数据不受影响)")
+    ths_ind_df = pd.DataFrame()
 
 # 关键词映射(东财 industry → 同花顺行业名)用于算每个行业的涨停股数
 INDUSTRY_KEYWORDS = {
