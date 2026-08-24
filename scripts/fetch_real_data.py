@@ -107,7 +107,6 @@ print("=" * 50)
 # ========== 1. 指数(6只核心) ==========
 # 顺序: 上证 / 深证 / 创业板 / 科创50 / 沪深300 / 微盘指数(国证2000,代表小微盘)
 print("\n[1/7] 主要指数...")
-idx_df = ak.stock_zh_index_spot_sina()
 # 顺序敏感:用 list of (code, name)
 WANTED = [
     ('sh000001', '上证指数'),
@@ -117,8 +116,31 @@ WANTED = [
     ('sh000300', '沪深300'),
     ('sz399303', '微盘指数'),  # 国证2000,代表小微盘
 ]
-# 转成 dict 方便查
-idx_dict = {row['代码']: row for _, row in idx_df.iterrows()}
+# v2.0.7gh:改用腾讯 qt.gtimg.cn 直连拉指数(akshare stock_zh_index_spot_sina 盘后常返 HTML/风控页)
+idx_dict = {}
+try:
+    import ssl as _ssl
+    _ctx = _ssl._create_unverified_context()
+    _iq_url = 'https://qt.gtimg.cn/q=' + ','.join(c for c, _ in WANTED)
+    _iq_req = urllib.request.Request(_iq_url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'})
+    _iq_txt = urllib.request.urlopen(_iq_req, timeout=12, context=_ctx).read().decode('gbk', errors='ignore')
+    for _line in _iq_txt.split(';'):
+        _m = re.match(r'v_(\w+)="([^"]+)"', _line.strip())
+        if not _m:
+            continue
+        _code = _m.group(1)
+        _p = _m.group(2).split('~')
+        if len(_p) < 36:
+            continue
+        _amt_str = _p[35].split('/')[2] if '/' in _p[35] else '0'
+        idx_dict[_code] = {
+            '最新价': safe_float(_p[3]),
+            '涨跌额': safe_float(_p[31]),
+            '涨跌幅': safe_float(_p[32]),
+            '成交额': safe_float(_amt_str),  # 元
+        }
+except Exception as _e:
+    print(f"  腾讯指数拉取失败({_e})，指数留空")
 indices = []
 sh_amt = 0
 for code, name in WANTED:
@@ -131,7 +153,7 @@ for code, name in WANTED:
             'changePercent': round(safe_float(row['涨跌幅']), 2),
             'turnover': round(safe_float(row['成交额']) / 1e8, 2),
         })
-    if code == 'sh000001':
+    if code == 'sh000001' and code in idx_dict:
         sh_amt = safe_float(idx_dict[code]['成交额']) / 1e8
 print(f"  指数 {len(indices)} 个: " + ", ".join(i['name'] for i in indices))
 
