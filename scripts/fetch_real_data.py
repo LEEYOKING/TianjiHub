@@ -253,21 +253,26 @@ ok_count = 0
 for batch_start in range(0, len(all_codes), BATCH_SIZE):
     batch_codes = all_codes[batch_start:batch_start + BATCH_SIZE]
     url = 'http://qt.gtimg.cn/q=' + ','.join(batch_codes)
-    try:
-        req = urllib.request.Request(url, headers={
-            'User-Agent': 'Mozilla/5.0',
-            'Referer': 'https://stockapp.finance.qq.com/',
-        })
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            text = resp.read().decode('gbk', errors='ignore')
-        for line in text.split(';'):
-            d = _parse_tencent_line(line)
-            if d is not None:
-                spot_rows.append(d)
-                ok_count += 1
-    except Exception as e:
-        print(f"  腾讯拉第 {batch_start//BATCH_SIZE + 1} 批失败: {e}")
-        continue
+    # v2.0.7gh:每批失败重试 3 次(腾讯偶发 timeout),避免漏拉导致家数少几百
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': 'https://stockapp.finance.qq.com/',
+            })
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                text = resp.read().decode('gbk', errors='ignore')
+            for line in text.split(';'):
+                d = _parse_tencent_line(line)
+                if d is not None:
+                    spot_rows.append(d)
+                    ok_count += 1
+            break  # 成功跳出 retry
+        except Exception as e:
+            if attempt == 2:
+                print(f"  腾讯拉第 {batch_start//BATCH_SIZE + 1} 批失败(重试3次仍失败): {e}")
+            else:
+                time.sleep(1 + attempt)
 _t1 = _t.time()
 print(f"  腾讯全市场拉完: {ok_count} 只有效 (耗时 {_t1 - _t0:.1f}s)")
 
@@ -389,7 +394,42 @@ try:
     etf_codes = [('sh' if str(c).startswith('5') else 'sz') + str(c) for c in etf_df['代码'].astype(str).tolist()]
     print(f"  ETF: 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat} (代码 {len(etf_codes)} 只)")
 except Exception as e:
-    print(f"  ETF akshare 失败({e}),置 0 继续")
+    print(f"  ETF akshare 失败({e}),改用新浪 etf_hq_fund fallback")
+    # v2.0.7gh:新浪 etf_hq_fund 节点分页拉 ETF(akshare 东财 ETF 接口海外/风控常失败)
+    try:
+        import ssl as _ssl_etf
+        _ef_ctx = _ssl_etf._create_unverified_context()
+        _ef_rows = []
+        for _p in range(1, 30):
+            _ef_url = (
+                'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/'
+                f'Market_Center.getHQNodeData?num=100&page={_p}&sort=changepercent&asc=0&node=etf_hq_fund&_={int(time.time()*1000)}'
+            )
+            try:
+                _ef_req = urllib.request.Request(_ef_url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://finance.sina.com.cn/'})
+                _ef_data = json.loads(urllib.request.urlopen(_ef_req, timeout=10, context=_ef_ctx).read().decode('utf-8', errors='ignore'))
+                if not isinstance(_ef_data, list) or len(_ef_data) == 0:
+                    break
+                for _s in _ef_data:
+                    _sym = _s.get('symbol', '')
+                    _cp_raw = _s.get('changepercent', 0)
+                    _cp = float(_cp_raw) if _cp_raw not in ('', '-') else 0.0
+                    _ef_rows.append((_sym, _cp))
+                if len(_ef_data) < 100:
+                    break
+            except Exception:
+                break
+            time.sleep(0.1)
+        if _ef_rows:
+            etf_up = sum(1 for _, _cp in _ef_rows if _cp > 0)
+            etf_down = sum(1 for _, _cp in _ef_rows if _cp < 0)
+            etf_flat = sum(1 for _, _cp in _ef_rows if _cp == 0)
+            etf_codes = [_sym for _sym, _ in _ef_rows]
+            print(f"  ETF(新浪 fallback): 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat} (代码 {len(etf_codes)})")
+        else:
+            print(f"  ETF 新浪 fallback 拉空,置 0")
+    except Exception as e2:
+        print(f"  ETF 新浪 fallback 也失败({e2}),置 0")
 
 # 2.6 可转债 涨/跌/平家数
 print("  可转债 涨/跌/平...")
