@@ -10,8 +10,8 @@ __pycache__/
 *.pyc
 *.pyo
 
-# 临时数据目录
-data/
+# 临时数据目录（/ 开头锚定到项目根，只忽略根目录的 data，不影响 src/data）
+/data/
 
 # 系统文件
 .DS_Store
