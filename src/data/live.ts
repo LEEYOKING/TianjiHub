@@ -220,51 +220,65 @@ export async function fetchMarketSummary(stockCodes?: string[]): Promise<{
   //   → 返 null → useState prev 保留 11:46 早盘 11948
   // — 修法:每批 retry 3 次(1s/2s/4s 退避),失败换域名 qz.gtimg.cn / m.gtimg.cn
   const TENCENT_HOSTS = ['qt.gtimg.cn', 'qz.gtimg.cn', 'm.gtimg.cn'];
-  for (let i = 0; i < codes.length; i += BATCH_SIZE) {
-    const batch = codes.slice(i, i + BATCH_SIZE);
-    let text: string | null = null;
-    let lastErr: unknown = null;
-    // 3 个域名 × 1 次(总 3 次,域名轮换降低单域名限流)
+
+  // 拉单批(3 域名依次重试),返回原始 text 或 null
+  const fetchOneBatch = async (batch: string[]): Promise<string | null> => {
     for (const host of TENCENT_HOSTS) {
       try {
         const url = `https://${host}/q=` + batch.join(',');
         const resp = await fetch(url, {
           headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/' }
         });
-        if (!resp.ok) { lastErr = `HTTP ${resp.status}`; continue; }
-        text = await resp.text();
-        if (text && text.length > 0) break;  // 成功拉取,跳出域名循环
+        if (!resp.ok) continue;
+        const text = await resp.text();
+        if (text && text.length > 0) return text;
       } catch (e) {
-        lastErr = e;
         // 继续试下一个域名
       }
     }
-    if (!text) {
-      console.warn('[fetchMarketSummary] 腾讯拉第', Math.floor(i / BATCH_SIZE) + 1, '批失败(3 域名):', lastErr);
-      continue;
+    return null;
+  };
+
+  // 解析单批返回的 text(v_sh600519="1~贵州茅台~600519~1297.99~...")
+  const parseBatchText = (text: string) => {
+    for (const line of text.split(';')) {
+      const eqIdx = line.indexOf('=');
+      if (eqIdx < 0) continue;
+      const fields = line.slice(eqIdx + 1).trim().replace(/^"|"$/g, '').split('~');
+      if (fields.length < 50) continue;
+      const codeRaw = fields[2];
+      if (!codeRaw || !/^\d+$/.test(codeRaw)) continue;
+      const name = fields[1];
+      // 跳过退市
+      if (name.includes('退')) continue;
+      // v2.0.7ex:用 fields[3] 现价 / fields[4] 昨收 算涨跌幅,不用 fields[32]
+      const close = parseFloat(fields[3]);
+      const prevClose = parseFloat(fields[4]);
+      const amt = parseFloat(fields[37]) || 0; // 成交额(万)
+      if (isNaN(close) || isNaN(prevClose) || prevClose === 0) continue;
+      const cp = ((close - prevClose) / prevClose) * 100;
+      allStocks.push({ cp, amt, name, code: codeRaw, close, prevClose });
     }
-      // 解析: v_sh600519="1~贵州茅台~600519~1297.99~1293.09~...~0.38~..."
-      for (const line of text.split(';')) {
-        const eqIdx = line.indexOf('=');
-        if (eqIdx < 0) continue;
-        const fields = line.slice(eqIdx + 1).trim().replace(/^"|"$/g, '').split('~');
-        if (fields.length < 50) continue;
-        const codeRaw = fields[2];
-        if (!codeRaw || !/^\d+$/.test(codeRaw)) continue;
-        const name = fields[1];
-        // 跳过退市
-        if (name.includes('退')) continue;
-        // v2.0.7ex:用 fields[3] 现价 / fields[4] 昨收 算涨跌幅,不用 fields[32]
-        // — fields[32] 是四舍五入到 0.01% 的涨跌幅,涨跌幅 < 0.005% 的股票被算成 cp=0 → 错算成"平"
-        // — 8/20 user 反馈:算出来 3983+1153+277=5413,实际 4096+1347+98=5541,差 179 只错算成"平"
-        // — 现价/昨收算精度高(0.001%),不会被四舍五入误判
-        const close = parseFloat(fields[3]);
-        const prevClose = parseFloat(fields[4]);
-        const amt = parseFloat(fields[37]) || 0; // 成交额(万)
-        if (isNaN(close) || isNaN(prevClose) || prevClose === 0) continue;
-        const cp = ((close - prevClose) / prevClose) * 100;
-        allStocks.push({ cp, amt, name, code: codeRaw, close, prevClose });
+  };
+
+  // v2.0.7gg:并发拉取 — 原来 56 批串行约 2-3 分钟,改并发 10 批/轮,压到 ~几秒
+  // — 腾讯 qt.gtimg.cn 对并发不敏感(海外 IP 实测稳定),CONCURRENCY 控制单轮并发批数
+  const CONCURRENCY = 10;
+  const batches: string[][] = [];
+  for (let i = 0; i < codes.length; i += BATCH_SIZE) {
+    batches.push(codes.slice(i, i + BATCH_SIZE));
+  }
+  for (let start = 0; start < batches.length; start += CONCURRENCY) {
+    const group = batches.slice(start, start + CONCURRENCY);
+    const texts = await Promise.all(group.map((b) => fetchOneBatch(b)));
+    for (let gi = 0; gi < texts.length; gi++) {
+      const text = texts[gi];
+      if (!text) {
+        console.warn('[fetchMarketSummary] 第', start + gi + 1, '批失败(3 域名)');
+        continue;
       }
+      parseBatchText(text);
+    }
   }
   // v2.0.7gf:Bug1 修复 — 原逻辑按"批数"判断成功(50 只/批),当 stockCodes 是硬编码 13999 只
   // (含约 8400 个不存在代码)时 totalBatches=140,而真实 A 股仅约 5500 只 → successBatches≈56
