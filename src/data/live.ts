@@ -328,8 +328,9 @@ export async function fetchMarketSummary(stockCodes?: string[]): Promise<{
     const limitPct = isBJ ? 30 : (is20 ? 20 : (isST ? 5 : 10));
     const limitUpPrice = Math.round(s.prevClose * (1 + limitPct / 100) * 100) / 100;
     const limitDownPrice = Math.round(s.prevClose * (1 - limitPct / 100) * 100) / 100;
-    if (s.close >= limitUpPrice - 0.005) lu++;
-    if (s.close <= limitDownPrice + 0.005) ld++;
+    // 严格等于涨停价才算封板(排除新股上市/复牌首日等无涨跌幅限制、close 远超涨跌停价的票)
+    if (Math.abs(s.close - limitUpPrice) < 0.005) lu++;
+    if (Math.abs(s.close - limitDownPrice) < 0.005) ld++;
     total += amt;
   }
   // v2.0.7ea:腾讯全市场 ~5,500 只,不再推算 × 11(直接用真实数字)
@@ -437,6 +438,58 @@ export async function fetchSinaIndustries(labels: string[]): Promise<Map<string,
     }
   }
   return result;
+}
+
+// v2.0.7gg:盘中实时拉 ETF/可转债涨跌家数(用脚本写入 data.json 的代码列表 + 腾讯行情)
+// — 之前 ETF/可转债盘中不更新(em 限流,函数被删),现在用腾讯加载代码列表实时算涨/跌/平
+export async function fetchETFAndBondStats(
+  etfCodes: string[],
+  bondCodes: string[],
+): Promise<{ etf: { up: number; down: number; flat: number }; bond: { up: number; down: number; flat: number } }> {
+  const statCodes = async (codes: string[]): Promise<{ up: number; down: number; flat: number }> => {
+    let up = 0, down = 0, flat = 0;
+    if (!codes || codes.length === 0) return { up: 0, down: 0, flat: 0 };
+    const BATCH = 100;
+    const batches: string[][] = [];
+    for (let i = 0; i < codes.length; i += BATCH) batches.push(codes.slice(i, i + BATCH));
+    const HOSTS = ['qt.gtimg.cn', 'qz.gtimg.cn', 'm.gtimg.cn'];
+    const CONCURRENCY = 8;
+    for (let start = 0; start < batches.length; start += CONCURRENCY) {
+      const group = batches.slice(start, start + CONCURRENCY);
+      const texts = await Promise.all(group.map(async (b) => {
+        for (const host of HOSTS) {
+          try {
+            const resp = await fetch(`https://${host}/q=` + b.join(','), {
+              headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/' }
+            });
+            if (!resp.ok) continue;
+            const t = await resp.text();
+            if (t && t.length > 0) return t;
+          } catch (e) { /* 下一个域名 */ }
+        }
+        return null;
+      }));
+      for (const text of texts) {
+        if (!text) continue;
+        for (const line of text.split(';')) {
+          const eq = line.indexOf('=');
+          if (eq < 0) continue;
+          const fields = line.slice(eq + 1).trim().replace(/^"|"$/g, '').split('~');
+          if (fields.length < 50) continue;
+          const close = parseFloat(fields[3]);
+          const prev = parseFloat(fields[4]);
+          if (isNaN(close) || isNaN(prev) || prev === 0) continue;
+          const cp = ((close - prev) / prev) * 100;
+          if (cp > 0.005) up++;
+          else if (cp < -0.005) down++;
+          else flat++;
+        }
+      }
+    }
+    return { up, down, flat };
+  };
+  const [etf, bond] = await Promise.all([statCodes(etfCodes), statCodes(bondCodes)]);
+  return { etf, bond };
 }
 
 // =============================================================

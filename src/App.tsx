@@ -28,7 +28,7 @@ export default function App() {
   // — 改成 ref + setBaseData 同步写 ref
   const baseDataRef = useRef<ReportData | null>(null);
   // v2.0.7ee:传 baseData.meta.stockCodes 给 useLiveData — 拉真实 5,547 只 A 股腾讯 qt.gtimg.cn
-  const live = useLiveData(true, baseData?.meta?.stockCodes);
+  const live = useLiveData(true, baseData?.meta?.stockCodes, baseData?.marketOverview?.etfCodes, baseData?.marketOverview?.bondCodes);
 
   useEffect(() => {
     // v2.0.7o:fetch 失败时如果已有 baseData(后台标签页被节流),静默不显示错误页

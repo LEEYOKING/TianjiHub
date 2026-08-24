@@ -354,6 +354,7 @@ except Exception as e:
 # 2.5 场内 ETF 涨/跌/平家数
 print("  场内 ETF 涨/跌/平...")
 etf_up = etf_down = etf_flat = 0
+etf_codes = []
 try:
     etf_df = ak.fund_etf_spot_em()
     # 涨跌幅字段是字符串,转 float
@@ -362,13 +363,16 @@ try:
     etf_up = int((etf_df['涨跌幅'] > 0).sum())
     etf_down = int((etf_df['涨跌幅'] < 0).sum())
     etf_flat = int((etf_df['涨跌幅'] == 0).sum())
-    print(f"  ETF: 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat}")
+    # v2.0.7gg:保存 ETF 代码列表(转腾讯 sh/sz 前缀,供前端盘中实时拉取)
+    etf_codes = [('sh' if str(c).startswith('5') else 'sz') + str(c) for c in etf_df['代码'].astype(str).tolist()]
+    print(f"  ETF: 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat} (代码 {len(etf_codes)} 只)")
 except Exception as e:
     print(f"  ETF akshare 失败({e}),置 0 继续")
 
 # 2.6 可转债 涨/跌/平家数
 print("  可转债 涨/跌/平...")
 bond_up = bond_down = bond_flat = 0
+bond_codes = []
 try:
     bond_df = ak.bond_zh_hs_cov_spot()
     bond_df['changepercent'] = bond_df['changepercent'].apply(lambda x: safe_float(x))
@@ -377,7 +381,9 @@ try:
     bond_up = int((bond_df['changepercent'] > 0).sum())
     bond_down = int((bond_df['changepercent'] < 0).sum())
     bond_flat = int((bond_df['changepercent'] == 0).sum())
-    print(f"  可转债: 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat}")
+    # v2.0.7gg:保存可转债代码列表(转腾讯 sh/sz 前缀,供前端盘中实时拉取)
+    bond_codes = [('sh' if str(c).startswith('11') else 'sz') + str(c) for c in bond_df['code'].astype(str).tolist()]
+    print(f"  可转债: 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat} (代码 {len(bond_codes)} 只)")
 except Exception as e:
     print(f"  可转债 akshare 失败({e}),置 0 继续")
 
@@ -1891,6 +1897,9 @@ data = {
         'bondStockUp': bond_stock_up,
         'bondStockDown': bond_stock_down,
         'bondStockFlat': bond_stock_flat,
+        # v2.0.7gg:ETF/可转债代码列表(腾讯 sh/sz 前缀),供前端盘中实时拉取
+        'etfCodes': etf_codes,
+        'bondCodes': bond_codes,
         # v2.0.7aa:主力资金流(20 日) — 失败返 None
         'mainCapitalFlow20d': _main_capital_flow,
         # v2.0.7aa:融资融券历史(沪+深合并) — 失败返 None

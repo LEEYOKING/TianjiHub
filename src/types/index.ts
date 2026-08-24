@@ -86,6 +86,9 @@ export interface MarketOverview {
   bondStockUp?: number;
   bondStockDown?: number;
   bondStockFlat?: number;
+  // v2.0.7gg:ETF/可转债代码列表(腾讯 sh/sz 前缀),盘中实时拉取用
+  etfCodes?: string[];
+  bondCodes?: string[];
   // v2.0.7aa:主力资金流(20 日) + 融资融券历史(60 日)
   mainCapitalFlow20d?: MainCapitalFlowItem[] | null;
   marginHistory?: MarginHistoryItem[] | null;

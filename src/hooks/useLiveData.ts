@@ -10,6 +10,7 @@ import {
   fetchTodaySnapshot,
   fetchMarketSummary,  // v2.0.7ea:加回 fetchMarketSummary(腾讯 qt.gtimg.cn)
   fetchEMIndustries,
+  fetchETFAndBondStats,  // v2.0.7gg:ETF/可转债盘中实时
   SINA_INDUSTRY_LABELS,
 } from '../data/live';
 import type { ReportData } from '../data/loader';
@@ -96,7 +97,7 @@ export interface LiveSnapshot {
 
 /** 实时数据 hook — 盘中(9:30-15:00)10s 拉全市场/ETF/可转债,60s 拉指数+行业;非盘中 5min
  * 默认 enabled=true */
-export function useLiveData(enabled = true, stockCodes?: string[]): LiveSnapshot {
+export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: string[], bondCodes?: string[]): LiveSnapshot {
   // v2.0.7ee:接 stockCodes 参数(从 baseData.meta.stockCodes 传) — React 端用真实 5,547 只拉腾讯
 
   const [snap, setSnap] = useState<LiveSnapshot>({
@@ -113,6 +114,10 @@ export function useLiveData(enabled = true, stockCodes?: string[]): LiveSnapshot
   // v2.0.7ee:useRef 缓存最新 codes(让 marketTick setInterval 闭包能读到)
   const codesRef = useRef<string[] | undefined>(stockCodes);
   useEffect(() => { codesRef.current = stockCodes; }, [stockCodes]);
+  // v2.0.7gg:缓存 ETF/可转债代码列表(盘中实时拉取用)
+  const etfCodesRef = useRef<string[] | undefined>(etfCodes);
+  const bondCodesRef = useRef<string[] | undefined>(bondCodes);
+  useEffect(() => { etfCodesRef.current = etfCodes; bondCodesRef.current = bondCodes; }, [etfCodes, bondCodes]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -220,14 +225,17 @@ export function useLiveData(enabled = true, stockCodes?: string[]): LiveSnapshot
       if (slowInflightRef.current) return;
       slowInflightRef.current = true;
       try {
-        const [emIndResult, sinaIndResult] = await Promise.all([
+        const [emIndResult, sinaIndResult, etfBondResult] = await Promise.all([
           safe(() => fetchEMIndustries(), new Map()),
           safe(() => fetchSinaIndustries(SINA_INDUSTRY_LABELS), new Map()),
+          safe(() => fetchETFAndBondStats(etfCodesRef.current || [], bondCodesRef.current || []), null),
         ]);
         setSnap((prev) => ({
           ...prev,
           emIndustries: (emIndResult && emIndResult.size > 0) ? emIndResult : prev.emIndustries,
           sinaIndustries: (sinaIndResult && sinaIndResult.size > 0) ? sinaIndResult : prev.sinaIndustries,
+          etfStats: etfBondResult ? etfBondResult.etf : prev.etfStats,
+          bondStats: etfBondResult ? etfBondResult.bond : prev.bondStats,
         }));
       } catch (e) {
         console.warn('[useLiveData] slow tick error:', e);
