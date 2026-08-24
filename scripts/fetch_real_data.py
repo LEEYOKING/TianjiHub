@@ -1485,7 +1485,7 @@ try:
 except Exception as e:
     print(f"  概念板块(ths) 失败: {e}")
     # v2.0.7ed:ths 限流时 fallback 到 em m:90+t:3 申万概念(em 限流时用 em push2delay + 标 stale 注释)
-    concept_sectors = _fetch_em_sector_fallback('m:90+t:3', limit=30, label='概念')
+    concept_sectors = _fetch_em_sector_fallback('m:90+t:3+f:!50', limit=30, label='概念')
     if concept_sectors:
         print(f"  概念板块(em fallback) {len(concept_sectors)} 个")
     else:
@@ -1594,7 +1594,7 @@ try:
 except Exception as e:
     print(f"  地域板块(ths) 失败: {e}")
     # v2.0.7ed:ths 限流时 fallback 到 em m:90+t:1 申万地域
-    region_sectors = _fetch_em_sector_fallback('m:90+t:1', limit=20, label='地域')
+    region_sectors = _fetch_em_sector_fallback('m:90+t:1+f:!50', limit=20, label='地域')
     if region_sectors:
         print(f"  地域板块(em fallback) {len(region_sectors)} 个")
     else:

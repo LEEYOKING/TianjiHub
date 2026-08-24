@@ -609,9 +609,9 @@ async function fetchEMSectors(fs: string): Promise<Map<string, EMIndustryItem>> 
 
 /** em 申万 90 行业(跟 ths 90 细分类 一一对应) */
 export const fetchEMIndustries = () => fetchEMSectors('m:90+t:2');
-// v2.0.7gg:em 申万概念 + 申万地域(概念/地域板块盘中实时覆盖用)
-export const fetchEMConcepts = () => fetchEMSectors('m:90+t:3');
-export const fetchEMRegions = () => fetchEMSectors('m:90+t:1');
+// v2.0.7gg:em 概念/地域板块(正确 fs 用空格分隔 + f:!50 过滤;URL 里 + 即空格)
+export const fetchEMConcepts = () => fetchEMSectors('m:90+t:3+f:!50');
+export const fetchEMRegions = () => fetchEMSectors('m:90+t:1+f:!50');
 
 // =============================================================
 // v2.0.7cs:Cloudflare Pages Function 优先(em 实时数据走 Function,绕开 user 浏览器直连 IP 限流)
