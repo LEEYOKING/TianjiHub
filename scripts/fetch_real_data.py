@@ -121,7 +121,7 @@ idx_dict = {}
 try:
     import ssl as _ssl
     _ctx = _ssl._create_unverified_context()
-    _iq_url = 'https://qt.gtimg.cn/q=' + ','.join(c for c, _ in WANTED)
+    _iq_url = 'https://qt.gtimg.cn/q=' + ','.join(c for c, _ in WANTED) + ',bj899050'
     _iq_req = urllib.request.Request(_iq_url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'})
     _iq_txt = urllib.request.urlopen(_iq_req, timeout=12, context=_ctx).read().decode('gbk', errors='ignore')
     for _line in _iq_txt.split(';'):
@@ -487,7 +487,7 @@ def code_prefix(code):
         return s[:2]
     return ''
 
-bj_amt = round(safe_float(spot_df[spot_df['代码'].str.lower().str.startswith('bj')]['成交额'].sum()) / 1e8, 2)
+bj_amt = round(safe_float(idx_dict['bj899050']['成交额']) / 1e8, 2) if 'bj899050' in idx_dict else 0
 # v2.0.7fo:从 sz399001 指数成交额直接拿(改 line 398 反推算法)
 # — 之前 line 398 sz_amt = total_turnover - sh_amt - bj_amt(从 spot_df 累加反推),腾讯海外 IP 18:30 跑时
 #   部分股票成交额字段返 0/缺失,spot_df sum 偏小,反推的 sz_amt 也不准
