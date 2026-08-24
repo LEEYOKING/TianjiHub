@@ -196,7 +196,8 @@ export async function fetchMarketSummary(stockCodes?: string[]): Promise<{
   // 修法:过滤只 A 股代码,140 批变 56 批,3-5 分钟完成,降低限流概率
   let codes: string[];
   if (stockCodes && stockCodes.length > 0) {
-    codes = stockCodes.filter((c) => /^(sh|sz)\d{6}$/.test(c));
+    // 保留 sh/sz/bj 三种前缀(北交所 bj 也是 A 股,之前误滤掉导致全市场家数少 300+)
+    codes = stockCodes.filter((c) => /^(sh|sz|bj)\d{6}$/.test(c));
   } else {
     // fallback 硬编码区间
     codes = [];
@@ -303,12 +304,14 @@ export async function fetchMarketSummary(stockCodes?: string[]): Promise<{
     else dist.up_ge_10++;
     // v2.0.7gf:涨跌停按精确涨停价比对(比涨跌幅阈值更准,彻底覆盖四舍五入冗余)
     // — 涨停价 = 昨收×(1±limitPct%) 四舍五入到分;现价 >= 涨停价即封板
-    // — 不依赖涨跌幅(低价股涨停涨跌幅可到 9.5%~10.5%,固定阈值如 9.90~10.06 会漏判)
-    // — 按 code 前缀 + name 是否含 ST 判断该股涨跌停幅度:
-    //   688/300/301(创业板/科创板)→ 20%;含 ST → 5%;其余(主板)→ 10%
-    const isST = s.name.includes('ST');
+    // — 板块判定(基于 6 位数字代码):
+    //   北交所(4/8/9 开头)→ 30%;科创/创业(688/300/301)→ 20%;主板 ST → 5%;主板 → 10%
+    //   注意:创业板/科创板 ST 涨跌幅仍是 20%、北交所 ST 仍 30%,只有主板 ST 才 5%
+    //   (旧逻辑 isST 优先,会把创业板/科创板 ST 误判成 5%,导致涨跌停虚高)
+    const isBJ = s.code.startsWith('4') || s.code.startsWith('8') || s.code.startsWith('9');
     const is20 = s.code.startsWith('688') || s.code.startsWith('300') || s.code.startsWith('301');
-    const limitPct = isST ? 5 : is20 ? 20 : 10;
+    const isST = s.name.includes('ST');
+    const limitPct = isBJ ? 30 : (is20 ? 20 : (isST ? 5 : 10));
     const limitUpPrice = Math.round(s.prevClose * (1 + limitPct / 100) * 100) / 100;
     const limitDownPrice = Math.round(s.prevClose * (1 - limitPct / 100) * 100) / 100;
     if (s.close >= limitUpPrice - 0.005) lu++;
