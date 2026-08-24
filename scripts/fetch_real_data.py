@@ -149,6 +149,9 @@ import time as _t
 # — 新浪 hs_a 分页(num=100, page=1..60)返回全市场真实 ~5500 只,symbol 直接带 sh/sz/bj 前缀
 # — 失败才 fallback 硬编码区间(应急)
 def _fetch_codes_from_sina():
+    import ssl
+    # macOS Python 证书链缺失会报 CERTIFICATE_VERIFY_FAILED,拉公开行情时禁用校验
+    _ssl_ctx = ssl._create_unverified_context()
     codes = []
     for page in range(1, 61):
         url = (
@@ -160,7 +163,7 @@ def _fetch_codes_from_sina():
                 'User-Agent': 'Mozilla/5.0',
                 'Referer': 'https://finance.sina.com.cn/',
             })
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=10, context=_ssl_ctx) as resp:
                 data = _json.loads(resp.read().decode('utf-8', errors='ignore'))
             if not isinstance(data, list) or len(data) == 0:
                 break
@@ -350,29 +353,33 @@ except Exception as e:
 
 # 2.5 场内 ETF 涨/跌/平家数
 print("  场内 ETF 涨/跌/平...")
-etf_df = ak.fund_etf_spot_em()
-# 涨跌幅字段是字符串,转 float
-etf_df['涨跌幅'] = etf_df['涨跌幅'].apply(lambda x: safe_float(x))
-etf_df = etf_df.dropna(subset=['涨跌幅'])
-# v2.0.7bf:akshare ETF 1576 只(同花顺 1553 只),差 23 只 — akshare 含 78 flat(货币 ETF + 无成交)
-# — 排除 flat 后 1498 只,跟同花顺差距缩小到 50-80 只(剩余是港股/QDII/分级 ETF 分类差异)
-# — akshare 跟同花顺分类本质不同(akshare 是东方财富,同花顺自己定义),100% 对齐不可能
-# — 但排除 flat 让 涨/跌 总和更准
-etf_up = int((etf_df['涨跌幅'] > 0).sum())
-etf_down = int((etf_df['涨跌幅'] < 0).sum())
-etf_flat = int((etf_df['涨跌幅'] == 0).sum())
-print(f"  ETF: 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat} (akshare 全 {len(etf_df)} 只含 {etf_flat} flat, 跟同花顺 ~1553 只分类差 100 只是 akshare vs 同花顺 分类差异)")
+etf_up = etf_down = etf_flat = 0
+try:
+    etf_df = ak.fund_etf_spot_em()
+    # 涨跌幅字段是字符串,转 float
+    etf_df['涨跌幅'] = etf_df['涨跌幅'].apply(lambda x: safe_float(x))
+    etf_df = etf_df.dropna(subset=['涨跌幅'])
+    etf_up = int((etf_df['涨跌幅'] > 0).sum())
+    etf_down = int((etf_df['涨跌幅'] < 0).sum())
+    etf_flat = int((etf_df['涨跌幅'] == 0).sum())
+    print(f"  ETF: 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat}")
+except Exception as e:
+    print(f"  ETF akshare 失败({e}),置 0 继续")
 
 # 2.6 可转债 涨/跌/平家数
 print("  可转债 涨/跌/平...")
-bond_df = ak.bond_zh_hs_cov_spot()
-bond_df['changepercent'] = bond_df['changepercent'].apply(lambda x: safe_float(x))
-bond_df = bond_df.dropna(subset=['changepercent'])
-bond_df = bond_df[bond_df['changepercent'] != 0.0]  # 过滤未交易
-bond_up = int((bond_df['changepercent'] > 0).sum())
-bond_down = int((bond_df['changepercent'] < 0).sum())
-bond_flat = int((bond_df['changepercent'] == 0).sum())
-print(f"  可转债: 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat}")
+bond_up = bond_down = bond_flat = 0
+try:
+    bond_df = ak.bond_zh_hs_cov_spot()
+    bond_df['changepercent'] = bond_df['changepercent'].apply(lambda x: safe_float(x))
+    bond_df = bond_df.dropna(subset=['changepercent'])
+    bond_df = bond_df[bond_df['changepercent'] != 0.0]  # 过滤未交易
+    bond_up = int((bond_df['changepercent'] > 0).sum())
+    bond_down = int((bond_df['changepercent'] < 0).sum())
+    bond_flat = int((bond_df['changepercent'] == 0).sum())
+    print(f"  可转债: 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat}")
+except Exception as e:
+    print(f"  可转债 akshare 失败({e}),置 0 继续")
 
 # 2.7 可转债对应正股 涨/跌/平家数
 print("  可转债正股 涨/跌/平...")
