@@ -10,10 +10,13 @@ import {
   fetchTodaySnapshot,
   fetchMarketSummary,  // v2.0.7ea:加回 fetchMarketSummary(腾讯 qt.gtimg.cn)
   fetchEMIndustries,
+  fetchEMConcepts,   // v2.0.7gg:概念板块实时
+  fetchEMRegions,    // v2.0.7gg:地域板块实时
   fetchETFAndBondStats,  // v2.0.7gg:ETF/可转债盘中实时
   SINA_INDUSTRY_LABELS,
 } from '../data/live';
 import type { ReportData } from '../data/loader';
+import { calcMarketTemperature } from '../utils/marketTemperature';
 
 // 判断是否在 A 股交易时段(供组件 UI 用)
 // v2.0.7dh:用东八区时间(跟 isPreMarket 一致)— 之前用 new Date() 本地时间
@@ -85,6 +88,9 @@ export interface LiveSnapshot {
   sinaIndustries: Map<string, { changePercent: number; totalTurnover: number; leaderName: string; leaderChangePercent: number; stockCount: number } | null>;
   // v2.0.7ax:em 申万 90 行业(跟 ths 90 细分类 一一对应,60s 实时)
   emIndustries?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number }>;
+  // v2.0.7gg:em 申万概念 + 地域(概念/地域板块盘中实时覆盖)
+  emConcepts?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number }>;
+  emRegions?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number }>;
   /** 今日实时快照(用于把今天数据 push 到 history 末尾) — v2.0.7cu:加 limitUp/limitDown 字段(同源 sina 9.97% 阈值) */
   today: { date: string; volume: number; up: number; down: number; flat?: number; limitUp: number; limitDown: number } | null;
   /** 数据源时间戳 */
@@ -225,14 +231,18 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
       if (slowInflightRef.current) return;
       slowInflightRef.current = true;
       try {
-        const [emIndResult, sinaIndResult, etfBondResult] = await Promise.all([
+        const [emIndResult, emConResult, emRegResult, sinaIndResult, etfBondResult] = await Promise.all([
           safe(() => fetchEMIndustries(), new Map()),
+          safe(() => fetchEMConcepts(), new Map()),
+          safe(() => fetchEMRegions(), new Map()),
           safe(() => fetchSinaIndustries(SINA_INDUSTRY_LABELS), new Map()),
           safe(() => fetchETFAndBondStats(etfCodesRef.current || [], bondCodesRef.current || []), null),
         ]);
         setSnap((prev) => ({
           ...prev,
           emIndustries: (emIndResult && emIndResult.size > 0) ? emIndResult : prev.emIndustries,
+          emConcepts: (emConResult && emConResult.size > 0) ? emConResult : prev.emConcepts,
+          emRegions: (emRegResult && emRegResult.size > 0) ? emRegResult : prev.emRegions,
           sinaIndustries: (sinaIndResult && sinaIndResult.size > 0) ? sinaIndResult : prev.sinaIndustries,
           etfStats: etfBondResult ? etfBondResult.etf : prev.etfStats,
           bondStats: etfBondResult ? etfBondResult.bond : prev.bondStats,
@@ -471,6 +481,28 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       }
     }
   }
+  // v2.0.7gg:概念/地域板块 em 申万实时覆盖(跟行业一样按 name 模糊匹配)
+  const applyEmSectorOverride = (list: any[] | undefined, emMap: Map<string, any> | undefined) => {
+    if (!list || !emMap || emMap.size === 0) return;
+    for (const s of list) {
+      const thsName = s.name || '';
+      if (!thsName) continue;
+      let bestMatch: any = null;
+      let bestLen = 0;
+      for (const [emName, emItem] of emMap) {
+        if (!emName) continue;
+        if (thsName === emName || thsName.includes(emName) || emName.includes(thsName)) {
+          if (emName.length > bestLen) { bestLen = emName.length; bestMatch = emItem; }
+        }
+      }
+      if (bestMatch && Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
+        s.changePercent = bestMatch.changePercent;
+        if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
+      }
+    }
+  };
+  applyEmSectorOverride(next.conceptSectors as any, live.emConcepts as any);
+  applyEmSectorOverride(next.regionSectors as any, live.emRegions as any);
   // 6. 把今日实时数据 push 到 history 末尾(让曲线图含当日点)
   // v2.0.7dr:曲线图末点直接映射卡片数据(next.marketOverview.*)— 不再单独算 todayData
   // — 之前:曲线图末点用 todayData(快 fastTick 拉 + liveLimits 阈值 600/100)— em 限流时 0:0
@@ -500,6 +532,20 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         ...todayPoint,
       };
     }
+  }
+  // 7. v2.0.7gg:市场情绪温度盘中实时重算(涨跌停用实时,其余维度用 baseData 盘后值)
+  if (next.marketOverview.marketTemperature) {
+    const bt = next.marketOverview.marketTemperature;
+    next.marketOverview.marketTemperature = calcMarketTemperature({
+      limitUp: next.marketOverview.limitUpCount,
+      limitDown: next.marketOverview.limitDownCount,
+      maxBoards: bt.details.max_boards,
+      brokenCount: bt.details.broken_count,
+      yestAvg: bt.details.yest_perf_value,
+      hasYest: bt.details.yest_perf !== '无数据',
+      promoteRate: bt.details.promote_rate_value,
+      hasPromote: bt.details.promote_rate !== '无数据',
+    });
   }
   return next;
 }

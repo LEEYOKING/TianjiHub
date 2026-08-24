@@ -575,10 +575,11 @@ export interface EMIndustryItem {
   stockCount: number;
 }
 
-/** 拉取 em 申万 90 行业实时数据(单页 100 个,够用)
+/** 拉取 em 申万板块实时数据(行业/概念/地域)
+ * fs: m:90+t:2(申万二级行业) / m:90+t:3(申万概念) / m:90+t:1(申万地域)
  * 返回: Map<name, EMIndustryItem> */
-export async function fetchEMIndustries(): Promise<Map<string, EMIndustryItem>> {
-  const params = 'pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fs=m:90+t:2&fields=f3,f12,f14,f128&fid=f3';
+async function fetchEMSectors(fs: string): Promise<Map<string, EMIndustryItem>> {
+  const params = `pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f128&fid=f3`;
   const result = new Map<string, EMIndustryItem>();
   for (const domain of ['https://push2.eastmoney.com', 'https://push2delay.eastmoney.com', 'https://82.push2.eastmoney.com']) {
     try {
@@ -605,6 +606,12 @@ export async function fetchEMIndustries(): Promise<Map<string, EMIndustryItem>> 
   }
   return result;
 }
+
+/** em 申万 90 行业(跟 ths 90 细分类 一一对应) */
+export const fetchEMIndustries = () => fetchEMSectors('m:90+t:2');
+// v2.0.7gg:em 申万概念 + 申万地域(概念/地域板块盘中实时覆盖用)
+export const fetchEMConcepts = () => fetchEMSectors('m:90+t:3');
+export const fetchEMRegions = () => fetchEMSectors('m:90+t:1');
 
 // =============================================================
 // v2.0.7cs:Cloudflare Pages Function 优先(em 实时数据走 Function,绕开 user 浏览器直连 IP 限流)
