@@ -1,0 +1,3 @@
+# SPA fallback — 但排除 /api/* (让 Cloudflare Pages Function 处理)
+/api/*  /api/:splat  200
+/*      /index.html  200

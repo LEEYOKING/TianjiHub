@@ -1,0 +1,148 @@
+/* 全局样式 + A股复盘系统UI规范 */
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+  background: #F5F7FA;
+  color: #333;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 表格斑马纹 */
+.ant-table-tbody > tr.row-alt > td {
+  background: #FAFBFC !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #FFF7E6 !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #FAFAFA !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  border-bottom: 1px solid #EBEEF5 !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #F0F0F0 !important;
+  padding: 10px 12px !important;
+}
+
+/* 链接颜色 */
+a {
+  color: #1890FF;
+  text-decoration: none;
+  transition: color .15s;
+}
+
+a:hover {
+  color: #40A9FF;
+  text-decoration: underline;
+}
+
+/* 卡片 — 全站统一浅灰外投影 + 14px 圆角 + 1px border(用户 #6 / #16 / #18 反馈) */
+.ant-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 30px 5px rgba(0, 0, 0, 0.02) !important;
+  border-radius: 14px !important;
+  border: 1px solid #E5E7EB !important;
+}
+
+/* 分页器 — 用户 #17 反馈:当前页黑底(主色) */
+.ant-pagination .ant-pagination-item-active {
+  background: #111827 !important;
+  border-color: #111827 !important;
+}
+.ant-pagination .ant-pagination-item-active a {
+  color: #fff !important;
+}
+.ant-pagination .ant-pagination-item-active:hover {
+  background: #000000 !important;
+  border-color: #000000 !important;
+}
+.ant-pagination .ant-pagination-item-active:hover a {
+  color: #fff !important;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+
+/* AntD Tag */
+.ant-tag-checkable {
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.ant-tag-checkable:hover {
+  opacity: 0.85;
+}
+
+/* 分页 */
+.ant-pagination-item-active {
+  background: #E60012 !important;
+  border-color: #E60012 !important;
+}
+
+.ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+
+/* v1.9.8:实时点 pulse 动画 */
+@keyframes fupan-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}
+
+/* v2.0.0:启动页粒子动画(canvas 背景) */
+
+/* v2.0.7fd:移动端全局规则(≤ 768px 触发,PC 端零影响) */
+@media (max-width: 768px) {
+  /* 字体基础缩 1px(中文 14→13 紧凑) */
+  html, body { font-size: 13px; }
+  /* 禁止 iOS 弹性滚动(避免图表错位) */
+  html, body { overflow-x: hidden; }
+  /* AntD Modal / Popover 小屏全宽 */
+  .ant-modal { max-width: calc(100vw - 16px) !important; margin: 8px !important; }
+  .ant-modal-body { padding: 16px !important; }
+  .ant-popover-inner { max-width: calc(100vw - 32px) !important; }
+  /* AntD Drawer(抽屉)— 移动端右抽屉 80% 宽 */
+  .ant-drawer-content-wrapper { max-width: 80vw !important; }
+  /* AntD Table — 表格字号 12px,小屏更紧凑 */
+  .ant-table-tbody > tr > td { padding: 8px 10px !important; font-size: 12px; }
+  .ant-table-thead > tr > th { padding: 10px 10px !important; font-size: 12px; }
+  /* AntD 分页 — 小屏紧凑 */
+  .ant-pagination { font-size: 12px; }
+  /* AntD InputNumber — 紧凑 */
+  .ant-input-number { font-size: 12px !important; }
+  /* 全站 — 卡片 padding 紧凑(我们的自定义 Card) */
+  .overview-stats-row > div, .overview-indices-row > div { padding: 12px 14px !important; }
+}
+

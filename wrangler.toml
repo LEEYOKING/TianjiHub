@@ -1,0 +1,10 @@
+# Cloudflare Pages 配置 — v2.0.7bt
+# 用 Git 集成,Cloudflare 自动 deploy Pages,不用 wrangler deploy
+# wrangler.toml 留着仅作项目标识(不影响 build)
+
+name = "tianjishu-a"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# SPA fallback / headers / redirects 在 Cloudflare Pages UI 里配
+# 或者用 public/_headers / public/_redirects 文件

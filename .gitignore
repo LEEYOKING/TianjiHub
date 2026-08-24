@@ -1,0 +1,22 @@
+# 依赖
+node_modules/
+
+# 构建产物（Cloudflare 会自动 build，无需提交）
+dist/
+dist-ssr/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 临时数据目录
+data/
+
+# 系统文件
+.DS_Store
+
+# 环境变量 / 密钥
+.env
+.env.local
+.env.*.local

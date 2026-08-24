@@ -1,0 +1,41 @@
+# Cloudflare Pages 自定义响应头 — v2.0.7br / v2.0.7ff
+
+# v2.0.7ff:data.json 改 60s 缓存 + SWR 10 分钟
+# — fetch-data 一天跑 8 次(9:35-18:10 北京),10 分钟级别延迟 OK
+# — 盘中 React 走 useLiveData 拉腾讯实时,data.json 缓存不影响
+# — 减少每个 user 每天 100+ 次重复请求,CF Pages 出口流量 -80%
+/data.json
+  Cache-Control: public, max-age=60, stale-while-revalidate=600
+  Access-Control-Allow-Origin: *
+
+# v2.0.7ff:sectorKlines.json 60s 缓存 + SWR 10 分钟 — Sector 页面用
+/sectorKlines.json
+  Cache-Control: public, max-age=60, stale-while-revalidate=600
+  Access-Control-Allow-Origin: *
+
+# surgery.json / prescan.json: 强制不缓存,实时拉最新
+/surgery.json
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Access-Control-Allow-Origin: *
+
+/prescan.json
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Access-Control-Allow-Origin: *
+
+# JS / CSS / 图片: 1 年强缓存(文件名带 hash,内容变了 hash 也变)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 字体 / logo
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/logo-*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 安全 headers
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
