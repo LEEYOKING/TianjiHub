@@ -391,15 +391,15 @@ export default function Overview({ data }: { data: ReportData }) {
       const d = new Date(h.date);
       return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     });
-    // v2.0.7eg:末点 0 时 fallback marketOverview 真值(跟第一排卡片一致)
+    // v2.0.7gj:末点强制用涨跌停比卡片真值(涨停池封板/跌停池),跟卡片完全一致
     const lastUp = data.marketOverview.limitUpCount || 0;
     const lastDown = data.marketOverview.limitDownCount || 0;
     const upData = hist.map((h: HistoryPoint, i: number) => {
-      if (i === hist.length - 1 && (h.limitUp === 0 || h.limitUp == null) && lastUp > 0) return lastUp;
+      if (i === hist.length - 1) return lastUp;
       return h.limitUp;
     });
     const downData = hist.map((h: HistoryPoint, i: number) => {
-      if (i === hist.length - 1 && (h.limitDown === 0 || h.limitDown == null) && lastDown > 0) return lastDown;
+      if (i === hist.length - 1) return lastDown;
       return h.limitDown;
     });
     return {

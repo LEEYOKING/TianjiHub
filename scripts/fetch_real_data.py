@@ -964,6 +964,16 @@ if not any(h.get('date') == _today_date for h in combined_history):
         'down': down_count,  # line 249 真值
     })
 
+# v2.0.7gj:曲线图 today 末点 limitUp/limitDown 强制覆盖为卡片准确值(涨停池封板/跌停池)
+# — zt_history 循环(line 937)已把 today append 进 combined_history,但用的是
+#   stock_zt_pool_em/stock_zt_pool_dtgc_em 的 len(含炸板/ST/北交),约 63/115
+# — 与卡片 limitUpCount=len(limit_up_stocks)=46 / limitDownCount=len(dt_df)=11 不一致
+for _h in combined_history:
+    if _h.get('date') == _today_date:
+        _h['limitUp'] = len(limit_up_stocks) if limit_up_stocks else 0
+        _h['limitDown'] = len(dt_df) if dt_df is not None and len(dt_df) > 0 else 0
+        break
+
 # v2.0.7ef:combined_history 末点 today(8/19) 4 个字段占位 — line 1669 之后会覆盖为 today 真值
 # — 之前 90 天 hist_df 不含 today → ud_dict/zt_dict/dt_dict 都没 today → 末点 0
 # — user 反馈:"涨/跌家数曲线图 8/19 = 0"/"涨/跌停家数曲线图 8/19 = 0"
