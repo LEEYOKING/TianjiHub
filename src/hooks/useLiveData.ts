@@ -482,27 +482,51 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
     }
   }
   // v2.0.7gg:概念/地域板块 em 申万实时覆盖(跟行业一样按 name 模糊匹配)
-  const applyEmSectorOverride = (list: any[] | undefined, emMap: Map<string, any> | undefined) => {
-    if (!list || !emMap || emMap.size === 0) return;
-    for (const s of list) {
-      const thsName = s.name || '';
-      if (!thsName) continue;
-      let bestMatch: any = null;
-      let bestLen = 0;
-      for (const [emName, emItem] of emMap) {
-        if (!emName) continue;
-        if (thsName === emName || thsName.includes(emName) || emName.includes(thsName)) {
-          if (emName.length > bestLen) { bestLen = emName.length; bestMatch = emItem; }
+  // 若 baseData 该板块为空(盘后同花顺 ths 超时),直接用 em 实时数据生成列表
+  const toSectorItem = (name: string, item: any) => ({
+    name,
+    changePercent: item.changePercent,
+    stockCount: 0,
+    totalTurnover: 0,
+    leaderName: item.leaderName && item.leaderName !== '-' ? item.leaderName : '-',
+    leaderChangePercent: 0,
+    netInflow: 0,
+    topStocks: [item.leaderName && item.leaderName !== '-' ? item.leaderName : '-', '-'],
+    limitUpCount: 0,
+    upCount: 0,
+    downCount: 0,
+  });
+  const applyOrBuildEmSector = (list: any[] | undefined, emMap: Map<string, any> | undefined, limit: number, setter: (arr: any[]) => void) => {
+    if (!emMap || emMap.size === 0) return;
+    if (list && list.length > 0) {
+      for (const s of list) {
+        const thsName = s.name || '';
+        if (!thsName) continue;
+        let bestMatch: any = null;
+        let bestLen = 0;
+        for (const [emName, emItem] of emMap) {
+          if (!emName) continue;
+          if (thsName === emName || thsName.includes(emName) || emName.includes(thsName)) {
+            if (emName.length > bestLen) { bestLen = emName.length; bestMatch = emItem; }
+          }
+        }
+        if (bestMatch && Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
+          s.changePercent = bestMatch.changePercent;
+          if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
         }
       }
-      if (bestMatch && Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
-        s.changePercent = bestMatch.changePercent;
-        if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
-      }
+    } else {
+      // baseData 为空：用 em 实时数据生成(按涨跌幅降序取前 limit 个)
+      const built = Array.from(emMap.entries())
+        .filter(([name]) => !!name)
+        .map(([name, item]) => toSectorItem(name, item))
+        .sort((a, b) => b.changePercent - a.changePercent)
+        .slice(0, limit);
+      if (built.length > 0) setter(built);
     }
   };
-  applyEmSectorOverride(next.conceptSectors as any, live.emConcepts as any);
-  applyEmSectorOverride(next.regionSectors as any, live.emRegions as any);
+  applyOrBuildEmSector(next.conceptSectors as any, live.emConcepts as any, 30, (arr) => { next.conceptSectors = arr; });
+  applyOrBuildEmSector(next.regionSectors as any, live.emRegions as any, 20, (arr) => { next.regionSectors = arr; });
   // 6. 把今日实时数据 push 到 history 末尾(让曲线图含当日点)
   // v2.0.7dr:曲线图末点直接映射卡片数据(next.marketOverview.*)— 不再单独算 todayData
   // — 之前:曲线图末点用 todayData(快 fastTick 拉 + liveLimits 阈值 600/100)— em 限流时 0:0
