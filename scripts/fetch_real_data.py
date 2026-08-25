@@ -163,6 +163,16 @@ print(f"  指数 {len(indices)} 个: " + ", ".join(i['name'] for i in indices))
 # — 之前 v2.0.7ea 硬编码区间漏了 沪市 605000-605999(112)/深市 1201+3000-3999/北交所 302132-920992(338)
 # — 实测 8/19 akshare 拉到 5,547 只 — 5,363 vs 5,547 — 漏 184
 # — 用 akshare stock_info_a_code_name() 拿真实代码,fetch-data + React 都用同一份
+# v2.0.8gk:提前读上一份 data.json(数据源失败时 fallback 旧值,避免把 0/硬编码写进线上)
+_prev_data = None
+try:
+    with open(OUT, 'r', encoding='utf-8') as _f:
+        _prev_data = json.load(_f)
+except Exception:
+    _prev_data = None
+_prev_mo = (_prev_data or {}).get('marketOverview', {})
+_prev_etf_codes = list(_prev_mo.get('etfCodes', []))
+_prev_bond_codes = list(_prev_mo.get('bondCodes', []))
 print("\n[2/7] 全市场快照(腾讯 qt.gtimg.cn + 新浪 hs_a 真实代码)...")
 import urllib.request, json as _json
 import time as _t
@@ -208,12 +218,18 @@ try:
     else:
         raise Exception(f"新浪 hs_a 仅 {len(all_codes)} 只,过少")
 except Exception as _e:
-    print(f"  新浪 hs_a 失败({_e}),fallback 硬编码区间")
-    all_codes = []
-    for i in range(600000, 606000): all_codes.append(f'sh{i:06d}')
-    for i in range(688000, 690000): all_codes.append(f'sh{i:06d}')
-    for i in range(1, 4000): all_codes.append(f'sz{i:06d}')
-    for i in range(300000, 302000): all_codes.append(f'sz{i:06d}')
+    _prev_codes = (_prev_data or {}).get('meta', {}).get('stockCodes', [])
+    if _prev_codes and len(_prev_codes) >= 1000:
+        # v2.0.8gk:失败时用上一份 data.json 的 stockCodes(真实代码),不回退硬编码 13999
+        all_codes = list(_prev_codes)
+        print(f"  新浪 hs_a 失败({_e}),用上一份 stockCodes {len(all_codes)} 只")
+    else:
+        print(f"  新浪 hs_a 失败({_e})且无上一份有效 stockCodes,fallback 硬编码区间")
+        all_codes = []
+        for i in range(600000, 606000): all_codes.append(f'sh{i:06d}')
+        for i in range(688000, 690000): all_codes.append(f'sh{i:06d}')
+        for i in range(1, 4000): all_codes.append(f'sz{i:06d}')
+        for i in range(300000, 302000): all_codes.append(f'sz{i:06d}')
 # 限流批量 100 只/批(URL 长度限制:实测 100 只不超 414)
 BATCH_SIZE = 100
 spot_rows = []
@@ -428,14 +444,31 @@ except Exception as e:
             etf_codes = [_sym for _sym, _ in _ef_rows]
             print(f"  ETF(新浪 fallback): 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat} (代码 {len(etf_codes)})")
         else:
-            print(f"  ETF 新浪 fallback 拉空,置 0")
+            # v2.0.8gk:新浪 fallback 拉空 → 用上一份旧值(不写 0)
+            if _prev_etf_codes or _prev_mo.get('etfUp') is not None:
+                etf_up = _prev_mo.get('etfUp', 0)
+                etf_down = _prev_mo.get('etfDown', 0)
+                etf_flat = _prev_mo.get('etfFlat', 0)
+                etf_codes = list(_prev_etf_codes)
+                print(f"  ETF 拉空,用上一份旧值(涨{etf_up}/跌{etf_down}/平{etf_flat},代码{len(etf_codes)})")
+            else:
+                print(f"  ETF 拉空且无旧值,置 0")
     except Exception as e2:
-        print(f"  ETF 新浪 fallback 也失败({e2}),置 0")
+        # v2.0.8gk:新浪 fallback 也失败 → 用旧值
+        if _prev_etf_codes or _prev_mo.get('etfUp') is not None:
+            etf_up = _prev_mo.get('etfUp', 0)
+            etf_down = _prev_mo.get('etfDown', 0)
+            etf_flat = _prev_mo.get('etfFlat', 0)
+            etf_codes = list(_prev_etf_codes)
+            print(f"  ETF 新浪 fallback 也失败({e2}),用上一份旧值(涨{etf_up}/跌{etf_down}/平{etf_flat},代码{len(etf_codes)})")
+        else:
+            print(f"  ETF 新浪 fallback 也失败({e2})且无旧值,置 0")
 
 # 2.6 可转债 涨/跌/平家数
 print("  可转债 涨/跌/平...")
 bond_up = bond_down = bond_flat = 0
 bond_codes = []
+bond_df = None  # v2.0.8gk:初始化,bond_zh_cov_spot 失败时正股步骤不 NameError
 try:
     bond_df = ak.bond_zh_hs_cov_spot()
     bond_df['changepercent'] = bond_df['changepercent'].apply(lambda x: safe_float(x))
@@ -448,7 +481,16 @@ try:
     bond_codes = [('sh' if str(c).startswith('11') else 'sz') + str(c) for c in bond_df['code'].astype(str).tolist()]
     print(f"  可转债: 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat} (代码 {len(bond_codes)} 只)")
 except Exception as e:
-    print(f"  可转债 akshare 失败({e}),置 0 继续")
+    # v2.0.8gk:失败用上一份旧值(不写 0);bond_df 置 None 让正股步骤跳过
+    bond_df = None
+    if _prev_bond_codes or _prev_mo.get('bondUp') is not None:
+        bond_up = _prev_mo.get('bondUp', 0)
+        bond_down = _prev_mo.get('bondDown', 0)
+        bond_flat = _prev_mo.get('bondFlat', 0)
+        bond_codes = list(_prev_bond_codes)
+        print(f"  可转债 akshare 失败({e}),用上一份旧值(涨{bond_up}/跌{bond_down}/平{bond_flat},代码{len(bond_codes)})")
+    else:
+        print(f"  可转债 akshare 失败({e})且无旧值,置 0 继续")
 
 # 2.7 可转债对应正股 涨/跌/平家数
 print("  可转债正股 涨/跌/平...")
@@ -463,6 +505,8 @@ try:
         if bc and sc:
             bond_map[bc] = sc
     # 2. 拉 当前交易的 320 只可转债,提取正股代码
+    if bond_df is None:
+        raise RuntimeError('bond_df is None(可转债未拉到)')
     bond_now = bond_df.copy()
     bond_now['_stock_code'] = bond_now['code'].astype(str).map(bond_map)
     bond_now = bond_now.dropna(subset=['_stock_code'])
@@ -478,8 +522,10 @@ try:
     bond_stock_flat = int((stock_map['涨跌幅'] == 0).sum())
     print(f"  可转债正股: 涨 {bond_stock_up} / 跌 {bond_stock_down} / 平 {bond_stock_flat}")
 except Exception as e:
-    print(f"  可转债正股 失败: {e}")
-    bond_stock_up = bond_stock_down = bond_stock_flat = 0
+    print(f"  可转债正股 失败: {e},用上一份旧值")
+    bond_stock_up = _prev_mo.get('bondStockUp', 0)
+    bond_stock_down = _prev_mo.get('bondStockDown', 0)
+    bond_stock_flat = _prev_mo.get('bondStockFlat', 0)
 
 # 按代码前缀算各市场成交额
 def code_prefix(code):
@@ -550,15 +596,10 @@ history = []
 # — 修法:line 433 history = [] 后,先从 public/data.json 读 history 末点(8/20 末点)— 暂存到 _prev_history
 # — 然后 line 462-480 line 758 用 _prev_history 覆盖 ud_dict[8/20] = 4,096 真值
 _prev_history = []
-try:
-    with open(OUT, 'r', encoding='utf-8') as f:
-        _prev_data = json.load(f)
-    _prev_history = _prev_data.get('history', [])
-    if _prev_history:
-        print(f"  读 git HEAD data.json history 末 {len(_prev_history)} 行(保留上一交易日真值)")
-except Exception as e:
-    print(f"  读 git HEAD data.json history 失败(忽略): {e}")
-    _prev_history = []
+# v2.0.8gk:_prev_data 已在 [2/7] 开头提前读取,这里复用(避免重复读 OUT)
+_prev_history = (_prev_data or {}).get('history', [])
+if _prev_history:
+    print(f"  读 git HEAD data.json history 末 {len(_prev_history)} 行(保留上一交易日真值)")
 
 # v2.0.7ba:history.volume 用 sina amount × 19 / 1e8 估算(沪深 8/12 估算 21444,差 1%)
 # — em sh000001 + sz399001 volume 字段单位"手",50+500 成分股加权
