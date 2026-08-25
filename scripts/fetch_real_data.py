@@ -489,16 +489,60 @@ try:
     bond_codes = [('sh' if str(c).startswith('11') else 'sz') + str(c) for c in bond_df['code'].astype(str).tolist()]
     print(f"  可转债: 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat} (代码 {len(bond_codes)} 只)")
 except Exception as e:
-    # v2.0.8gk:失败用上一份旧值(不写 0);bond_df 置 None 让正股步骤跳过
+    # v2.0.8gk:先试腾讯直连(硬编码可转债区间 + 成交量过滤退市/停牌),再退回旧值
     bond_df = None
-    if _prev_bond_codes or _prev_mo.get('bondUp') is not None:
-        bond_up = _prev_mo.get('bondUp', 0)
-        bond_down = _prev_mo.get('bondDown', 0)
-        bond_flat = _prev_mo.get('bondFlat', 0)
-        bond_codes = list(_prev_bond_codes)
-        print(f"  可转债 akshare 失败({e}),用上一份旧值(涨{bond_up}/跌{bond_down}/平{bond_flat},代码{len(bond_codes)})")
-    else:
-        print(f"  可转债 akshare 失败({e})且无旧值,置 0 继续")
+    print(f"  可转债 akshare 失败({e}),改用腾讯直连 fallback")
+    try:
+        import ssl as _ssl_bond
+        _bond_ctx = _ssl_bond._create_unverified_context()
+        _bond_region = []
+        for _i in range(110000, 112000): _bond_region.append(f'sh{_i:06d}')
+        for _i in range(113000, 114000): _bond_region.append(f'sh{_i:06d}')
+        for _i in range(118000, 119000): _bond_region.append(f'sh{_i:06d}')
+        for _i in range(123000, 129000): _bond_region.append(f'sz{_i:06d}')
+        _bond_rows = []
+        for _bi in range(0, len(_bond_region), 100):
+            _bb = _bond_region[_bi:_bi + 100]
+            _burl = 'https://qt.gtimg.cn/q=' + ','.join(_bb)
+            _breq = urllib.request.Request(_burl, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'})
+            _btxt = urllib.request.urlopen(_breq, timeout=12, context=_bond_ctx).read().decode('gbk', errors='ignore')
+            for _line in _btxt.split(';'):
+                _eq = _line.find('=')
+                if _eq < 0:
+                    continue
+                _f = _line[_eq + 1:].strip().strip('"').split('~')
+                if len(_f) < 50:
+                    continue
+                _nm = _f[1]
+                if '转债' not in _nm and '可转' not in _nm:
+                    continue
+                try:
+                    _c = float(_f[3]); _pv = float(_f[4]); _v = float(_f[6])
+                except Exception:
+                    continue
+                # 当前交易:昨收>0 且 成交量>0(退市/停牌转债成交量=0)
+                if _pv > 0 and _v > 0:
+                    _bond_rows.append((_f[2], _nm, _c, _pv, _v))
+            time.sleep(0.05)
+        if _bond_rows:
+            bond_up = sum(1 for _r in _bond_rows if (_r[2] - _r[3]) / _r[3] > 0.005)
+            bond_down = sum(1 for _r in _bond_rows if (_r[2] - _r[3]) / _r[3] < -0.005)
+            bond_flat = sum(1 for _r in _bond_rows if abs((_r[2] - _r[3]) / _r[3]) <= 0.005)
+            bond_codes = [('sh' if _r[0].startswith('11') else 'sz') + _r[0] for _r in _bond_rows]
+            print(f"  可转债(腾讯直连): 涨 {bond_up} / 跌 {bond_down} / 平 {bond_flat} (代码 {len(bond_codes)} 只)")
+        else:
+            raise Exception('腾讯直连拉到 0 只可转债')
+    except Exception as _e_bond:
+        # v2.0.8gk:腾讯直连也失败 → 用上一份旧值
+        print(f"  可转债腾讯直连也失败({_e_bond}),用上一份旧值")
+        if _prev_bond_codes or _prev_mo.get('bondUp') is not None:
+            bond_up = _prev_mo.get('bondUp', 0)
+            bond_down = _prev_mo.get('bondDown', 0)
+            bond_flat = _prev_mo.get('bondFlat', 0)
+            bond_codes = list(_prev_bond_codes)
+            print(f"  可转债用上一份旧值(涨{bond_up}/跌{bond_down}/平{bond_flat},代码{len(bond_codes)})")
+        else:
+            print(f"  可转债无旧值,置 0 继续")
 
 # 2.7 可转债对应正股 涨/跌/平家数
 print("  可转债正股 涨/跌/平...")
