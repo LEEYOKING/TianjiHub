@@ -368,7 +368,10 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
     // — 修法:卡片也用 live.today 覆盖,跟曲线图末点同源
     // — 跟 v2.0.7bi 一样处理 limitUp/limitDown(同花顺"当前封板"近似)
     if (live.today && (live.today.up > 0 || live.today.down > 0) && live.today.volume > 0) {
+      // v2.0.8gj:盘中动态算 turnoverDiff = 今日实时成交额 - 昨日收盘成交额(baseData 覆盖前的值)
+      const _prevTurnover = next.marketOverview.marketTurnover;
       next.marketOverview.marketTurnover = live.today.volume;
+      next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover) * 100) / 100;
       next.marketOverview.upCount = live.today.up;
       next.marketOverview.downCount = live.today.down;
       // v2.0.7ex:fetchTodaySnapshot 也加 flatCount 字段(用现价/昨收算涨跌幅,精度 0.001%)
@@ -397,7 +400,10 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       if (mktValid) {
         // v2.0.7d:成交量也实时刷新 + turnoverDiff 由 fetch_real_data 5 cron 算(末 1 vs 末 2 收盘对比)
         // v2.0.7bb:em 不覆盖 turnoverDiff(避免 8/13 跑出 25659 - 25673 = -14.46 自减)
+        // v2.0.8gj:盘中动态算 turnoverDiff(与 live.today 分支同口径)
+        const _prevTurnover2 = next.marketOverview.marketTurnover;
         next.marketOverview.marketTurnover = live.market!.totalTurnover;
+        next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2) * 100) / 100;
         next.marketOverview.upCount = live.market!.upCount;
         next.marketOverview.downCount = live.market!.downCount;
         next.marketOverview.flatCount = live.market!.flatCount;
