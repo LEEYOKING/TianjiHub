@@ -112,6 +112,7 @@ WANTED = [
     ('sh000001', '上证指数'),
     ('sz399001', '深证成指'),
     ('sz399006', '创业板指'),
+    ('bj899050', '北证50'),  # v2.0.8gj:新增北证50(在创业板和科创50之间)
     ('sh000688', '科创50'),
     ('sh000300', '沪深300'),
     ('sz399303', '微盘指数'),  # 国证2000,代表小微盘
@@ -121,7 +122,7 @@ idx_dict = {}
 try:
     import ssl as _ssl
     _ctx = _ssl._create_unverified_context()
-    _iq_url = 'https://qt.gtimg.cn/q=' + ','.join(c for c, _ in WANTED) + ',bj899050'
+    _iq_url = 'https://qt.gtimg.cn/q=' + ','.join(c for c, _ in WANTED)
     _iq_req = urllib.request.Request(_iq_url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'})
     _iq_txt = urllib.request.urlopen(_iq_req, timeout=12, context=_ctx).read().decode('gbk', errors='ignore')
     for _line in _iq_txt.split(';'):

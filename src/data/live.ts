@@ -62,8 +62,10 @@ export const SINA_INDUSTRY_LABELS = [
   'new_gqhg',   // 股权变更
 ];
 
-/** 6 个核心指数代码(对应 data.json indices 顺序) */
-export const INDEX_CODES = ['sh000001', 'sz399001', 'sz399006', 'sh000688', 'sh000300', 'sz399303'];
+/** 7 个核心指数代码(对应 data.json indices 顺序) */
+export const INDEX_CODES = ['sh000001', 'sz399001', 'sz399006', 'bj899050', 'sh000688', 'sh000300', 'sz399303'];
+/** 与 INDEX_CODES 一一对应的指数中文名(v2.0.8gj:用于按名匹配覆盖,避免按索引错位) */
+export const INDEX_NAMES = ['上证指数', '深证成指', '创业板指', '北证50', '科创50', '沪深300', '微盘指数'];
 
 const TENCENT_BASE = 'https://qt.gtimg.cn/q=';
 const SINA_API = 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData';
@@ -94,7 +96,7 @@ interface SinaStock {
  * 字段位置(0-indexed): 3=现价, 4=昨收, 5=今开, 6=成交量(手)
  *                       31=涨跌额, 32=涨跌幅, 33=最高, 34=最低
  *                       35="现价/成交量(手)/成交额(元)" 复合字段 */
-export async function fetchLiveIndices(): Promise<{ point: number; changeAmount: number; changePercent: number; turnover: number }[]> {
+export async function fetchLiveIndices(): Promise<{ name?: string; point: number; changeAmount: number; changePercent: number; turnover: number }[]> {
   try {
     const url = TENCENT_BASE + INDEX_CODES.join(',');
     const resp = await fetch(url);
@@ -114,7 +116,7 @@ export async function fetchLiveIndices(): Promise<{ point: number; changeAmount:
       const amountStr = parts[35]?.split('/')[2] || '0';
       const amountYuan = parseFloat(amountStr) || 0;
       const turnover = Math.round(amountYuan / 1e8);  // 元 → 亿
-      results.push({ point, changeAmount, changePercent, turnover });
+      results.push({ name: INDEX_NAMES[results.length], point, changeAmount, changePercent, turnover });
     }
     return results;
   } catch (e) {

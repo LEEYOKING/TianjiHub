@@ -147,6 +147,9 @@ function RangeTabs({ value, onChange, options }: { value: number; onChange: (v: 
 export default function Overview({ data }: { data: ReportData }) {
   // data 已经是 App.tsx 合并 live 后的 mergedData,直接用
   const { marketOverview: idx, history } = data;
+  // v2.0.8gj:沪深300 挪到第一行尾部,第二行其余指数(上证/深证/创业板/北证50/科创50/微盘)按原顺序
+  const hs300Index = idx.indices.find((it) => it.name === '沪深300');
+  const row2Indices = idx.indices.filter((it) => it.name !== '沪深300');
 
   // v2.0.7fv:L5 修 — 删 30s 重复拉 data.json — App.tsx 已经在 60s 拉,这里再 30s 拉完全没 setState 浪费带宽
   // v2.0.7fv:L6 修 — liveAgoSec 不会自动 tick,加个 1s setState 让 "X 秒前更新" 实时
@@ -448,10 +451,19 @@ export default function Overview({ data }: { data: ReportData }) {
       <div className="overview-stats-row">
         <StatCard label="成交量" value={idx.marketTurnover} suffix="亿"
           subLeft="较上一日增量" subValue={idx.turnoverDiff} suffix2="亿" subValueColor="updown" />
-        <StatCard label="上涨家数" value={idx.upCount}
-          subLeft="占比" subValue={idx.upPercent} suffix2="%" subValueColor="uponly" valueColor={COLOR_UP} />
-        <StatCard label="下跌家数" value={idx.downCount}
-          subLeft="平盘" subText={idx.flatCount} valueColor={COLOR_DOWN} />
+        {/* v2.0.8gj:合并"上涨家数"+"下跌家数"为一张"涨/跌家数"卡,第3行仅保留"平盘 xxx" */}
+        <StatCard
+          label="涨/跌家数"
+          value={null}
+          customValue={
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span style={{ color: COLOR_UP, fontSize: 26, fontWeight: 700 }}>{idx.upCount}</span>
+              <span style={{ color: '#C9CDD4', fontSize: 22, fontWeight: 400 }}>:</span>
+              <span style={{ color: COLOR_DOWN, fontSize: 26, fontWeight: 700 }}>{idx.downCount}</span>
+            </span>
+          }
+          subLeft="平盘" subText={idx.flatCount}
+        />
         <StatCard
           label="涨跌停比"
           value={null}
@@ -476,44 +488,14 @@ export default function Overview({ data }: { data: ReportData }) {
           etfDown={idx.etfDown || 0}
           etfFlat={idx.etfFlat || 0}
         />
+        {/* v2.0.8gj:沪深300 指数卡挪到第一行第6位置 */}
+        {hs300Index && <IndexCard it={hs300Index} />}
       </div>
 
-      {/* 第二行:6 个指数 */}
+      {/* 第二行:6 个指数(不含沪深300,已挪到第一行尾部) */}
       <div className="overview-indices-row">
-        {idx.indices.map((it) => (
-          <div key={it.name} className="index-card">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>{it.name}</span>
-              <span className="index-pct-badge" style={{
-                fontSize: 13,
-                // v1.9.4:文字色 = 涨跌幅对应色,背景 = 对应色 + opacity 0.08
-                color: it.changePercent > 0 ? COLOR_UP : it.changePercent < 0 ? COLOR_DOWN : COLOR_FLAT,
-                background: it.changePercent > 0 ? 'rgba(255, 77, 79, 0.08)'
-                  : it.changePercent < 0 ? 'rgba(14, 205, 112, 0.08)'
-                  : 'rgba(156, 163, 175, 0.08)',
-                padding: '4px 10px',
-                borderRadius: 6,
-                fontWeight: 700,
-                minWidth: 56,
-                textAlign: 'center',
-              }}>
-                {it.changePercent > 0 ? '+' : ''}{it.changePercent.toFixed(2)}%
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
-              <span style={{ fontSize: 24, fontWeight: 700, color: COLOR_TEXT, lineHeight: 1.2 }}>{it.point.toFixed(2)}</span>
-              <span style={{
-                fontSize: 16, fontWeight: 700,
-                color: it.changePercent > 0 ? COLOR_UP : it.changePercent < 0 ? COLOR_DOWN : COLOR_FLAT,
-              }}>
-                {it.changePercent > 0 ? '↑' : it.changePercent < 0 ? '↓' : '–'}
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: '#86909C', display: 'flex', justifyContent: 'space-between' }}>
-              <span><ColorText value={it.changeAmount} style={{ fontWeight: 500 }}>{it.changeAmount >= 0 ? '+' : ''}{it.changeAmount.toFixed(2)}</ColorText></span>
-              <span>成交额 {Math.round(it.turnover)}亿</span>
-            </div>
-          </div>
+        {row2Indices.map((it) => (
+          <IndexCard key={it.name} it={it} />
         ))}
       </div>
 
@@ -777,6 +759,37 @@ export function Card({ title, right, children }: { title: string; right?: React.
         {right}
       </div>
       {children}
+    </div>
+  );
+}
+
+// v2.0.8gj:指数卡片(第一行沪深300 + 第二行 6 指数共用)
+function IndexCard({ it }: { it: { name: string; point: number; changeAmount: number; changePercent: number; turnover: number } }) {
+  return (
+    <div className="index-card">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>{it.name}</span>
+        <span className="index-pct-badge" style={{
+          fontSize: 13,
+          color: it.changePercent > 0 ? COLOR_UP : it.changePercent < 0 ? COLOR_DOWN : COLOR_FLAT,
+          background: it.changePercent > 0 ? 'rgba(255, 77, 79, 0.08)'
+            : it.changePercent < 0 ? 'rgba(14, 205, 112, 0.08)'
+            : 'rgba(156, 163, 175, 0.08)',
+          padding: '4px 10px', borderRadius: 6, fontWeight: 700, minWidth: 56, textAlign: 'center',
+        }}>
+          {it.changePercent > 0 ? '+' : ''}{it.changePercent.toFixed(2)}%
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+        <span style={{ fontSize: 24, fontWeight: 700, color: COLOR_TEXT, lineHeight: 1.2 }}>{it.point.toFixed(2)}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: it.changePercent > 0 ? COLOR_UP : it.changePercent < 0 ? COLOR_DOWN : COLOR_FLAT }}>
+          {it.changePercent > 0 ? '↑' : it.changePercent < 0 ? '↓' : '–'}
+        </span>
+      </div>
+      <div style={{ fontSize: 12, color: '#86909C', display: 'flex', justifyContent: 'space-between' }}>
+        <span><ColorText value={it.changeAmount} style={{ fontWeight: 500 }}>{it.changeAmount >= 0 ? '+' : ''}{it.changeAmount.toFixed(2)}</ColorText></span>
+        <span>成交额 {Math.round(it.turnover)}亿</span>
+      </div>
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function isPreMarket(): boolean {
 
 export interface LiveSnapshot {
   /** 6 个指数实时数据(顺序对应 data.indices) */
-  indices: { point: number; changeAmount: number; changePercent: number; turnover: number }[];
+  indices: { name?: string; point: number; changeAmount: number; changePercent: number; turnover: number }[];
   /** 全市场汇总(EM push2:含涨跌停) */
   market: {
     upCount: number;
@@ -334,15 +334,16 @@ export function useLiveDataOnce(enabled = true): LiveSnapshot {
 export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData {
   if (live.fetchedAt === 0) return data;
   const next: ReportData = JSON.parse(JSON.stringify(data));
-  // 1. 指数
+  // 1. 指数 — v2.0.8gj:改按 name 匹配覆盖(前端 7 指数含北证50,data.json 可能仍 6 个,避免按索引错位)
   if (live.indices.length > 0 && live.indices.some((li) => li.point > 0)) {
-    for (let i = 0; i < next.marketOverview.indices.length && i < live.indices.length; i++) {
-      const li = live.indices[i];
-      if (li.point > 0) {
-        next.marketOverview.indices[i].point = li.point;
-        next.marketOverview.indices[i].changeAmount = li.changeAmount;
-        next.marketOverview.indices[i].changePercent = li.changePercent;
-        next.marketOverview.indices[i].turnover = li.turnover;
+    for (const li of live.indices) {
+      if (!li.name || li.point <= 0) continue;
+      const target = next.marketOverview.indices.find((it) => it.name === li.name);
+      if (target) {
+        target.point = li.point;
+        target.changeAmount = li.changeAmount;
+        target.changePercent = li.changePercent;
+        target.turnover = li.turnover;
       }
     }
   }
