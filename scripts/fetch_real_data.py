@@ -191,22 +191,26 @@ def _fetch_codes_from_sina():
             'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/'
             f'Market_Center.getHQNodeData?num=100&page={page}&sort=code&asc=1&node=hs_a&_={int(time.time()*1000)}'
         )
-        try:
-            req = urllib.request.Request(url, headers={
-                'User-Agent': 'Mozilla/5.0',
-                'Referer': 'https://finance.sina.com.cn/',
-            })
-            with urllib.request.urlopen(req, timeout=10, context=_ssl_ctx) as resp:
-                data = _json.loads(resp.read().decode('utf-8', errors='ignore'))
-            if not isinstance(data, list) or len(data) == 0:
+        data = None
+        # v2.0.8gk:新浪间歇 456 限流,单页重试 4 次(退避 1.5s/3s/4.5s),扛住瞬时风控
+        for _attempt in range(4):
+            try:
+                req = urllib.request.Request(url, headers={
+                    'User-Agent': 'Mozilla/5.0',
+                    'Referer': 'https://finance.sina.com.cn/',
+                })
+                with urllib.request.urlopen(req, timeout=10, context=_ssl_ctx) as resp:
+                    data = _json.loads(resp.read().decode('utf-8', errors='ignore'))
                 break
-            for item in data:
-                sym = item.get('symbol', '') or item.get('code', '')
-                if sym:
-                    codes.append(sym)
-            if len(data) < 100:
-                break
-        except Exception:
+            except Exception:
+                time.sleep(1.5 * (_attempt + 1))
+        if not isinstance(data, list) or len(data) == 0:
+            break
+        for item in data:
+            sym = item.get('symbol', '') or item.get('code', '')
+            if sym:
+                codes.append(sym)
+        if len(data) < 100:
             break
         time.sleep(0.1)
     return codes
@@ -422,19 +426,23 @@ except Exception as e:
                 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/'
                 f'Market_Center.getHQNodeData?num=100&page={_p}&sort=changepercent&asc=0&node=etf_hq_fund&_={int(time.time()*1000)}'
             )
-            try:
-                _ef_req = urllib.request.Request(_ef_url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://finance.sina.com.cn/'})
-                _ef_data = json.loads(urllib.request.urlopen(_ef_req, timeout=10, context=_ef_ctx).read().decode('utf-8', errors='ignore'))
-                if not isinstance(_ef_data, list) or len(_ef_data) == 0:
+            _ef_data = None
+            # v2.0.8gk:新浪间歇 456 限流,单页重试 4 次,扛住瞬时风控
+            for _att in range(4):
+                try:
+                    _ef_req = urllib.request.Request(_ef_url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://finance.sina.com.cn/'})
+                    _ef_data = json.loads(urllib.request.urlopen(_ef_req, timeout=10, context=_ef_ctx).read().decode('utf-8', errors='ignore'))
                     break
-                for _s in _ef_data:
-                    _sym = _s.get('symbol', '')
-                    _cp_raw = _s.get('changepercent', 0)
-                    _cp = float(_cp_raw) if _cp_raw not in ('', '-') else 0.0
-                    _ef_rows.append((_sym, _cp))
-                if len(_ef_data) < 100:
-                    break
-            except Exception:
+                except Exception:
+                    time.sleep(1.5 * (_att + 1))
+            if not isinstance(_ef_data, list) or len(_ef_data) == 0:
+                break
+            for _s in _ef_data:
+                _sym = _s.get('symbol', '')
+                _cp_raw = _s.get('changepercent', 0)
+                _cp = float(_cp_raw) if _cp_raw not in ('', '-') else 0.0
+                _ef_rows.append((_sym, _cp))
+            if len(_ef_data) < 100:
                 break
             time.sleep(0.1)
         if _ef_rows:
