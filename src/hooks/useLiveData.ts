@@ -350,21 +350,10 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
   // 9:30 之后用 live 实时
   // v2.0.7av:跨日时(8:00 hook 切日期后但 baseData 还没 cron 更新)也清 0 涨跌停
   // — 否则 8/14 9:30-9:35 会显示 8/13 收盘涨停池 56(错,应 0)
-  const _now8 = new Date(Date.now() + 8 * 3600 * 1000);
-  const _todayYMD = `${_now8.getUTCFullYear()}${String(_now8.getUTCMonth() + 1).padStart(2, '0')}${String(_now8.getUTCDate()).padStart(2, '0')}`;
-  const _baseTradeDate = (next.marketOverview as any).tradeDate || '';
-  const _isCrossDay = _baseTradeDate && _baseTradeDate !== _todayYMD;
-  if (_isCrossDay) {
-    // v2.0.7ci:跨日(baseData 是 8/14 但 today 8/15)只清 0 涨跌停
-    // — upCount/downCount/flatCount/turnover 保留 8/14 收盘值(避免显示 0)
-    // — 涨跌停 0:00-9:30 保留 baseData 8/14 收盘(用户还在看昨天的数据)
-    // — 9:30 后 em 实时(fast tick)覆盖
-    // 注意:这里不清 0 涨跌停,保留 baseData(0:00-9:30 期间显示昨天收盘值)
-    // — 因为 8:00 hook 之后到 9:35 cron 之前,涨跌停应该还是昨天收盘的
-    // v2.0.7fp:回滚 v2.0.7fo 加的 live.today 覆盖(useLiveData 0:00-9:30 不跑,这段代码死代码)
-    // — baseData 8/21 已手动改成 2505/2862/46(同花顺口径),user 立即看到对的值
-    // — 8/22 18:30 cron 跑时 fetch-data 用新算法(指数成交额)重写 8/21 末点
-  } else if (isPreMarket()) {
+  // v2.0.8gj:删除 crossDay 空分支 — 该分支导致新交易日早盘(9:30 后、盘后 cron 更新前,baseData 还是昨日)
+  // 全市场(成交量/涨跌家数/涨跌停/涨跌分布/曲线图末点)不应用 live 实时数据,只有指数(在判断之前)实时。
+  // 修法:盘中(非 preMarket)一律用 live 实时覆盖,跨日不再单独拦截。
+  if (isPreMarket()) {
     // v2.0.7cy:取消 preMarket 清 0 — 0:00-9:30 保留 baseData 上一交易日收盘值
     // — 之前 v2.0.7p/v2.0.7bd 清 0 → user 看到 30-60 分钟空白
     // — 现在保留 baseData 8/17 收盘 + Layout 8:00 hook 切日期到 8/18
