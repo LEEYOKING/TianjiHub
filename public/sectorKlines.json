@@ -4,33 +4,33 @@
     "kline": []
   },
   "基础化工": {
-    "leaderName": "彩客科技",
-    "code": "920206",
+    "leaderName": "圣达生物",
+    "code": "603079",
     "kline": []
   },
   "钢铁": {
-    "leaderName": "南钢股份",
-    "code": "600282",
+    "leaderName": "凌钢股份",
+    "code": "600231",
     "kline": []
   },
   "有色金属": {
-    "leaderName": "宜安科技",
-    "code": "300328",
+    "leaderName": "华阳新材",
+    "code": "600281",
     "kline": []
   },
   "电子": {
-    "leaderName": "思泉新材",
-    "code": "301489",
+    "leaderName": "天通股份",
+    "code": "600330",
     "kline": []
   },
   "汽车": {
-    "leaderName": "中集车辆",
-    "code": "301039",
+    "leaderName": "众泰汽车",
+    "code": "000980",
     "kline": []
   },
   "家用电器": {
-    "leaderName": "联合精密",
-    "code": "001268",
+    "leaderName": "康盛股份",
+    "code": "002418",
     "kline": []
   },
   "食品饮料": {
@@ -38,28 +38,28 @@
     "kline": []
   },
   "纺织服饰": {
-    "leaderName": "富春染织",
-    "code": "605189",
+    "leaderName": "金春股份",
+    "code": "300877",
     "kline": []
   },
   "轻工制造": {
-    "leaderName": "林平发展",
-    "code": "603284",
+    "leaderName": "青山纸业",
+    "code": "600103",
     "kline": []
   },
   "医药生物": {
-    "leaderName": "键凯科技",
-    "code": "688356",
+    "leaderName": "西点药业",
+    "code": "301130",
     "kline": []
   },
   "公用事业": {
-    "leaderName": "协鑫能科",
-    "code": "002015",
+    "leaderName": "聆达股份",
+    "code": "300125",
     "kline": []
   },
   "交通运输": {
-    "leaderName": "世盟股份",
-    "code": "001220",
+    "leaderName": "中创物流",
+    "code": "603967",
     "kline": []
   },
   "房地产": {
@@ -75,13 +75,13 @@
     "kline": []
   },
   "银行": {
-    "leaderName": "渝农商行",
-    "code": "601077",
+    "leaderName": "兰州银行",
+    "code": "001227",
     "kline": []
   },
   "非银金融": {
-    "leaderName": "锦龙股份",
-    "code": "000712",
+    "leaderName": "国元证券",
+    "code": "000728",
     "kline": []
   },
   "建筑材料": {
@@ -93,18 +93,18 @@
     "kline": []
   },
   "电力设备": {
-    "leaderName": "天力锂能",
-    "code": "301152",
+    "leaderName": "滨海能源",
+    "code": "000695",
     "kline": []
   },
   "机械设备": {
-    "leaderName": "博科测试",
-    "code": "301598",
+    "leaderName": "英维克",
+    "code": "002837",
     "kline": []
   },
   "国防军工": {
-    "leaderName": "科思科技",
-    "code": "688788",
+    "leaderName": "合众思壮",
+    "code": "002383",
     "kline": []
   },
   "美容护理": {
@@ -112,8 +112,8 @@
     "kline": []
   },
   "石油石化": {
-    "leaderName": "博汇股份",
-    "code": "300839",
+    "leaderName": "康普顿",
+    "code": "603798",
     "kline": []
   },
   "煤炭": {
@@ -126,8 +126,8 @@
     "kline": []
   },
   "综合": {
-    "leaderName": "悦达投资",
-    "code": "600805",
+    "leaderName": "群兴玩具",
+    "code": "002575",
     "kline": []
   }
 }
