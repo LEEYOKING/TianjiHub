@@ -544,40 +544,8 @@ except Exception as e:
         else:
             print(f"  可转债无旧值,置 0 继续")
 
-# 2.7 可转债对应正股 涨/跌/平家数
-print("  可转债正股 涨/跌/平...")
-try:
-    # 1. 拉 可转债↔正股 映射
-    bond_map_df = ak.bond_zh_cov()
-    # 字段: 债券代码(11位数字)/ 正股代码(6位数字)
-    bond_map = {}
-    for _, r in bond_map_df.iterrows():
-        bc = str(r.get('债券代码', ''))
-        sc = str(r.get('正股代码', ''))
-        if bc and sc:
-            bond_map[bc] = sc
-    # 2. 拉 当前交易的 320 只可转债,提取正股代码
-    if bond_df is None:
-        raise RuntimeError('bond_df is None(可转债未拉到)')
-    bond_now = bond_df.copy()
-    bond_now['_stock_code'] = bond_now['code'].astype(str).map(bond_map)
-    bond_now = bond_now.dropna(subset=['_stock_code'])
-    stock_codes = set(bond_now['_stock_code'].tolist())
-    # 3. 从 spot 找这些正股的实时涨跌
-    # spot_df 代码格式: sz301565 / sh600519 (前缀+6位数字), 正股代码: 301565 纯 6位
-    spot_codes_str = spot_df['代码'].astype(str)
-    spot_codes_digits = spot_codes_str.str.replace(r'^[a-z]+', '', regex=True)
-    stock_map = spot_df[spot_codes_digits.isin(stock_codes)].copy()
-    stock_map['涨跌幅'] = stock_map['涨跌幅'].apply(lambda x: safe_float(x))
-    bond_stock_up = int((stock_map['涨跌幅'] > 0).sum())
-    bond_stock_down = int((stock_map['涨跌幅'] < 0).sum())
-    bond_stock_flat = int((stock_map['涨跌幅'] == 0).sum())
-    print(f"  可转债正股: 涨 {bond_stock_up} / 跌 {bond_stock_down} / 平 {bond_stock_flat}")
-except Exception as e:
-    print(f"  可转债正股 失败: {e},用上一份旧值")
-    bond_stock_up = _prev_mo.get('bondStockUp', 0)
-    bond_stock_down = _prev_mo.get('bondStockDown', 0)
-    bond_stock_flat = _prev_mo.get('bondStockFlat', 0)
+# v2.0.8gk:可转债正股字段已删除(用户要求),可转债卡左下改为显示"平盘"
+# 依赖东财 bond_zh_cov(可转债↔正股映射)海外不稳定,故移除正股统计
 
 # 按代码前缀算各市场成交额
 def code_prefix(code):
@@ -2064,9 +2032,6 @@ data = {
         'bondUp': bond_up,
         'bondDown': bond_down,
         'bondFlat': bond_flat,
-        'bondStockUp': bond_stock_up,
-        'bondStockDown': bond_stock_down,
-        'bondStockFlat': bond_stock_flat,
         # v2.0.7gg:ETF/可转债代码列表(腾讯 sh/sz 前缀),供前端盘中实时拉取
         'etfCodes': etf_codes,
         'bondCodes': bond_codes,

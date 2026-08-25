@@ -82,10 +82,6 @@ export interface MarketOverview {
   bondUp?: number;
   bondDown?: number;
   bondFlat?: number;
-  // 可转债对应正股 涨/跌/平
-  bondStockUp?: number;
-  bondStockDown?: number;
-  bondStockFlat?: number;
   // v2.0.7gg:ETF/可转债代码列表(腾讯 sh/sz 前缀),盘中实时拉取用
   etfCodes?: string[];
   bondCodes?: string[];

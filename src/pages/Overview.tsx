@@ -475,12 +475,11 @@ export default function Overview({ data }: { data: ReportData }) {
             </span>
           }
         />
-        {/* 可转债涨跌分布:主体=可转债涨/跌,左下=可转债对应正股涨/跌(用户 #3 反馈修正) */}
+        {/* 可转债涨跌分布:主体=可转债涨/跌,左下=平盘 */}
         <BondsCard
           bondUp={idx.bondUp || 0}
           bondDown={idx.bondDown || 0}
-          stockUp={idx.bondStockUp || 0}
-          stockDown={idx.bondStockDown || 0}
+          bondFlat={idx.bondFlat || 0}
         />
         {/* ETF 涨跌分布 */}
         <ETFCard
@@ -836,10 +835,10 @@ function StatCard({ label, value, subLeft, subValue, subText, suffix, suffix2, s
   );
 }
 
-// 可转债涨跌分布卡(用户 #5 + 反馈 #3 修正:正股=可转债对应正股的涨跌)
+// 可转债涨跌分布卡(用户 #5:主体=可转债涨/跌,左下=平盘)
 // 主体: 可转债 涨家数:跌家数
-// 左下: 正股 涨家数:跌家数(320 只可转债对应的 320 个正股)
-function BondsCard({ bondUp, bondDown, stockUp, stockDown }: { bondUp: number; bondDown: number; stockUp: number; stockDown: number }) {
+// 左下: 平盘 家数
+function BondsCard({ bondUp, bondDown, bondFlat }: { bondUp: number; bondDown: number; bondFlat: number }) {
   return (
     <div className="stat-card">
       <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>可转债涨跌分布</div>
@@ -849,10 +848,8 @@ function BondsCard({ bondUp, bondDown, stockUp, stockDown }: { bondUp: number; b
         <span style={{ color: COLOR_DOWN }}>{bondDown}</span>
       </div>
       <div style={{ fontSize: 12, marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-        <span style={{ color: '#6b7280' }}>正股</span>
-        <span style={{ color: COLOR_UP, fontWeight: 700 }}>{stockUp}</span>
-        <span style={{ color: '#C9CDD4' }}>:</span>
-        <span style={{ color: COLOR_DOWN, fontWeight: 700 }}>{stockDown}</span>
+        <span style={{ color: '#6b7280' }}>平盘</span>
+        <span style={{ color: '#111827', fontWeight: 700 }}>{bondFlat}</span>
       </div>
     </div>
   );
