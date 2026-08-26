@@ -4,28 +4,28 @@
     "kline": []
   },
   "基础化工": {
-    "leaderName": "元利科技",
-    "code": "603217",
+    "leaderName": "瑞丰新材",
+    "code": "300910",
     "kline": []
   },
   "钢铁": {
-    "leaderName": "常宝股份",
-    "code": "002478",
+    "leaderName": "鄂尔多斯",
+    "code": "600295",
     "kline": []
   },
   "有色金属": {
-    "leaderName": "华阳新材",
-    "code": "600281",
+    "leaderName": "宜安科技",
+    "code": "300328",
     "kline": []
   },
   "电子": {
-    "leaderName": "天通股份",
-    "code": "600330",
+    "leaderName": "同宇新材",
+    "code": "301630",
     "kline": []
   },
   "汽车": {
-    "leaderName": "江淮汽车",
-    "code": "600418",
+    "leaderName": "众泰汽车",
+    "code": "000980",
     "kline": []
   },
   "家用电器": {
@@ -38,8 +38,8 @@
     "kline": []
   },
   "纺织服饰": {
-    "leaderName": "联发股份",
-    "code": "002394",
+    "leaderName": "新澳股份",
+    "code": "603889",
     "kline": []
   },
   "轻工制造": {
@@ -48,18 +48,18 @@
     "kline": []
   },
   "医药生物": {
-    "leaderName": "西点药业",
-    "code": "301130",
+    "leaderName": "德源药业",
+    "code": "920735",
     "kline": []
   },
   "公用事业": {
-    "leaderName": "聆达股份",
-    "code": "300125",
+    "leaderName": "立新能源",
+    "code": "001258",
     "kline": []
   },
   "交通运输": {
-    "leaderName": "三羊马",
-    "code": "001317",
+    "leaderName": "嘉友国际",
+    "code": "603871",
     "kline": []
   },
   "房地产": {
@@ -75,13 +75,13 @@
     "kline": []
   },
   "银行": {
-    "leaderName": "兰州银行",
-    "code": "001227",
+    "leaderName": "苏农银行",
+    "code": "603323",
     "kline": []
   },
   "非银金融": {
-    "leaderName": "国元证券",
-    "code": "000728",
+    "leaderName": "锦龙股份",
+    "code": "000712",
     "kline": []
   },
   "建筑材料": {
@@ -93,13 +93,13 @@
     "kline": []
   },
   "电力设备": {
-    "leaderName": "滨海能源",
-    "code": "000695",
+    "leaderName": "力王股份",
+    "code": "920627",
     "kline": []
   },
   "机械设备": {
-    "leaderName": "国安达",
-    "code": "300902",
+    "leaderName": "一拖股份",
+    "code": "601038",
     "kline": []
   },
   "国防军工": {
@@ -112,8 +112,8 @@
     "kline": []
   },
   "石油石化": {
-    "leaderName": "康普顿",
-    "code": "603798",
+    "leaderName": "荣盛石化",
+    "code": "002493",
     "kline": []
   },
   "煤炭": {
@@ -126,8 +126,8 @@
     "kline": []
   },
   "综合": {
-    "leaderName": "群兴玩具",
-    "code": "002575",
+    "leaderName": "ST三木",
+    "code": "000632",
     "kline": []
   }
 }
