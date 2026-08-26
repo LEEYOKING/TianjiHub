@@ -11,7 +11,7 @@ const DragonTiger = lazy(() => import('./pages/DragonTiger'));
 const Surgery = lazy(() => import('./pages/Surgery'));
 const PreScan = lazy(() => import('./pages/PreScan'));
 const FirstBoard = lazy(() => import('./pages/FirstBoard'));
-import { loadReportData, type ReportData } from './data/loader';
+import { loadReportData, getCNTodayYMD, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
 
 // 全局 live context — PageHeader 通过它读 lastUpdatedAt
@@ -36,8 +36,14 @@ export default function App() {
     const fetchData = () =>
       loadReportData(true)
         .then((d) => {
-          baseDataRef.current = d;
-          setBaseData(d);
+          // v2.0.8:盘后(data 仍是昨日)用今日盘中定格快照替代,避免 15:00 后刷新回滚到上一交易日
+          let finalData = d;
+          if (String(d.meta?.tradeDate) !== getCNTodayYMD()) {
+            const snap = loadLiveSnapshot();
+            if (snap) finalData = snap;
+          }
+          baseDataRef.current = finalData;
+          setBaseData(finalData);
           setBaseErr(null);
         })
         .catch((e) => {
@@ -55,6 +61,13 @@ export default function App() {
     if (!baseData) return null;
     return mergeLiveData(baseData, live);
   }, [baseData, live]);
+
+  // v2.0.8:盘中/收盘持续缓存今日快照(live 拉到实时后,15:00 定格值自然被缓存,刷新不丢)
+  useEffect(() => {
+    if (merged && live.fetchedAt > 0) {
+      saveLiveSnapshot(merged);
+    }
+  }, [merged]);
 
   if (baseErr) {
     return (
