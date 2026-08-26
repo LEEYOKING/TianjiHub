@@ -16,6 +16,9 @@ __pycache__/
 # 系统文件
 .DS_Store
 
+# 自动化脚本日志
+auto_refresh.log
+
 # 环境变量 / 密钥
 .env
 .env.local
