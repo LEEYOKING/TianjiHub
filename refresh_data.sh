@@ -39,9 +39,24 @@ else
   echo "  ✓ 已提交"
 fi
 
-# 4. 推送（HTTP/1.1 规避 GitHub 的 HTTP2 framing 层报错 / 连接超时）
+# 4. 推送（HTTP/1.1 规避 GitHub HTTP2 framing 层报错/连接超时；失败重试 8 次）
 echo "[4/4] 推送到 GitHub..."
-git -c http.version=HTTP/1.1 push
+PUSH_OK=0
+for i in $(seq 1 8); do
+  if git -c http.version=HTTP/1.1 push; then
+    PUSH_OK=1
+    break
+  fi
+  echo "  ! push 第 ${i} 次失败（GitHub 网络波动），$((i * 5)) 秒后重试..."
+  sleep $((i * 5))
+done
+
+if [ "$PUSH_OK" -ne 1 ]; then
+  echo ""
+  echo "❌ push 仍失败！数据已提交到本地，但未推送到 GitHub/Cloudflare。"
+  echo "   请稍后手动执行：git -c http.version=HTTP/1.1 push"
+  exit 1
+fi
 
 echo ""
-echo "✓ 完成！Cloudflare Pages 会自动检测 main 分支更新并重新部署（约 1-2 分钟）。"
+echo "✓ 完成！已推送 GitHub。Cloudflare Pages 会自动重新部署（约 1-2 分钟）。"
