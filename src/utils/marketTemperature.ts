@@ -118,43 +118,30 @@ export function calcLiveEmotionTemperature(input: {
   const lu = Math.max(0, Math.round(input.limitUp));
   const ld = Math.max(0, Math.round(input.limitDown));
 
-  // 1. 涨跌停对比(±30)
+  // 1. 涨跌停对比(±30) — 连续对数,消除临界跳变
   const ratio = lu / Math.max(ld, 1);
   let s1 = 0;
-  if (ld === 0 && lu > 0) s1 = 30;
-  else if (ratio > 5) s1 = 24;
-  else if (ratio > 2) s1 = 15;
-  else if (ratio >= 1) s1 = 6;
-  else if (ratio > 0.5) s1 = -12;
-  else s1 = -30;
+  if (ld === 0 && lu > 0) {
+    s1 = 30;  // 无跌停、有涨停:极强
+  } else {
+    // log10:ratio=1→0, ratio=10→+20, ratio≈32→+30; ratio=0.1→-20, ratio≈0.03→-30
+    s1 = Math.max(-30, Math.min(30, Math.round(20 * Math.log10(ratio))));
+  }
   score += s1;
 
-  // 2. 上涨占比(±35)
+  // 2. 上涨占比(±35) — 连续线性(偏离 50% 每 1pp ≈ 1.4 分,±25pp 满档)
   const total = up + down;
   const pct = total > 0 ? (up / total) * 100 : 50;
-  let s2 = 0;
-  if (pct > 70) s2 = 35;
-  else if (pct > 60) s2 = 25;
-  else if (pct > 55) s2 = 12;
-  else if (pct >= 45) s2 = 0;
-  else if (pct > 35) s2 = -15;
-  else if (pct > 25) s2 = -25;
-  else s2 = -35;
+  const s2 = Math.max(-35, Math.min(35, Math.round((pct - 50) * 1.4)));
   score += s2;
 
-  // 3. 大涨 vs 大跌股数(±35)
+  // 3. 大涨 vs 大跌股数(±35) — 连续线性(每 15 只差 ≈ 1 分)
   let s3 = 0;
   if (input.distribution) {
     const bigUp = input.distribution.up_5_to_7 + input.distribution.up_7_to_10 + input.distribution.up_ge_10;
     const bigDown = input.distribution.down_7_to_5 + input.distribution.down_10_to_7 + input.distribution.down_ge_10;
     const diff = bigUp - bigDown;
-    if (diff > 300) s3 = 35;
-    else if (diff > 150) s3 = 25;
-    else if (diff > 50) s3 = 12;
-    else if (diff >= -50) s3 = 0;
-    else if (diff > -150) s3 = -12;
-    else if (diff > -300) s3 = -25;
-    else s3 = -35;
+    s3 = Math.max(-35, Math.min(35, Math.round(diff / 15)));
   }
   score += s3;
 

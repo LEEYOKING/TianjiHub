@@ -15,7 +15,7 @@ import {
   fetchETFAndBondStats,  // v2.0.7gg:ETF/可转债盘中实时
   SINA_INDUSTRY_LABELS,
 } from '../data/live';
-import type { ReportData } from '../data/loader';
+import { getCNTodayYMD, type ReportData } from '../data/loader';
 import { calcLiveEmotionTemperature } from '../utils/marketTemperature';
 
 // 判断是否在 A 股交易时段(供组件 UI 用)
@@ -460,6 +460,8 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
   // — em "m:90+t:2" 申万二级行业(约 90 个),跟 ths 90 细分类 一一对应(医疗服务/医疗器械/化学制药 等都分开)
   // — 不再用 sina 49 行业(那是聚合,自动化设备/通用设备/.../电机 都归到 new_jxhy,会导致多个 ths 细分类被覆盖成同一值)
   // — em 申万按 name 模糊匹配覆盖 ths 90 细分类(60s 实时,无重复)
+  // v2.0.8:跨日(baseData 仍是昨日)时,不做 ≤3% 差值过滤,直接用 em 实时覆盖(否则板块停留在昨日收盘)
+  const isCrossDay = String(data.meta?.tradeDate) !== getCNTodayYMD();
   if (live.emIndustries && live.emIndustries.size > 0) {
     for (const s of next.sectors) {
       const thsName = s.name || '';
@@ -482,7 +484,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         // — em 申万是 em 实时,ths 14:00 是 fetch-data 14:00 cron 写
         // — em 申万 +0.17% vs ths +9.38% 差异大 → em 申万 stale(限流返 8/17)— 跳过
         // — 数字差 ≤ 3% 时正常覆盖(em 实时比 ths 14:00 更近)
-        if (Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
+        if (isCrossDay || Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
           s.changePercent = bestMatch.changePercent;
           if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
         }
@@ -518,7 +520,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
             if (emName.length > bestLen) { bestLen = emName.length; bestMatch = emItem; }
           }
         }
-        if (bestMatch && Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
+        if (bestMatch && (isCrossDay || Math.abs(bestMatch.changePercent - s.changePercent) <= 3)) {
           s.changePercent = bestMatch.changePercent;
           if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
         }
