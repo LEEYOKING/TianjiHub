@@ -341,6 +341,18 @@ export function useLiveDataOnce(enabled = true): LiveSnapshot {
   return snap;
 }
 
+// v2.0.8:盘中交易进度(0-1),用于估算"昨日同期成交额"
+// A股交易: 9:30-11:30(120min) + 13:00-15:00(120min) = 240min
+function _tradingProgressCN(): number {
+  const now8 = new Date(Date.now() + 8 * 3600 * 1000);
+  const mins = now8.getUTCHours() * 60 + now8.getUTCMinutes();
+  if (mins < 570) return 0;                       // 9:30 前
+  if (mins < 690) return (mins - 570) / 240;      // 9:30-11:30
+  if (mins < 780) return 120 / 240;               // 11:30-13:00 午休,进度停在 0.5
+  if (mins < 900) return (120 + (mins - 780)) / 240; // 13:00-15:00
+  return 1;                                       // 15:00 收盘后
+}
+
 /** 把 live snapshot 合并到 ReportData(覆盖涨跌幅/家数等实时字段)
  * v2.0.7:全市场/ETF/可转债 涨跌停数也用 live 覆盖(10s 实时) */
 export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData {
@@ -384,7 +396,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       // v2.0.8gj:盘中动态算 turnoverDiff = 今日实时成交额 - 昨日收盘成交额(baseData 覆盖前的值)
       const _prevTurnover = next.marketOverview.marketTurnover;
       next.marketOverview.marketTurnover = live.today.volume;
-      next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover) * 100) / 100;
+      next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover * _tradingProgressCN()) * 100) / 100;
       next.marketOverview.upCount = live.today.up;
       next.marketOverview.downCount = live.today.down;
       // v2.0.7ex:fetchTodaySnapshot 也加 flatCount 字段(用现价/昨收算涨跌幅,精度 0.001%)
@@ -416,7 +428,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         // v2.0.8gj:盘中动态算 turnoverDiff(与 live.today 分支同口径)
         const _prevTurnover2 = next.marketOverview.marketTurnover;
         next.marketOverview.marketTurnover = live.market!.totalTurnover;
-        next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2) * 100) / 100;
+        next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * _tradingProgressCN()) * 100) / 100;
         next.marketOverview.upCount = live.market!.upCount;
         next.marketOverview.downCount = live.market!.downCount;
         next.marketOverview.flatCount = live.market!.flatCount;
