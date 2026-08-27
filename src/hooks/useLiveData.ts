@@ -119,7 +119,15 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
   });
   // v2.0.7ee:useRef 缓存最新 codes(让 marketTick setInterval 闭包能读到)
   const codesRef = useRef<string[] | undefined>(stockCodes);
-  useEffect(() => { codesRef.current = stockCodes; }, [stockCodes]);
+  // v2.0.8:marketTick 引用(stockCodes 首次就绪时立即拉,缩短首次实时到位时间)
+  const marketTickRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    codesRef.current = stockCodes;
+    // stockCodes 首次就绪 → 立即拉市场(不等 60s interval,也不走 fallback 13999 慢拉)
+    if (stockCodes && stockCodes.length > 0) {
+      marketTickRef.current?.();
+    }
+  }, [stockCodes]);
   // v2.0.7gg:缓存 ETF/可转债代码列表(盘中实时拉取用)
   const etfCodesRef = useRef<string[] | undefined>(etfCodes);
   const bondCodesRef = useRef<string[] | undefined>(bondCodes);
@@ -185,6 +193,8 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
     const marketInflightRef = { current: false };
     const marketTick = async () => {
       if (marketInflightRef.current) return;
+      // v2.0.8:codes 未就绪不拉 — 避免走 fallback 13999 慢拉(140 批限流,首次等 1-2 分钟)
+      if (!codesRef.current || codesRef.current.length === 0) return;
       marketInflightRef.current = true;
       try {
         const mkt = await safe(() => fetchMarketSummary(codesRef.current), null);
@@ -253,6 +263,8 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
         slowInflightRef.current = false;
       }
     };
+
+    marketTickRef.current = marketTick;
 
     indexTick();
     marketTick();
