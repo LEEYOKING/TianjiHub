@@ -1,82 +1,52 @@
 {
+  "电子": {
+    "leaderName": "捷荣技术",
+    "code": "002855",
+    "kline": []
+  },
+  "通信": {
+    "leaderName": "汇源通信",
+    "code": "000586",
+    "kline": []
+  },
+  "煤炭": {
+    "leaderName": "昊华能源",
+    "code": "601101",
+    "kline": []
+  },
   "农林牧渔": {
-    "leaderName": "-",
+    "leaderName": "新赛股份",
+    "code": "600540",
     "kline": []
   },
-  "基础化工": {
-    "leaderName": "瑞丰新材",
-    "code": "300910",
+  "国防军工": {
+    "leaderName": "立航科技",
+    "code": "603261",
     "kline": []
   },
-  "钢铁": {
-    "leaderName": "鄂尔多斯",
-    "code": "600295",
+  "综合": {
+    "leaderName": "ST三木",
+    "code": "000632",
     "kline": []
   },
   "有色金属": {
-    "leaderName": "宜安科技",
-    "code": "300328",
+    "leaderName": "湖南黄金",
+    "code": "002155",
     "kline": []
   },
-  "电子": {
-    "leaderName": "同宇新材",
-    "code": "301630",
+  "基础化工": {
+    "leaderName": "新农股份",
+    "code": "002942",
     "kline": []
   },
-  "汽车": {
-    "leaderName": "众泰汽车",
-    "code": "000980",
+  "机械设备": {
+    "leaderName": "江钨装备",
+    "code": "600397",
     "kline": []
   },
-  "家用电器": {
-    "leaderName": "康盛股份",
-    "code": "002418",
-    "kline": []
-  },
-  "食品饮料": {
-    "leaderName": "-",
-    "kline": []
-  },
-  "纺织服饰": {
-    "leaderName": "新澳股份",
-    "code": "603889",
-    "kline": []
-  },
-  "轻工制造": {
-    "leaderName": "青山纸业",
-    "code": "600103",
-    "kline": []
-  },
-  "医药生物": {
-    "leaderName": "德源药业",
-    "code": "920735",
-    "kline": []
-  },
-  "公用事业": {
-    "leaderName": "立新能源",
-    "code": "001258",
-    "kline": []
-  },
-  "交通运输": {
-    "leaderName": "嘉友国际",
-    "code": "603871",
-    "kline": []
-  },
-  "房地产": {
-    "leaderName": "-",
-    "kline": []
-  },
-  "商贸零售": {
-    "leaderName": "-",
-    "kline": []
-  },
-  "社会服务": {
-    "leaderName": "-",
-    "kline": []
-  },
-  "银行": {
-    "leaderName": "苏农银行",
-    "code": "603323",
+  "计算机": {
+    "leaderName": "大普微-UW",
+    "code": "301666",
     "kline": []
   },
   "非银金融": {
@@ -84,50 +54,104 @@
     "code": "000712",
     "kline": []
   },
-  "建筑材料": {
-    "leaderName": "-",
-    "kline": []
-  },
-  "建筑装饰": {
-    "leaderName": "-",
-    "kline": []
-  },
-  "电力设备": {
-    "leaderName": "力王股份",
-    "code": "920627",
-    "kline": []
-  },
-  "机械设备": {
-    "leaderName": "一拖股份",
-    "code": "601038",
-    "kline": []
-  },
-  "国防军工": {
-    "leaderName": "高凌信息",
-    "code": "688175",
-    "kline": []
-  },
-  "美容护理": {
-    "leaderName": "-",
-    "kline": []
-  },
   "石油石化": {
-    "leaderName": "荣盛石化",
-    "code": "002493",
+    "leaderName": "桐昆股份",
+    "code": "601233",
     "kline": []
   },
-  "煤炭": {
-    "leaderName": "上海能源",
-    "code": "600508",
+  "医药生物": {
+    "leaderName": "冀衡医药",
+    "code": "002742",
+    "kline": []
+  },
+  "家用电器": {
+    "leaderName": "康盛股份",
+    "code": "002418",
+    "kline": []
+  },
+  "社会服务": {
+    "leaderName": "ST豆神",
+    "code": "300010",
+    "kline": []
+  },
+  "汽车": {
+    "leaderName": "中国重汽",
+    "code": "000951",
+    "kline": []
+  },
+  "商贸零售": {
+    "leaderName": "凯瑞德",
+    "code": "002072",
+    "kline": []
+  },
+  "建筑材料": {
+    "leaderName": "中国巨石",
+    "code": "600176",
     "kline": []
   },
   "环保": {
-    "leaderName": "-",
+    "leaderName": "法尔胜",
+    "code": "000890",
     "kline": []
   },
-  "综合": {
-    "leaderName": "ST三木",
-    "code": "000632",
+  "电力设备": {
+    "leaderName": "杭电股份",
+    "code": "603618",
+    "kline": []
+  },
+  "房地产": {
+    "leaderName": "京投发展",
+    "code": "600683",
+    "kline": []
+  },
+  "食品饮料": {
+    "leaderName": "五芳斋",
+    "code": "603237",
+    "kline": []
+  },
+  "纺织服饰": {
+    "leaderName": "深中华A",
+    "code": "000017",
+    "kline": []
+  },
+  "轻工制造": {
+    "leaderName": "海鸥住工",
+    "code": "002084",
+    "kline": []
+  },
+  "公用事业": {
+    "leaderName": "郴电国际",
+    "code": "600969",
+    "kline": []
+  },
+  "建筑装饰": {
+    "leaderName": "恒尚节能",
+    "code": "603137",
+    "kline": []
+  },
+  "美容护理": {
+    "leaderName": "洁雅股份",
+    "code": "301108",
+    "kline": []
+  },
+  "交通运输": {
+    "leaderName": "海晨股份",
+    "code": "300873",
+    "kline": []
+  },
+  "传媒": {
+    "leaderName": "蓝色光标",
+    "code": "300058",
+    "kline": []
+  },
+  "钢铁": {
+    "leaderName": "金洲管道",
+    "code": "002443",
+    "kline": []
+  },
+  "银行": {
+    "leaderName": "沪农商行",
+    "code": "601825",
     "kline": []
   }
 }
