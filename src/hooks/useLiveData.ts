@@ -16,7 +16,7 @@ import {
   SINA_INDUSTRY_LABELS,
 } from '../data/live';
 import type { ReportData } from '../data/loader';
-import { calcMarketTemperature } from '../utils/marketTemperature';
+import { calcLiveEmotionTemperature } from '../utils/marketTemperature';
 
 // 判断是否在 A 股交易时段(供组件 UI 用)
 // v2.0.7dh:用东八区时间(跟 isPreMarket 一致)— 之前用 new Date() 本地时间
@@ -565,18 +565,18 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       };
     }
   }
-  // 7. v2.0.7gg:市场情绪温度盘中实时重算(涨跌停用实时,其余维度用 baseData 盘后值)
+  // 7. v2.0.8:市场情绪温度盘中实时重算 — 用实时 3 维度(涨跌停对比/上涨占比/大涨大跌)
+  // 盘后温度仍由脚本用原 5 维度超短框架算,盘中用本函数覆盖 temperature/status。
   if (next.marketOverview.marketTemperature) {
     const bt = next.marketOverview.marketTemperature;
-    next.marketOverview.marketTemperature = calcMarketTemperature({
+    next.marketOverview.marketTemperature = calcLiveEmotionTemperature({
+      upCount: next.marketOverview.upCount,
+      downCount: next.marketOverview.downCount,
       limitUp: next.marketOverview.limitUpCount,
       limitDown: next.marketOverview.limitDownCount,
-      maxBoards: bt.details.max_boards,
-      brokenCount: bt.details.broken_count,
-      yestAvg: bt.details.yest_perf_value,
-      hasYest: bt.details.yest_perf !== '无数据',
-      promoteRate: bt.details.promote_rate_value,
-      hasPromote: bt.details.promote_rate !== '无数据',
+      distribution: next.marketOverview.changeDistribution,
+      baseMaxBoards: bt.details.max_boards,
+      baseBrokenCount: bt.details.broken_count,
     });
   }
   return next;

@@ -16,13 +16,7 @@ export interface EmotionThermometerProps {
     promote_rate: string;
     limit_ratio: string;
   };
-  dimension_scores?: {
-    '涨跌停对比': number;
-    '连板高度': number;
-    '炸板率': number;
-    '昨日涨停今日': number;
-    '晋级率': number;
-  };
+  dimension_scores?: Record<string, number>;
   limitUpCount?: number;
   upCount?: number;
   downCount?: number;

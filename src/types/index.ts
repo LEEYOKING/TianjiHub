@@ -67,13 +67,7 @@ export interface MarketOverview {
       promote_rate_value: number;
       limit_ratio: string;      // "12.0" / "60/0"
     };
-    dimension_scores: {
-      '涨跌停对比': number;
-      '连板高度': number;
-      '炸板率': number;
-      '昨日涨停今日': number;
-      '晋级率': number;
-    };
+    dimension_scores: Record<string, number>;
   };
   // 可转债 / ETF 涨跌家数(akshare 静态)
   etfUp?: number;
