@@ -591,10 +591,25 @@ for attempt in range(3):
         print(f"  sina K 线第 {attempt+1} 次失败: {e}")
         time.sleep(3)
 if hist_df is None or hist_sz_df is None:
-    # fallback em
-    print("  sina 限流,fallback em stock_zh_index_daily")
-    hist_df = ak.stock_zh_index_daily(symbol="sh000001").tail(100).reset_index(drop=True)
-    hist_sz_df = ak.stock_zh_index_daily(symbol="sz399001").tail(100).reset_index(drop=True)
+    # fallback em(新浪 finance.sina.com.cn,同样加 retry —— 之前裸调用 sz399001 一次超时即崩溃)
+    print("  腾讯 K 线限流,fallback 新浪 stock_zh_index_daily")
+    for _try_hist in range(3):
+        try:
+            hist_df = ak.stock_zh_index_daily(symbol="sh000001").tail(100).reset_index(drop=True)
+            hist_sz_df = ak.stock_zh_index_daily(symbol="sz399001").tail(100).reset_index(drop=True)
+            break
+        except Exception as _e_hist2:
+            print(f"  新浪 K 线第 {_try_hist+1} 次失败: {_e_hist2}")
+            time.sleep(3)
+# v2.0.8:双数据源(腾讯+新浪)都失败时优雅降级,用上一份 data.json 的 history 日期占位,
+# 避免历史K线超时中断整个脚本(导致后面的涨停池/龙虎榜/板块无法刷新)
+if hist_df is None or hist_sz_df is None or len(hist_df) == 0 or len(hist_sz_df) == 0:
+    print("  历史K线双数据源都失败,用上一份 history 日期占位(历史涨跌家数为均值估算)")
+    _ph = (_prev_data or {}).get('history') or []
+    _ph_dates = [h.get('date') for h in _ph if h.get('date')][-90:]
+    _placeholder = pd.DataFrame({'date': _ph_dates, 'open': [0.0] * len(_ph_dates), 'close': [0.0] * len(_ph_dates)})
+    hist_df = _placeholder.copy()
+    hist_sz_df = _placeholder.copy()
 
 # 全市场成交量 = 上证 amount + 深证 amount (amount 单位是手)
 # 转成交额: 估算 平均成交价 × 成交量。简化用"手"作为相对活跃度
