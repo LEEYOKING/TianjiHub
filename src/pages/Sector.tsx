@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { PageHeader, Card } from './Overview';
 import { COLOR_UP, COLOR_DOWN, COLOR_TEXT, COLOR_FLAT } from '../utils/format';
@@ -12,22 +12,6 @@ export default function Sector({ data }: { data: ReportData }) {
   const concepts = data.conceptSectors || [];
   const regions = data.regionSectors || [];
   const idx = data.marketOverview;
-
-  // v2.0.7ff:行业 K 线(110KB)从 data.json 拆到独立 sectorKlines.json — 进入 Sector 页面时按需 fetch
-  const [sectorKlines, setSectorKlines] = useState<ReportData['sectorKlines']>(data.sectorKlines);
-  useEffect(() => {
-    if (data.sectorKlines) {
-      // 老 data.json 仍有 sectorKlines 字段(过渡期)— 直接用,不重新 fetch
-      setSectorKlines(data.sectorKlines);
-      return;
-    }
-    let cancelled = false;
-    fetch(import.meta.env.BASE_URL + 'sectorKlines.json?cb=' + Date.now(), { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d) setSectorKlines(d as any); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [data.sectorKlines]);
 
   // 涨幅前 10 / 跌幅前 10
   // v2.0.7v:涨幅前 10 — 过滤负数 + 次级键(成交额 / 涨停数)
@@ -107,14 +91,12 @@ export default function Sector({ data }: { data: ReportData }) {
           data={sectorTopGain}
           defaultSort="desc"
           showNetInflow={false}
-          sectorKlines={sectorKlines}
         />
         <DetailTableCard
           title="行业主力净流入 TOP15"
           data={sectorTopNetIn}
           defaultSort="netInflow"
           showNetInflow={true}
-          sectorKlines={sectorKlines}
         />
       </div>
 
@@ -124,13 +106,11 @@ export default function Sector({ data }: { data: ReportData }) {
           title="概念板块 TOP15"
           data={conceptTopGain}
           defaultSort="desc"
-          sectorKlines={sectorKlines}
         />
         <DetailTableCard
           title="地域板块 TOP15"
           data={regionTopGain}
           defaultSort="desc"
-          sectorKlines={sectorKlines}
         />
       </div>
     </div>
@@ -272,7 +252,7 @@ function BarChartCard({ title, items, maxAbs, type: _type }: {
 }
 
 // ====== 详细表卡(支持涨跌幅升降序 + 表格样式 + 首列居中 + 列名不换行) ======
-function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = false, sectorKlines }: { title: string; data: SectorItem[]; defaultSort?: 'desc' | 'asc' | 'netInflow' | 'turnover'; showNetInflow?: boolean; sectorKlines?: Record<string, { kline: KLine[] }> }) {
+function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = false }: { title: string; data: SectorItem[]; defaultSort?: 'desc' | 'asc' | 'netInflow' | 'turnover'; showNetInflow?: boolean }) {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc' | 'netInflow' | 'turnover'>(defaultSort === 'turnover' ? 'turnover' : defaultSort);
 
   const sorted = useMemo(() => {
@@ -327,7 +307,7 @@ function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = fa
     }>
       {/* v2.0.7fn:user 反馈 PC 端表格"资金流向"列被 site header 盖住(红箭头)— 加 isolation: isolate 建立独立 stacking context,防止外部 site header zIndex 干扰;虽已确认 v2.0.7fm 不会影响 PC 端,但截图现象说明有外部 stacking 在穿透,加这层防御 */}
       <div style={{ overflowX: 'auto', maxWidth: '100%', position: 'relative', zIndex: 0, isolation: 'isolate' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: showNetInflow ? 720 : 660 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: showNetInflow ? 645 : 585 }}>
           <thead>
             <tr>
               {/* 板块名称:首列,居中(用户 #12 反馈) */}
@@ -352,7 +332,6 @@ function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = fa
               <th style={{ ...headStyle, width: 70 }}>成交额</th>
               <th style={{ ...headStyle, width: 80 }}>涨停/占比</th>
               <th style={{ ...headStyle, width: 80 }}>上涨/下跌</th>
-              <th style={{ ...headStyle, width: 75 }}>所处位置</th>
               <th style={{ ...headStyle, textAlign: 'left', width: 100 }}>领涨个股</th>
             </tr>
           </thead>
@@ -393,9 +372,6 @@ function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = fa
                     <span style={{ color: '#C9CDD4', margin: '0 4px', fontWeight: 400 }}>/</span>
                     <span style={{ color: COLOR_DOWN }}>{s.downCount ?? '-'}</span>
                   </td>
-                  <td style={cellStyle}>
-                    <PositionTag stage={getStageForSector(s.name, sectorKlines)} />
-                  </td>
                   <td style={{ ...cellStyle, textAlign: 'left', fontSize: 12, fontWeight: 500 }}>
                     {topStocks[0] !== '-' ? (
                       <>
@@ -416,100 +392,5 @@ function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = fa
         </table>
       </div>
     </Card>
-  );
-}
-
-// 所处位置 v1.9.3:基于 K 线 + 用户给的量化逻辑(BREAKOUT / REVERSAL / CONSOLIDATION)
-const POSITION_STYLES = {
-  突破: { bg: 'rgba(255, 77, 79, 0.18)', color: '#ff4d4f', fontWeight: 700 },
-  反包: { bg: 'rgba(154, 129, 252, 0.10)', color: '#7b5fd6', fontWeight: 600 },
-  震荡: { bg: 'rgba(154, 129, 252, 0.10)', color: '#7b5fd6', fontWeight: 500 },
-  弱势: { bg: 'rgba(14, 205, 112, 0.08)', color: '#0ecd70', fontWeight: 600 },
-  破位: { bg: 'rgba(14, 205, 112, 0.18)', color: '#0ecd70', fontWeight: 700 },
-  强势: { bg: 'rgba(255, 77, 79, 0.08)', color: '#ff4d4f', fontWeight: 600 },
-} as const;
-type PositionLabel = keyof typeof POSITION_STYLES;
-
-interface KLine {
-  date: string; open: number; close: number; high: number; low: number; amount: number;
-}
-
-// v1.9.3:用户给的量化逻辑(伪代码转 JS)
-// 输入: 行业 leader 60 日 K 线
-// 输出: BREAKOUT / REVERSAL / CONSOLIDATION / 弱势 / 破位
-function identifyStage(kline: KLine[]): PositionLabel {
-  if (kline.length < 25) return '震荡';
-  const lookback = 20;
-  const volume_threshold = 1.8;
-  const breakout_pct = 0.02;
-  const consolidation_range = 0.12;
-  const today = kline[kline.length - 1];
-  const prev = kline[kline.length - 2];
-  const recent = kline.slice(-lookback - 1, -1);  // 不含今日
-
-  // ====== 1. 突破 ======
-  const resistance = Math.max(...recent.map((k) => k.high));
-  const avg_amount = recent.reduce((s, k) => s + k.amount, 0) / recent.length;
-  const is_breakout =
-    today.close > resistance * (1 + breakout_pct) &&
-    today.amount > volume_threshold * avg_amount &&
-    today.close > today.open;
-  if (is_breakout) return '突破';
-
-  // ====== 2. 反包 ======
-  const is_reversal =
-    prev.close < prev.open &&        // 前日阴线
-    today.close > today.open &&      // 今日阳线
-    today.close > prev.open &&       // 覆盖前日开盘价
-    today.open < prev.close &&       // 开盘低于前日收盘
-    today.amount > prev.amount;      // 放量
-  if (is_reversal) return '反包';
-
-  // ====== 3. 震荡 ======
-  const window_high = Math.max(...recent.map((k) => k.high));
-  const window_low = Math.min(...recent.map((k) => k.low));
-  const range_pct = (window_high - window_low) / window_low;
-  // MA5 / MA20
-  const last5 = kline.slice(-5).map((k) => k.close);
-  const last20 = kline.slice(-20).map((k) => k.close);
-  const ma5 = last5.reduce((s, c) => s + c, 0) / 5;
-  const ma20 = last20.reduce((s, c) => s + c, 0) / 20;
-  const is_consolidation =
-    range_pct < consolidation_range &&
-    Math.abs(ma5 - ma20) / ma20 < 0.03 &&
-    today.close < resistance * 0.98;
-  if (is_consolidation) return '震荡';
-
-  // ====== 4. 趋势延续中(根据 5/20 日均线偏离度判断强势/弱势)======
-  if (ma5 > ma20 * 1.02) return '强势';
-  if (ma5 < ma20 * 0.98) return '弱势';
-  return '震荡';
-}
-
-// 行业 ths 名 → sw 一级名 映射(用于查找 K 线)
-const THS_TO_SW: Record<string, string> = {
-  煤炭开采加工: '煤炭', 化学制品: '基础化工', 钢铁: '钢铁', 小金属: '有色金属',
-  电子化学品: '电子', 汽车整车: '汽车', 白色家电: '家用电器', 白酒概念: '食品饮料',
-  纺织制造: '纺织服饰', 造纸: '轻工制造', 化学制药: '医药生物', 电力: '公用事业',
-  物流: '交通运输', 房地产开发: '房地产', 商业百货: '商贸零售', 旅游酒店: '社会服务',
-  银行: '银行', 证券: '非银金融', 水泥: '建筑材料', 装修装饰: '建筑装饰',
-  电池: '电力设备', 专用设备: '机械设备', 军工电子: '国防军工', 化妆品: '美容护理',
-  石油加工贸易: '石油石化', 环保: '环保', 综合: '综合',
-};
-function getStageForSector(thsName: string, sectorKlines?: Record<string, { kline: KLine[] }>): PositionLabel {
-  if (!sectorKlines) return '震荡';
-  const sw = THS_TO_SW[thsName] || thsName;
-  const data = sectorKlines[sw];
-  if (!data || data.kline.length < 25) return '震荡';
-  return identifyStage(data.kline);
-}
-function PositionTag({ stage }: { stage: PositionLabel }) {
-  const s = POSITION_STYLES[stage];
-  return (
-    <span style={{
-      display: 'inline-block', padding: '2px 10px',
-      background: s.bg, color: s.color, borderRadius: 3,
-      fontSize: 12, fontWeight: s.fontWeight,
-    }}>{stage}</span>
   );
 }
