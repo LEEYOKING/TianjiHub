@@ -67,6 +67,17 @@ export const INDEX_CODES = ['sh000001', 'sz399001', 'sz399006', 'bj899050', 'sh0
 /** 与 INDEX_CODES 一一对应的指数中文名(v2.0.8gj:用于按名匹配覆盖,避免按索引错位) */
 export const INDEX_NAMES = ['上证指数', '深证成指', '创业板指', '北证50', '科创50', '沪深300', '微盘指数'];
 
+// v2.0.8:申万一级行业 31 个——行业板块统一用这一级,与脚本 data.json 的 sectors、热力图 classifySW28 对齐。
+// 旧版前端用 em m:90+t:2(494 个申万二/三级)按"最长子串"模糊匹配同花顺 90 细分类,会把
+// 医疗服务→其他医疗服务、电机→电机Ⅲ,把跌幅前10负值覆盖成正的三级子板块值,导致行业板块涨跌错乱。
+export const SW_LEVEL1 = [
+  '煤炭', '石油石化', '钢铁', '有色金属', '电子', '汽车', '家用电器', '食品饮料',
+  '纺织服饰', '轻工制造', '医药生物', '公用事业', '交通运输', '房地产', '商贸零售',
+  '社会服务', '综合', '建筑材料', '建筑装饰', '电力设备', '国防军工', '计算机', '传媒',
+  '通信', '银行', '非银金融', '机械设备', '环保', '美容护理', '农林牧渔', '基础化工',
+];
+const SW_LEVEL1_SET = new Set(SW_LEVEL1);
+
 const TENCENT_BASE = 'https://qt.gtimg.cn/q=';
 const SINA_API = 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData';
 
@@ -578,10 +589,11 @@ export interface EMIndustryItem {
 }
 
 /** 拉取 em 申万板块实时数据(行业/概念/地域)
- * fs: m:90+t:2(申万二级行业) / m:90+t:3(申万概念) / m:90+t:1(申万地域)
+ * fs: m:90+t:2(申万行业) / m:90+t:3(申万概念) / m:90+t:1(申万地域)
  * 返回: Map<name, EMIndustryItem> */
-async function fetchEMSectors(fs: string): Promise<Map<string, EMIndustryItem>> {
-  const params = `pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f128&fid=f3`;
+async function fetchEMSectors(fs: string, pn = 1): Promise<Map<string, EMIndustryItem>> {
+  // v2.0.8:pz 改 100(东财单页上限,原来 pz=200 实际也被截断),支持 pn 翻页
+  const params = `pn=${pn}&pz=100&po=1&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f128&fid=f3`;
   const result = new Map<string, EMIndustryItem>();
   for (const domain of ['https://push2.eastmoney.com', 'https://push2delay.eastmoney.com', 'https://82.push2.eastmoney.com']) {
     try {
@@ -594,7 +606,7 @@ async function fetchEMSectors(fs: string): Promise<Map<string, EMIndustryItem>> 
           result.set(name, {
             name,
             changePercent: Math.round((s.f3 || 0) * 100) / 100,
-            totalTurnover: 0,  // em 这个接口没成交额,留着 0(用 ths 静态)
+            totalTurnover: 0,  // em 这个接口没成交额,留着 0(用静态值)
             leaderName: s.f128 || '-',
             leaderChangePercent: 0,
             stockCount: 0,
@@ -609,8 +621,19 @@ async function fetchEMSectors(fs: string): Promise<Map<string, EMIndustryItem>> 
   return result;
 }
 
-/** em 申万 90 行业(跟 ths 90 细分类 一一对应) */
-export const fetchEMIndustries = () => fetchEMSectors('m:90+t:2');
+/** em 申万一级行业(31 个) — v2.0.8:分页拉全 494 个再过滤到 31 个一级,确保涨幅/跌幅两端的一级行业都能取到
+ * (旧版单页 pz=200 被东财截成 100 且按涨幅降序,只能取到涨幅前 100 个,跌幅行业永远取不到 → 跌幅前10 不实时) */
+export const fetchEMIndustries = async (): Promise<Map<string, EMIndustryItem>> => {
+  const result = new Map<string, EMIndustryItem>();
+  for (let pn = 1; pn <= 6; pn++) {
+    const page = await fetchEMSectors('m:90+t:2+f:!50', pn);
+    if (page.size === 0) break;
+    for (const [name, item] of page) {
+      if (SW_LEVEL1_SET.has(name)) result.set(name, item);
+    }
+  }
+  return result;
+};
 // v2.0.7gg:em 概念/地域板块(正确 fs 用空格分隔 + f:!50 过滤;URL 里 + 即空格)
 export const fetchEMConcepts = () => fetchEMSectors('m:90+t:3+f:!50');
 export const fetchEMRegions = () => fetchEMSectors('m:90+t:1+f:!50');

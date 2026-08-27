@@ -11,6 +11,7 @@ import { useLive } from '../App';
 import { ChangeDistributionCard } from '../components/ChangeDistributionCard';
 import { MarginHistoryCard } from '../components/MarginHistoryCard';
 import { useEchartsResize } from '../hooks/useEchartsResize';
+import { SW_LEVEL1 } from '../data/live';
 
 // 前 2 个曲线图:7/15/30 日(去掉 60/90)
 // 涨跌停家数:7/15 日(原限制)
@@ -25,8 +26,10 @@ const RANGE_OPTIONS_LIMIT = [
 ];
 
 // 28 个申万一级行业(用户 #1 反馈:方案 C 热力图)
-// ths 90 个细分类 → sw 28 一级分类映射(基于 ths name 关键词)
+// v2.0.8:行业板块已统一为申万一级(31 个),这里先精确匹配一级名,再按关键词兜底
 function classifySW28(thsName: string): string | null {
+  // v2.0.8:一级名精确命中直接返回(如 有色金属/电子/公用事业 等不含关键词、旧逻辑会漏掉)
+  if (SW_LEVEL1.includes(thsName)) return thsName;
   if (thsName.includes('煤炭')) return '煤炭';
   if (thsName.includes('石油') || thsName.includes('石化')) return '石油石化';
   if (thsName.includes('钢铁')) return '钢铁';

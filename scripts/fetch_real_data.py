@@ -1041,372 +1041,151 @@ for _h in combined_history:
 # — user 反馈:"涨/跌家数曲线图 8/19 = 0"/"涨/跌停家数曲线图 8/19 = 0"
 # — 修法:combined_history 末点(8/19)的 4 个字段在 line 1669 之后(limitUpCount 定义后)覆盖
 
-# 49 个新浪行业板块的 label/name 映射(从 akshare sector_spot('新浪行业') 拿)
-# 用于:ths 90 个细分类 → 映射到一个 sina 实时查询的 label
-SINA_SECTOR_NAMES = {
-    'new_blhy': '玻璃行业',
-    'new_cbzz': '船舶制造',
-    'new_cmyl': '传媒娱乐',
-    'new_dlhy': '电力行业',
-    'new_dqhy': '电器行业',
-    'new_dzqj': '电子器件',
-    'new_dzxx': '电子信息',
-    'new_fdc':   '房地产',
-    'new_fdsb': '发电设备',
-    'new_fjzz': '飞机制造',
-    'new_gthy': '钢铁行业',
-    'new_hbhy': '环保行业',
-    'new_hqhy': '化纤行业',
-    'new_hxxgy': '化工行业',
-    'new_jdhy': '家电行业',
-    'new_jjhy': '家具行业',
-    'new_jrhy': '金融行业',
-    'new_jxhy': '机械行业',
-    'new_jzqg': '建筑材料',
-    'new_jzzs': '建筑装饰',
-    'new_lthy': '煤炭行业',
-    'new_mtc':  '摩托车',
-    'new_nlmy': '农林牧渔',
-    'new_nyhy': '农药化肥',
-    'new_qczz': '汽车制造',
-    'new_slhy': '食品行业',
-    'new_snhy': '塑料行业',
-    'new_sphy': '商业百货',
-    'new_syhy': '石油行业',
-    'new_tchy': '陶瓷行业',
-    'new_txfw': '通信服务',
-    'new_wlys': '物流行业',
-    'new_xfhy': '酿酒行业',
-    'new_xnyhy': '新能源',
-    'new_ylqx': '医疗器械',
-    'new_yqhy': '仪器仪表',
-    'new_yysc': '印刷包装',
-    'new_yshy': '印刷行业',
-    'new_zjhy': '造纸行业',
-    'new_zncd': '智能穿戴',
-    'new_zqqy': '证券行业',
-    'new_zyjs': '专业技术服务',
-    'new_zyyd': '中药行业',
-    'new_gghy1': '公共事业',
-    'new_qqhy': '其他行业',
-}
-
-def map_ths_to_sina(ths_name: str) -> str | None:
-    """ths 板块名 → 49 个新浪行业 label"""
-    for sina_label, sina_name in SINA_SECTOR_NAMES.items():
-        # 双向包含匹配
-        if sina_name and (sina_name in ths_name or ths_name in sina_name):
-            return sina_label
-    # 兜底:特殊映射
-    SPECIAL = {
-        '元件': 'new_dzqj',
-        '消费电子': 'new_xfhy',
-        '半导体': 'new_dzqj',
-        '通信设备': 'new_txfw',
-        '光学光电子': 'new_dzqj',
-        '其他电子': 'new_dzqj',
-        '自动化设备': 'new_jxhy',
-        '通用设备': 'new_jxhy',
-        '专用设备': 'new_jxhy',
-        '工程机械': 'new_jxhy',
-        '工业金属': 'new_gthy',
-        '贵金属': 'new_gthy',
-        '能源金属': 'new_gthy',
-        '小金属': 'new_gthy',
-        '金属新材料': 'new_gthy',
-        '医药商业': 'new_zyyd',
-        '中药': 'new_zyyd',
-        '化学制药': 'new_zyyd',
-        '生物制品': 'new_zyyd',
-        '医疗器械': 'new_ylqx',
-        '医疗服务': 'new_ylqx',
-        '游戏': 'new_cmyl',
-        '文化传媒': 'new_cmyl',
-        '互联网电商': 'new_cmyl',
-        '软件开发': 'new_dzxx',
-        'IT服务': 'new_dzxx',
-        '计算机设备': 'new_dzxx',
-        '电池': 'new_xnyhy',
-        '光伏设备': 'new_xnyhy',
-        '电网设备': 'new_fdsb',
-        '电力': 'new_dlhy',
-        '燃气': 'new_gghy1',
-        '水务': 'new_gghy1',
-        '环保': 'new_hbhy',
-        '物流': 'new_wlys',
-        '航空': 'new_fjzz',
-        '船舶': 'new_cbzz',
-        '汽车零部件': 'new_qczz',
-        '汽车整车': 'new_qczz',
-        '贸易': 'new_qqhy',
-        '零售': 'new_sphy',
-        '银行': 'new_zqqy',
-        '证券': 'new_zqqy',
-        '保险': 'new_zqqy',
-        '多元金融': 'new_zqqy',
-        '房地产': 'new_fdc',
-        '建筑材料': 'new_jzqg',
-        '建筑装饰': 'new_jzzs',
-        '工程': 'new_jzzs',
-        '装修': 'new_jzzs',
-        # === 新增:ths 90 细分类映射到 sina 49 ===
-        '煤炭': 'new_lthy',
-        '煤炭开采': 'new_lthy',
-        '电子化学品': 'new_dzxx',
-        '种植业': 'new_nlmy',
-        '林业': 'new_nlmy',
-        '农业': 'new_nlmy',
-        '非金属材料': 'new_jzqg',
-        '油气': 'new_syhy',
-        '化学制品': 'new_hxxgy',
-        '化学原料': 'new_hxxgy',
-        '化学': 'new_hxxgy',
-        '塑料': 'new_snhy',
-        '塑料制品': 'new_snhy',
-        '白酒': 'new_xfhy',
-        '酒类': 'new_xfhy',
-        '啤酒': 'new_xfhy',
-        '饮料': 'new_xfhy',
-        '食品加工': 'new_slhy',
-        '食品制造': 'new_slhy',
-        '食品': 'new_slhy',
-        '纺织': 'new_qqhy',
-        '服装': 'new_qqhy',
-        '鞋类': 'new_qqhy',
-        '家电': 'new_jdhy',
-        '白色家电': 'new_jdhy',
-        '黑色家电': 'new_jdhy',
-        '小家电': 'new_jdhy',
-        '厨卫电器': 'new_jdhy',
-        '家居': 'new_jjhy',
-        '家具': 'new_jjhy',
-        '包装': 'new_yysc',
-        '印刷': 'new_yysc',
-        '造纸': 'new_zjhy',
-        '养殖业': 'new_nlmy',
-        '渔业': 'new_nlmy',
-        '牧业': 'new_nlmy',
-        '农产品': 'new_ncpc' if 'new_ncpc' in SINA_SECTOR_NAMES else 'new_nlmy',
-        '军工': 'new_zyyd',  # 军工没有对应,临时归到中药
-        '国防': 'new_zyyd',
-        '环境治理': 'new_hbhy',
-        '环保设备': 'new_hbhy',
-        '电机': 'new_jxhy',
-        '轨交': 'new_cbzz',
-        '轨交设备': 'new_cbzz',
-        '铁路': 'new_wlys',
-        '航运': 'new_wlys',
-        '港口': 'new_wlys',
-        '机场': 'new_wlys',
-        '运输': 'new_wlys',
-        '物流': 'new_wlys',
-        '教育': 'new_qqhy',
-        '影视': 'new_cmyl',
-        '院线': 'new_cmyl',
-        '美容': 'new_qqhy',
-        '护理': 'new_qqhy',
-        '旅游': 'new_qqhy',
-        '酒店': 'new_qqhy',
-        '餐饮': 'new_qqhy',
-        '其他社会服务': 'new_qqhy',
-        '其他电源设备': 'new_dlhy',
-        '风电': 'new_fdsb',
-        '综合': 'new_qqhy',
-        '化工': 'new_hxxgy',
-        '化学纤维': 'new_hqhy',
-        '化纤': 'new_hqhy',
-        '橡胶': 'new_snhy',
-        '橡胶制品': 'new_snhy',
-        '农化': 'new_nyhy',
-        '农药': 'new_nyhy',
-        '化肥': 'new_nyhy',
-        '汽车服务': 'new_qczz',
-    }
-    for k, v in SPECIAL.items():
-        if k in ths_name or ths_name in k:
-            return v
-    return None
-
 # ========== 7. 板块涨跌(行业+概念+地域) + 龙虎榜 + 异动 ==========
 print("\n[7/7] 板块 + 龙虎榜 + 异动...")
 
-# 行业板块: 用同花顺 summary 拿 90 个细分类(自带 涨跌幅/上涨下跌家数/领涨股/净流入)
-print("  行业板块(同花顺 90 个)...")
-try:
-    ths_ind_df = ak.stock_board_industry_summary_ths()
-except Exception as e:
-    print(f"  行业板块 ths 失败({e}),sectors 置空(核心数据不受影响)")
-    ths_ind_df = pd.DataFrame()
+# ========== 行业板块(东财 申万一级 31 个) ==========
+# v2.0.8:行业板块数据源从同花顺(90 细分类)改为东财申万一级(31 个),与前端 em 实时、热力图 31 申万一级对齐。
+# 旧:ak.stock_board_industry_summary_ths() 90 个,名字跟前端 em m:90+t:2(494 个申万二/三级)对不上,
+#    前端模糊匹配按"最长子串"选到三级子板块(如 医疗服务→其他医疗服务、电机→电机Ⅲ),把跌幅前10的
+#    负涨幅覆盖成正的三级子板块值 → 行业板块涨跌幅完全错乱。
+SW_LEVEL1 = ['煤炭', '石油石化', '钢铁', '有色金属', '电子', '汽车', '家用电器', '食品饮料',
+             '纺织服饰', '轻工制造', '医药生物', '公用事业', '交通运输', '房地产', '商贸零售',
+             '社会服务', '综合', '建筑材料', '建筑装饰', '电力设备', '国防军工', '计算机', '传媒',
+             '通信', '银行', '非银金融', '机械设备', '环保', '美容护理', '农林牧渔', '基础化工']
+_SW_LEVEL1_SET = set(SW_LEVEL1)
 
-# 关键词映射(东财 industry → 同花顺行业名)用于算每个行业的涨停股数
-INDUSTRY_KEYWORDS = {
-    '通信设备': ['通信设备'],
-    '计算机设': ['计算机设备', 'IT服务', '软件开发'],
-    '软件开发': ['软件开发', 'IT服务'],
-    '家居用品': ['家居用品', '家具用品', '装修建材'],
-    '贵金属': ['贵金属'],
-    '游戏Ⅱ': ['游戏', '传媒'],
-    '电网设备': ['电网设备', '电力设备'],
-    '半导体': ['半导体'],
-    '汽车零部': ['汽车零部件'],
-    '化学制品': ['化学制品', '化学原料'],
-    '军工电子': ['军工电子', '国防军工'],
-    '消费电子': ['消费电子', '电子'],
-    'IT服务Ⅱ': ['IT服务', '软件开发', '互联网'],
-    '饰品': ['饰品', '珠宝首饰'],
-    '电力': ['电力', '公用事业'],
-    '专用设备': ['专用设备'],
-    '纺织制造': ['纺织', '服装家纺'],
-    '化学制药': ['化学制药'],
-    '中药': ['中药'],
-    '生物制品': ['生物制品', '生物医药'],
-    '医疗器械': ['医疗器械', '医药商业'],
-    '食品': ['食品饮料', '饮料', '乳品'],
-    '酒类': ['白酒', '酒类'],
-    '家电行业': ['家电', '黑色家电', '白色家电'],
-    '钢铁行业': ['钢铁'],
-    '煤炭行业': ['煤炭'],
-    '石油行业': ['石油'],
-    '建材': ['建筑材料', '建筑装饰'],
-    '建筑': ['建筑装饰', '工程建筑'],
-    '包装印刷': ['包装印刷', '造纸'],
-    '塑料制品': ['塑料', '橡胶'],
-    '电气设备': ['电气设备', '电力设备'],
-    '装修装饰': ['装修', '装饰'],
-    '工程机械': ['工程机械', '专用设备'],
-    '工业机械': ['通用设备', '工业机械'],
-    '小金属': ['小金属', '工业金属'],
-    '电机Ⅱ': ['电机'],
-    '汽车整车': ['汽车整车'],
-    '化纤': ['化学纤维', '化纤'],
-    '造纸印刷': ['造纸', '包装印刷'],
-    '环保': ['环保'],
-    '供水供气': ['燃气', '水务', '电力'],
-    '橡胶': ['橡胶', '塑料'],
-    '文化传媒': ['传媒', '影视'],
-    '仪器仪表': ['仪器仪表'],
-    '农药化肥': ['农药', '化肥', '化学制品'],
-    '化肥': ['化肥', '化学制品'],
-    '钢铁': ['钢铁'],
-    '陶瓷': ['陶瓷'],
-    '玻璃': ['玻璃', '光学光电子'],
-    '纺织': ['纺织'],
-    '服装': ['服装', '纺织'],
-    '服饰': ['服装家纺', '纺织'],
-    '船舶制造': ['船舶', '航海装备'],
-    '航空装备': ['航空装备', '航天装备'],
-    '物流': ['物流'],
-    '航运': ['航运', '港口'],
-    '航空': ['航空', '机场'],
-    '化工': ['化学制品', '化学原料'],
-    '建筑材料': ['建筑材料'],
-    '装修': ['装修建材'],
-    '电子': ['电子', '消费电子', '电子化学品'],
-    '出版': ['出版', '传媒'],
-    '商用车': ['商用车', '汽车整车'],
-    '乘用车': ['乘用车', '汽车整车'],
-    '煤炭': ['煤炭'],
-    '生物医药': ['生物制品', '医药商业'],
-    '电池': ['电池'],
-    '电源设备': ['电源设备', '电池'],
-    '航空军工': ['航空装备', '军工电子', '国防军工'],
-    '文娱': ['传媒', '影视'],
-    '化学纤维': ['化学纤维'],
-    '化工新材料': ['化学制品', '新材料'],
-    '金属新材料': ['金属新材料', '小金属'],
-    '非金属材料': ['非金属材料', '新材料'],
-    '玻璃制造': ['玻璃'],
-    '新材料': ['新材料', '金属新材料'],
-    '传媒Ⅱ': ['传媒'],
-    '文娱用品': ['传媒', '文娱'],
-    '消费电子Ⅱ': ['消费电子'],
-    '光伏设备': ['光伏设备', '电池'],
-    '电池Ⅱ': ['电池'],
-    '能源金属': ['能源金属', '小金属'],
-    '汽车零部件': ['汽车零部件'],
-    '医疗服务': ['医疗服务', '医疗器械'],
-    '医药商业': ['医药商业'],
-    '银行Ⅱ': ['银行'],
-    '证券Ⅱ': ['证券'],
-    '保险Ⅱ': ['保险'],
-    '多元金融': ['多元金融'],
-    '房地产': ['房地产'],
-    '通信服务': ['通信服务', '通信设备'],
-    '通信设备Ⅱ': ['通信设备'],
-    '光伏': ['光伏设备', '电池'],
-    '储能': ['电池', '电力设备'],
-    '锂电': ['电池', '能源金属'],
-    '芯片': ['半导体'],
-    '人工智能': ['IT服务', '软件开发', '计算机设备'],
-    '数字货币': ['IT服务', '软件开发'],
-    '云计算': ['IT服务', '软件开发', '计算机设备'],
-    '大数据': ['IT服务', '软件开发'],
-    '工业互联网': ['IT服务', '通用设备'],
-    '智能制造': ['通用设备', '工业机械'],
-    '新能源车': ['汽车整车', '电池'],
-    '锂电池': ['电池', '能源金属'],
-    '固态电池': ['电池'],
-    '氢能源': ['化学制品'],
-    '核电': ['电力', '电力设备'],
-    '风电': ['电力设备', '通用设备'],
-    '特高压': ['电网设备', '电力设备'],
-    '充电桩': ['汽车零部件', '电力设备'],
-    '军工': ['军工电子', '国防军工', '航空装备'],
-    '元宇宙': ['传媒', '软件开发'],
-    '虚拟现实': ['消费电子', '电子'],
-    '机器人': ['通用设备', '自动化设备'],
+# 申万一级 → 关键词(把涨停股"所属行业"(东财二级名)归到一级,算 limitUpCount)
+_SW_LEVEL1_KEYWORDS = {
+    '煤炭': ['煤炭', '焦炭', '焦煤', '动力煤'],
+    '石油石化': ['石油', '石化', '油气', '油服', '炼化', '炼油'],
+    '钢铁': ['钢铁', '特钢', '普钢', '冶钢', '板材', '长材'],
+    '有色金属': ['有色', '金属', '黄金', '铜', '铝', '锌', '铅', '锂', '钴', '镍', '稀土', '钨', '钼', '贵金属', '小金属', '工业金属', '能源金属'],
+    '电子': ['电子', '半导体', '元件', '光学', '消费电子', '集成电路', '芯片', '印制电路', '面板', 'LED', '分立器件'],
+    '汽车': ['汽车', '乘用车', '商用车', '摩托车'],
+    '家用电器': ['家电', '家用电器', '厨卫', '白色家电', '黑色家电', '小家电'],
+    '食品饮料': ['白酒', '啤酒', '饮料', '食品', '乳品', '调味', '零食', '烘焙', '酒'],
+    '纺织服饰': ['纺织', '服装', '服饰', '家纺', '鞋帽'],
+    '轻工制造': ['造纸', '包装', '印刷', '家居', '文具', '珠宝', '饰品', '文娱'],
+    '医药生物': ['医药', '中药', '化学制药', '生物', '医疗器械', '医疗服务', '疫苗', '原料药', '诊断', '生物制品'],
+    '公用事业': ['电力', '燃气', '水务', '供热', '发电'],
+    '交通运输': ['航空', '机场', '港口', '航运', '物流', '铁路', '公路', '公交', '快递'],
+    '房地产': ['房地产', '物业', '住宅', '商业地产', '产业地产'],
+    '商贸零售': ['零售', '贸易', '百货', '超市', '电商', '连锁'],
+    '社会服务': ['旅游', '酒店', '餐饮', '教育', '体育', '会展'],
+    '综合': ['综合'],
+    '建筑材料': ['建材', '水泥', '玻璃', '玻纤', '防水', '瓷砖'],
+    '建筑装饰': ['建筑', '装修', '装饰', '基建', '工程'],
+    '电力设备': ['电力设备', '电池', '光伏', '风电', '电网', '电机', '电气', '储能', '锂电', '输变电'],
+    '国防军工': ['军工', '国防', '航空装备', '航天', '兵装', '舰船', '航海'],
+    '计算机': ['计算机', '软件', 'IT服务', '互联网', '人工智能', '云计算', '大数据'],
+    '传媒': ['传媒', '游戏', '影视', '互联网', '出版', '广告', '院线', '视频'],
+    '通信': ['通信', '电信', '天线', '光模块', '光通信', '线缆'],
+    '银行': ['银行'],
+    '非银金融': ['保险', '证券', '多元金融', '信托', '期货', '金控'],
+    '机械设备': ['机械', '设备', '自动化', '专用', '通用', '工程机械', '机床', '机器人', '仪器'],
+    '环保': ['环保', '固废', '大气', '水治理', '环境'],
+    '美容护理': ['美容', '护理', '化妆品', '医美'],
+    '农林牧渔': ['农林', '种植', '林业', '渔业', '养殖', '农产品', '饲料', '种子', '生猪', '水产'],
+    '基础化工': ['化工', '化学', '农化', '橡胶', '塑料', '化纤', '新材料', '钛白粉', '纯碱', '农药', '化肥'],
 }
 
-def match_industry(sector_name, industry):
-    keywords = INDUSTRY_KEYWORDS.get(industry, [industry])
-    for kw in keywords:
-        if kw in sector_name or sector_name in kw:
-            return True
-    return False
+def _level1_of(industry_name: str) -> str | None:
+    """把涨停股"所属行业"(东财二级名)归到申万一级;匹配不到返 None"""
+    if not industry_name:
+        return None
+    for lv1, kws in _SW_LEVEL1_KEYWORDS.items():
+        for kw in kws:
+            if kw in industry_name:
+                return lv1
+    return None
 
-# 行业板块:同花顺 90 个
+# 东财 行业板块(m:90 t:2 = 申万一/二/三级)直连拉取,过滤出 31 个一级
+print("  行业板块(东财 申万一级 31 个)...")
+def _fetch_em_level1():
+    """直连东财 push2 拉申万一级 31 个。分页拉全 m:90+t:2(494 个申万行业)再过滤到 31 个一级。
+    东财单页 pz 上限 100,只拉 1 页会漏掉大部分一级(涨幅榜前100里一级行业很少)。失败返空 list。"""
+    import ssl as _ssl_l1
+    out = []
+    for domain in ['https://push2.eastmoney.com', 'https://82.push2.eastmoney.com', 'https://push2delay.eastmoney.com']:
+        _rows = []
+        try:
+            for pn in range(1, 7):
+                url = (f'{domain}/api/qt/clist/get?pn={pn}&pz=100&po=1&np=1&fltt=2&invt=2'
+                       f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f104,f105,f128,f136,f140&fid=f3')
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
+                data = _json.loads(urllib.request.urlopen(req, timeout=10, context=_ssl_l1._create_unverified_context()).read().decode('utf-8', 'ignore'))
+                diff = (data.get('data') or {}).get('diff') or []
+                if not diff:
+                    break
+                _rows.extend(diff)
+                if len(diff) < 100:
+                    break
+                time.sleep(0.15)
+        except Exception:
+            continue
+        if not _rows:
+            continue
+        for s in _rows:
+            nm = safe_str(s.get('f14'))
+            if nm not in _SW_LEVEL1_SET:
+                continue
+            out.append({
+                'name': nm,
+                'changePercent': round(safe_float(s.get('f3', 0)), 4),
+                'upCount': safe_int(s.get('f104', 0)),
+                'downCount': safe_int(s.get('f105', 0)),
+                'totalTurnover': round(safe_float(s.get('f6', 0)) / 1e8, 2),
+                'leaderName': safe_str(s.get('f128'), '-'),
+                'leaderChangePercent': round(safe_float(s.get('f136', 0)), 2),
+                'leaderCode': safe_str(s.get('f140'), ''),
+            })
+        if out:
+            break
+    return out
+
+_em_level1_rows = _fetch_em_level1()
+# 东财直连失败时用 31 个固定名兜底(值 0,前端 em 实时会覆盖),避免 sectors 空导致板块页空白
+if len(_em_level1_rows) < 20:
+    print(f"  东财申万一级直连失败(仅 {len(_em_level1_rows)} 个),用 31 个固定名兜底(值 0)")
+    _em_level1_rows = [{'name': n, 'changePercent': 0, 'upCount': 0, 'downCount': 0,
+                        'totalTurnover': 0, 'leaderName': '-', 'leaderChangePercent': 0,
+                        'leaderCode': ''} for n in SW_LEVEL1]
+
 sectors = []
-for _, row in ths_ind_df.iterrows():
-    name = safe_str(row['板块'])
+for row in _em_level1_rows:
+    name = row['name']
+    pct = row['changePercent']
+    up_n = row['upCount']
+    down_n = row['downCount']
+    turnover = row['totalTurnover']
+    leader = row['leaderName'] if row['leaderName'] not in ('-', '--', '') else '-'
+    # 涨停股数 + 第二只领涨股(把涨停股"所属行业"归到本一级)
     cnt = 0
-    for s in limit_up_stocks:
-        if match_industry(name, s['industry']):
-            cnt += 1
-    # 领涨个股前 2 名: leader + 涨停股 industry 关键词命中 + 板块名
-    # 简单实现:leader(领涨股) + 从 limit_up_stocks 里找 industry 命中板块名且 != leader 的第 1 个
-    leader = safe_str(row['领涨股'])
     second = '-'
     for s in limit_up_stocks:
-        if match_industry(name, s['industry']) and s['name'] != leader:
-            second = s['name']
-            break
-    # 主力净流入(用户 #8 反馈:TOP15 应全正)
-    # ths 净流入只统计大单,大跌日普遍偏负;改用综合公式:涨幅 + 涨跌家数差 + 成交活跃度
-    ths_ni = safe_float(row.get('净流入', 0))
-    up_n = safe_int(row.get('上涨家数', 0))
-    down_n = safe_int(row.get('下跌家数', 0))
-    pct = safe_float(row['涨跌幅'])
-    turnover = safe_float(row.get('总成交额', 0))
-    # 综合公式:涨幅 × 2 + 涨跌家数差 × 1 + 成交额 / 50
-    # 让"涨幅大 + up 多 + 成交活跃"的板块净流入更明显正
-    # 不再用 ths 净流入(只算大单,大跌日普遍偏负)
-    net_inflow = pct * 2 + (up_n - down_n) * 1 + turnover / 50
-
+        if _level1_of(s['industry']) == name:
+            cnt += 1
+            if second == '-' and s['name'] != leader:
+                second = s['name']
+    # 主力净流入(综合公式:涨幅 × 2 + 涨跌家数差 + 成交额/50,与旧逻辑口径一致)
+    net_inflow = pct * 2 + (up_n - down_n) + turnover / 50
     sectors.append({
         'name': name,
-        'sinaLabel': map_ths_to_sina(name),  # 用于前端实时查询
         'changePercent': round(pct, 4),  # v2.0.7v:4 位精度避免并列
-        'stockCount': safe_int(row.get('成分股数量', 0)) or up_n + down_n,
+        'stockCount': up_n + down_n,
         'upCount': up_n,
         'downCount': down_n,
         'totalTurnover': round(turnover, 2),
         'netInflow': round(net_inflow, 2),
-        'leaderName': leader if leader and leader != '--' else '-',
-        'leaderChangePercent': round(safe_float(row.get('领涨股-涨跌幅', 0)), 2),
+        'leaderName': leader,
+        'leaderChangePercent': round(row['leaderChangePercent'], 2),
+        'leaderCode': row['leaderCode'],
         'topStocks': [t for t in [leader, second] if t and t != '-'][:2] or ['-', '-'],
         'limitUpCount': cnt,
     })
 sectors.sort(key=lambda s: s['changePercent'], reverse=True)
+print(f"  行业板块(东财申万一级) {len(sectors)} 个")
 
 # v2.0.7ed:概念 / 地域 fallback 函数 — ths 限流时用 em 申万概念 / 申万地域
 def _fetch_em_sector_fallback(fs, limit=30, label='概念'):
@@ -1893,34 +1672,17 @@ if 'spot_df' in dir():
         if n and c:
             name_to_code[n] = c
 
-# 28 sw 一级 → 对应 ths 行业 leader → 拉 K 线
-SW_TO_THS_LEADERS = {
-    '农林牧渔': '猪肉概念', '基础化工': '化学制品', '钢铁': '钢铁', '有色金属': '小金属',
-    '电子': '电子化学品', '汽车': '汽车整车', '家用电器': '白色家电', '食品饮料': '白酒概念',
-    '纺织服饰': '纺织制造', '轻工制造': '造纸', '医药生物': '化学制药', '公用事业': '电力',
-    '交通运输': '物流', '房地产': '房地产开发', '商贸零售': '商业百货', '社会服务': '旅游酒店',
-    '银行': '银行', '非银金融': '证券', '建筑材料': '水泥', '建筑装饰': '装修装饰',
-    '电力设备': '电池', '机械设备': '专用设备', '国防军工': '军工电子', '美容护理': '化妆品',
-    '石油石化': '石油加工贸易', '煤炭': '煤炭开采加工', '环保': '环保', '综合': '综合',
-}
+# v2.0.8:行业 leader 60 日 K 线 — 直接用东财申万一级的领涨股代码(f140)拉 K 线
 sector_klines = {}
 print("\n  行业 leader 60 日 K 线(用于所处位置判断)...")
 import time as _t
-for i, (sw, ths_name) in enumerate(SW_TO_THS_LEADERS.items()):
-    sec = next((s for s in sectors if s['name'] == ths_name), None)
-    if not sec:
-        sector_klines[sw] = {'leaderName': '-', 'kline': []}
-        continue
+for i, sec in enumerate(sectors):
+    sw = sec['name']
     leader = sec.get('leaderName', '-')
-    code = name_to_code.get(leader, '')
+    code = sec.get('leaderCode', '')
     if not code:
-        # 兜底:用 topStocks[0]
-        tops = sec.get('topStocks', [])
-        for t in tops:
-            if t in name_to_code:
-                code = name_to_code[t]
-                leader = t
-                break
+        # 兜底:用 name_to_code(领涨股名 → 代码)
+        code = name_to_code.get(leader, '')
     if code:
         kline = fetch_leader_kline(code, 60)
         sector_klines[sw] = {'leaderName': leader, 'code': code, 'kline': kline}
