@@ -977,6 +977,44 @@ for i in range(min(LIMIT_HISTORY_DAYS, len(hist_df))):
 up_down_history.reverse()
 print(f"  涨跌家数估算 {len(up_down_history)} 天")
 
+# v2.0.8:直连东财 push2his 拉指数历史成交额,合成全市场成交额(亿) dict {date: 亿}
+# — 之前 v2.0.7ez 砍掉了历史 volume 估算,导致中间断档(如 8/28~9/4)的成交量曲线=0
+# — 上证指数(1.000001)+深证成指(0.399001)的成交额之和 ≈ 全市场成交额(与当日 total_turnover 口径一致,差北证<1%)
+def _fetch_hist_turnover():
+    """拉指数历史成交额并合成全市场成交额。失败返回空 dict(不会中断,最坏保持原 0)。"""
+    import ssl as _ssl_ht
+    def _one(secid):
+        for _t in range(3):
+            for _domain in ['https://push2his.eastmoney.com', 'https://7.push2his.eastmoney.com']:
+                try:
+                    url = (f'{_domain}/api/qt/stock/kline/get?secid={secid}'
+                           f'&fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56,f57,f58'
+                           f'&klt=101&fqt=0&beg=0&end=20500101')
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
+                    data = _json.loads(urllib.request.urlopen(req, timeout=12, context=_ssl_ht._create_unverified_context()).read().decode('utf-8', 'ignore'))
+                    kl = (data.get('data') or {}).get('klines') or []
+                    out = {}
+                    for _k in kl:
+                        _p = _k.split(',')
+                        if len(_p) >= 7:
+                            out[_p[0]] = safe_float(_p[6])  # date -> 成交额(元)
+                    if out:
+                        return out
+                except Exception:
+                    continue
+            time.sleep(2)
+        return {}
+    _sh = _one('1.000001')   # 上证指数
+    _sz = _one('0.399001')   # 深证成指
+    if not _sh and not _sz:
+        return {}
+    _merged = {}
+    for _d in sorted(set(list(_sh.keys()) + list(_sz.keys()))):
+        _v = _sh.get(_d, 0) + _sz.get(_d, 0)
+        if _v > 0:
+            _merged[_d] = round(_v / 1e8, 2)
+    return _merged
+
 # 把历史"成交量"数据与 zt/dt 对齐
 combined_history = []
 zt_dict = {x['date']: x['count'] for x in zt_history}
@@ -1004,6 +1042,12 @@ for _h_list in (_prev_history, history):
                 'up': _h.get('up', 0),
                 'down': _h.get('down', 0),
             }
+
+# v2.0.8:用东财指数历史成交额补全 vol_dict 缺失日期的 volume(修复 8/28~9/4 断档成交量=0)
+_hist_turnover = _fetch_hist_turnover()
+for _d, _v in _hist_turnover.items():
+    if vol_dict.get(_d, 0) == 0:
+        vol_dict[_d] = _v
 
 # v2.0.7ez:combined_history 循环用 zt_history 90 天(不再用 vol_dict,vol_dict 只 8/20 末点)
 # — 旧:vol_dict.items() 循环,history 只 line 462-480 末点(8/20)→ combined_history 只有 8/20
