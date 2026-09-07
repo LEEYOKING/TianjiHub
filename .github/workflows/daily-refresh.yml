@@ -1,0 +1,76 @@
+name: Daily Data Refresh
+
+# 交易日盘后云端自动刷新：不依赖本机开机。
+# cron 为 UTC 时间：
+#   35 7  * * 1-5  → 北京时间 15:35（收盘快照）
+#   35 10 * * 1-5  → 北京时间 18:35（龙虎榜 18:00 披露后补跑）
+on:
+  schedule:
+    - cron: '35 7 * * 1-5'
+    - cron: '35 10 * * 1-5'
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: 判断是否 A 股交易日
+        id: trading_day
+        run: |
+          python3 <<'PY'
+          import datetime, os
+          today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).date()
+          try:
+              import akshare as ak
+              df = ak.tool_trade_date_hist_sina()
+              dates = set(str(x) for x in df['trade_date'].tolist())
+              is_td = today.strftime('%Y-%m-%d') in dates
+          except Exception:
+              is_td = today.weekday() < 5
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"trading_day={'1' if is_td else '0'}\n")
+          print('A股交易日' if is_td else '非交易日(周末/法定节假日),跳过')
+          PY
+
+      - name: 拉取盘后数据
+        if: steps.trading_day.outputs.trading_day == '1'
+        run: NO_PROXY="*" no_proxy="*" python3 scripts/fetch_real_data.py
+
+      - name: 提交并推送
+        if: steps.trading_day.outputs.trading_day == '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data.json public/sectorKlines.json
+          if git diff --cached --quiet; then
+            echo "无数据变化,跳过提交"
+            exit 0
+          fi
+          git commit -m "盘后刷新数据 $(TZ=Asia/Shanghai date +%F)"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "推送成功"
+              exit 0
+            fi
+            echo "第 $i 次推送失败,尝试同步后重试"
+            git pull --rebase origin main || true
+            sleep 10
+          done
+          echo "推送失败"
+          exit 1
