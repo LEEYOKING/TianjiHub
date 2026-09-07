@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-09-07 21:39:26",
-    "tradeDate": "20260907",
-    "tradeDateSlash": "26/09/07",
+    "generatedAt": "2026-09-08 00:01:08",
+    "tradeDate": "20260908",
+    "tradeDateSlash": "26/09/08",
     "dataSource": "akshare (新浪/腾讯/东方财富)",
     "stockCodes": [
       "sz000001",
@@ -5566,11 +5566,11 @@
     "lhbFallback": false
   },
   "marketOverview": {
-    "tradeDate": "20260907",
-    "tradeDateSlash": "26/09/07",
-    "generatedAt": "2026-09-07 21:39",
+    "tradeDate": "20260908",
+    "tradeDateSlash": "26/09/08",
+    "generatedAt": "2026-09-08 00:01",
     "marketTurnover": 19644.36,
-    "turnoverDiff": 19644.36,
+    "turnoverDiff": 0.0,
     "marketTemperature": {
       "temperature": 83,
       "status": "极度沸点",
@@ -5581,10 +5581,10 @@
         "max_boards": 6,
         "broken_rate": "17%",
         "broken_count": 19,
-        "yest_perf": "+4.6%",
-        "yest_perf_value": 4.61,
-        "promote_rate": "28%",
-        "promote_rate_value": 0.28125,
+        "yest_perf": "+10.9%",
+        "yest_perf_value": 10.87,
+        "promote_rate": "11%",
+        "promote_rate_value": 0.1125,
         "limit_ratio": "46.5"
       },
       "dimension_scores": {
@@ -7647,7 +7647,7 @@
       "sz128142"
     ],
     "mainCapitalFlow20d": {
-      "date": "2026-09-07",
+      "date": "2026-09-08",
       "total_net_inflow": 590.86,
       "industries": [
         {
@@ -8490,6 +8490,14 @@
     },
     {
       "date": "2026-09-07",
+      "volume": 19644.36,
+      "limitUp": 93,
+      "limitDown": 2,
+      "up": 3166,
+      "down": 2196
+    },
+    {
+      "date": "2026-09-08",
       "volume": 19644.36,
       "limitUp": 93,
       "limitDown": 2,
