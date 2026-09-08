@@ -1,7 +1,17 @@
 {
+  "石油石化": {
+    "leaderName": "中曼石油",
+    "code": "603619",
+    "kline": []
+  },
   "综合": {
     "leaderName": "红棉股份",
     "code": "000523",
+    "kline": []
+  },
+  "煤炭": {
+    "leaderName": "云煤能源",
+    "code": "600792",
     "kline": []
   },
   "农林牧渔": {
@@ -9,9 +19,9 @@
     "code": "600108",
     "kline": []
   },
-  "煤炭": {
-    "leaderName": "云煤能源",
-    "code": "600792",
+  "钢铁": {
+    "leaderName": "本钢板材",
+    "code": "000761",
     "kline": []
   },
   "房地产": {
@@ -24,44 +34,9 @@
     "code": "603999",
     "kline": []
   },
-  "钢铁": {
-    "leaderName": "新兴铸管",
-    "code": "000778",
-    "kline": []
-  },
-  "石油石化": {
-    "leaderName": "和顺石油",
-    "code": "603353",
-    "kline": []
-  },
   "基础化工": {
     "leaderName": "三孚股份",
     "code": "603938",
-    "kline": []
-  },
-  "食品饮料": {
-    "leaderName": "海欣食品",
-    "code": "002702",
-    "kline": []
-  },
-  "建筑材料": {
-    "leaderName": "青龙管业",
-    "code": "002457",
-    "kline": []
-  },
-  "环保": {
-    "leaderName": "法尔胜",
-    "code": "000890",
-    "kline": []
-  },
-  "商贸零售": {
-    "leaderName": "百大集团",
-    "code": "600865",
-    "kline": []
-  },
-  "社会服务": {
-    "leaderName": "博瑞传播",
-    "code": "600880",
     "kline": []
   },
   "公用事业": {
@@ -69,29 +44,54 @@
     "code": "600903",
     "kline": []
   },
-  "建筑装饰": {
-    "leaderName": "中钢国际",
-    "code": "000928",
+  "医药生物": {
+    "leaderName": "永安药业",
+    "code": "002365",
     "kline": []
   },
-  "有色金属": {
-    "leaderName": "精艺股份",
-    "code": "002295",
-    "kline": []
-  },
-  "通信": {
-    "leaderName": "华脉科技",
-    "code": "603042",
+  "社会服务": {
+    "leaderName": "博瑞传播",
+    "code": "600880",
     "kline": []
   },
   "国防军工": {
-    "leaderName": "航发科技",
-    "code": "600391",
+    "leaderName": "合众思壮",
+    "code": "002383",
+    "kline": []
+  },
+  "商贸零售": {
+    "leaderName": "百大集团",
+    "code": "600865",
+    "kline": []
+  },
+  "环保": {
+    "leaderName": "法尔胜",
+    "code": "000890",
+    "kline": []
+  },
+  "食品饮料": {
+    "leaderName": "海欣食品",
+    "code": "002702",
     "kline": []
   },
   "银行": {
     "leaderName": "西安银行",
     "code": "600928",
+    "kline": []
+  },
+  "美容护理": {
+    "leaderName": "维琪科技",
+    "code": "920176",
+    "kline": []
+  },
+  "建筑装饰": {
+    "leaderName": "圣晖集成",
+    "code": "603163",
+    "kline": []
+  },
+  "建筑材料": {
+    "leaderName": "青龙管业",
+    "code": "002457",
     "kline": []
   },
   "纺织服饰": {
@@ -109,14 +109,9 @@
     "code": "002403",
     "kline": []
   },
-  "非银金融": {
-    "leaderName": "新力金融",
-    "code": "600318",
-    "kline": []
-  },
-  "美容护理": {
-    "leaderName": "维琪科技",
-    "code": "920176",
+  "有色金属": {
+    "leaderName": "精艺股份",
+    "code": "002295",
     "kline": []
   },
   "交通运输": {
@@ -124,34 +119,39 @@
     "code": "002357",
     "kline": []
   },
-  "医药生物": {
-    "leaderName": "东亚药业",
-    "code": "605177",
+  "非银金融": {
+    "leaderName": "新力金融",
+    "code": "600318",
+    "kline": []
+  },
+  "通信": {
+    "leaderName": "华脉科技",
+    "code": "603042",
     "kline": []
   },
   "机械设备": {
-    "leaderName": "丰安股份",
-    "code": "920608",
-    "kline": []
-  },
-  "计算机": {
-    "leaderName": "当虹科技",
-    "code": "688039",
-    "kline": []
-  },
-  "电力设备": {
-    "leaderName": "杭电股份",
-    "code": "603618",
-    "kline": []
-  },
-  "电子": {
-    "leaderName": "中京电子",
-    "code": "002579",
+    "leaderName": "集智股份",
+    "code": "300553",
     "kline": []
   },
   "汽车": {
     "leaderName": "众泰汽车",
     "code": "000980",
+    "kline": []
+  },
+  "电力设备": {
+    "leaderName": "华盛昌",
+    "code": "002980",
+    "kline": []
+  },
+  "计算机": {
+    "leaderName": "ST荣科",
+    "code": "300290",
+    "kline": []
+  },
+  "电子": {
+    "leaderName": "中京电子",
+    "code": "002579",
     "kline": []
   }
 }
