@@ -1006,14 +1006,31 @@ def _fetch_hist_turnover():
         return {}
     _sh = _one('1.000001')   # 上证指数
     _sz = _one('0.399001')   # 深证成指
-    if not _sh and not _sz:
+    if _sh and _sz:
+        _merged = {}
+        for _d in sorted(set(list(_sh.keys()) + list(_sz.keys()))):
+            _v = _sh.get(_d, 0) + _sz.get(_d, 0)
+            if _v > 0:
+                _merged[_d] = round(_v / 1e8, 2)
+        if _merged:
+            return _merged
+    # fallback: 东财历史K线海外限流 → 用腾讯指数成交量(手)×均值估算成交额(海外/国内基本可用,~8% 误差仅用于曲线趋势)
+    print("  东财历史成交额不可用(海外限流),fallback 腾讯指数成交量估算")
+    try:
+        _tx1 = ak.stock_zh_index_daily_tx('sh000001')
+        _tx2 = ak.stock_zh_index_daily_tx('sz399001')
+        _v1 = dict(zip([str(x) for x in _tx1['date']], _tx1['amount']))
+        _v2 = dict(zip([str(x) for x in _tx2['date']], _tx2['amount']))
+        _AVG_AMT = 1750.0  # 元/手:全市场成交额(亿)≈(上证+深证成指成交量亿手)×1750(近期反推 1600~1900,取中低值避免高估)
+        _merged2 = {}
+        for _d in sorted(set(list(_v1.keys()) + list(_v2.keys()))):
+            _vol = _v1.get(_d, 0) + _v2.get(_d, 0)
+            if _vol > 0:
+                _merged2[_d] = round(_vol * _AVG_AMT / 1e8, 2)
+        return _merged2
+    except Exception as _e_tx:
+        print(f"  腾讯成交量估算也失败({_e_tx}),历史成交量保持 0")
         return {}
-    _merged = {}
-    for _d in sorted(set(list(_sh.keys()) + list(_sz.keys()))):
-        _v = _sh.get(_d, 0) + _sz.get(_d, 0)
-        if _v > 0:
-            _merged[_d] = round(_v / 1e8, 2)
-    return _merged
 
 # 把历史"成交量"数据与 zt/dt 对齐
 combined_history = []
