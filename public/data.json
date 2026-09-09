@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-09-09 20:28:09",
+    "generatedAt": "2026-09-09 22:46:39",
     "tradeDate": "20260909",
     "tradeDateSlash": "26/09/09",
     "dataSource": "akshare (新浪/腾讯/东方财富)",
@@ -5570,7 +5570,7 @@
   "marketOverview": {
     "tradeDate": "20260909",
     "tradeDateSlash": "26/09/09",
-    "generatedAt": "2026-09-09 20:28",
+    "generatedAt": "2026-09-09 22:46",
     "marketTurnover": 18732.46,
     "turnoverDiff": -1051.61,
     "marketTemperature": {
