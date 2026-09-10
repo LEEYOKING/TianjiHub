@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-09-10 20:21:24",
+    "generatedAt": "2026-09-10 22:36:15",
     "tradeDate": "20260910",
     "tradeDateSlash": "26/09/10",
     "dataSource": "akshare (新浪/腾讯/东方财富)",
@@ -5571,7 +5571,7 @@
   "marketOverview": {
     "tradeDate": "20260910",
     "tradeDateSlash": "26/09/10",
-    "generatedAt": "2026-09-10 20:21",
+    "generatedAt": "2026-09-10 22:36",
     "marketTurnover": 16625.14,
     "turnoverDiff": -2107.32,
     "marketTemperature": {
@@ -9654,744 +9654,487 @@
   ],
   "conceptSectors": [
     {
-      "name": "阿尔茨海默概念",
-      "changePercent": 4.69,
-      "stockCount": 1,
-      "upCount": 1,
+      "name": "船舶制造",
+      "sinaLabel": "船舶制造",
+      "changePercent": 0.0125,
+      "stockCount": 0,
+      "upCount": 0,
       "downCount": 0,
-      "totalTurnover": 0.0,
-      "netInflow": 2.41,
-      "leaderName": "阿尔特",
-      "leaderChangePercent": 10.0,
-      "topStocks": [
-        "阿尔特",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "参股银行",
-      "changePercent": 1.95,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 53.8,
-      "netInflow": 18.63,
-      "leaderName": "-",
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "国瑞科技",
       "leaderChangePercent": 0,
       "topStocks": [
-        "-",
-        "-"
+        "国瑞科技"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "抽水蓄能",
-      "changePercent": 1.75,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 49.4,
-      "netInflow": 16.74,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "BC电池",
-      "changePercent": 1.68,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 47.8,
-      "netInflow": 16.08,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "冰雪产业",
-      "changePercent": 1.55,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 45.0,
-      "netInflow": 14.85,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "草甘膦",
-      "changePercent": 1.55,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 45.0,
-      "netInflow": 14.85,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "长三角一体化",
-      "changePercent": 1.55,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 45.0,
-      "netInflow": 14.85,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "AI语料",
-      "changePercent": 1.42,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 42.2,
-      "netInflow": 13.62,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "超超临界发电",
-      "changePercent": 1.42,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 42.2,
-      "netInflow": 13.62,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "阿里巴巴概念",
-      "changePercent": 1.39,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 41.4,
-      "netInflow": 13.34,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "参股券商",
-      "changePercent": 1.08,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 34.6,
-      "netInflow": 10.41,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "丙烯酸",
-      "changePercent": 0.99,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 32.6,
-      "netInflow": 9.56,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "百度概念",
-      "changePercent": 0.9,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 30.6,
-      "netInflow": 8.71,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "充电桩",
-      "changePercent": 0.9,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 30.6,
-      "netInflow": 8.71,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "超级电容",
-      "changePercent": 0.88,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 30.2,
-      "netInflow": 8.52,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "AI手机",
-      "changePercent": 0.69,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 25.8,
-      "netInflow": 6.73,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "车联网(车路协同)",
-      "changePercent": 0.63,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 24.6,
-      "netInflow": 6.16,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "参股保险",
-      "changePercent": 0.58,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 23.4,
-      "netInflow": 5.69,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "AI PC",
-      "changePercent": 0.51,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 21.8,
-      "netInflow": 5.03,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "重组蛋白",
-      "changePercent": 0.51,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 21.8,
-      "netInflow": 5.03,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "白酒概念",
-      "changePercent": 0.38,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 19.0,
-      "netInflow": 3.8,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "宁德时代概念",
-      "changePercent": 0.36,
-      "stockCount": 1,
-      "upCount": 1,
+      "name": "纳米银",
+      "sinaLabel": "纳米银",
+      "changePercent": 0.0106,
+      "stockCount": 0,
+      "upCount": 0,
       "downCount": 0,
-      "totalTurnover": 0.01,
-      "netInflow": 1.11,
-      "leaderName": "宁德时代",
-      "leaderChangePercent": 10.0,
-      "topStocks": [
-        "宁德时代",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "超级品牌",
-      "changePercent": 0.36,
-      "stockCount": 30,
-      "upCount": 15,
-      "downCount": 15,
-      "totalTurnover": 18.6,
-      "netInflow": 3.61,
-      "leaderName": "-",
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "超声电子",
       "leaderChangePercent": 0,
       "topStocks": [
-        "-",
-        "-"
+        "超声电子"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "长安汽车概念",
-      "changePercent": -0.84,
-      "stockCount": 1,
+      "name": "昨日首板",
+      "sinaLabel": "昨日首板",
+      "changePercent": 0.01,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 1,
-      "totalTurnover": 0.0,
-      "netInflow": -1.25,
-      "leaderName": "长安汽车",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "国创高新",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "长安汽车",
-        "-"
+        "国创高新"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "成飞概念",
-      "changePercent": -1.77,
-      "stockCount": 2,
+      "name": "科创板做市商",
+      "sinaLabel": "科创板做市商",
+      "changePercent": 0.0087,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 2,
-      "totalTurnover": 0.0,
-      "netInflow": -3.06,
-      "leaderName": "中航成飞",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "国信证券",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "中航成飞",
-        "成飞集成"
+        "国信证券"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "超导概念",
-      "changePercent": -1.7741,
-      "stockCount": 2,
+      "name": "金融地产风格",
+      "sinaLabel": "金融地产风格",
+      "changePercent": 0.0083,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 2,
-      "totalTurnover": 0.0,
-      "netInflow": -3.06,
-      "leaderName": "西部超导",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "宁波银行",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "西部超导",
-        "健信超导"
+        "宁波银行"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "传感器",
-      "changePercent": -2.287,
-      "stockCount": 3,
+      "name": "券商概念",
+      "sinaLabel": "券商概念",
+      "changePercent": 0.0081,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 3,
-      "totalTurnover": 0.0,
-      "netInflow": -5.06,
-      "leaderName": "苏奥传感",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "哈投股份",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "苏奥传感",
-        "柯力传感"
+        "哈投股份"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "宠物经济",
-      "changePercent": -2.4549,
-      "stockCount": 3,
+      "name": "氦气概念",
+      "sinaLabel": "氦气概念",
+      "changePercent": 0.0058,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 3,
-      "totalTurnover": 0.0,
-      "netInflow": -5.21,
-      "leaderName": "天元宠物",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "水发燃气",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "天元宠物",
-        "乖宝宠物"
+        "水发燃气"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "比亚迪概念",
-      "changePercent": -2.75,
-      "stockCount": 1,
+      "name": "地热能",
+      "sinaLabel": "地热能",
+      "changePercent": 0.0055,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 1,
-      "totalTurnover": 0.0,
-      "netInflow": -1.82,
-      "leaderName": "比亚迪",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "豫能控股",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "比亚迪",
-        "-"
+        "豫能控股"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "安防",
-      "changePercent": -3.0764,
-      "stockCount": 2,
+      "name": "长期破净",
+      "sinaLabel": "长期破净",
+      "changePercent": 0.0022,
+      "stockCount": 0,
       "upCount": 0,
-      "downCount": 2,
-      "totalTurnover": 0.0,
-      "netInflow": -3.85,
-      "leaderName": "王力安防",
-      "leaderChangePercent": 10.0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "*ST西旅",
+      "leaderChangePercent": 0,
       "topStocks": [
-        "王力安防",
-        "恒辉安防"
+        "*ST西旅"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "绿色电力",
+      "sinaLabel": "绿色电力",
+      "changePercent": 0.0019,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "太极实业",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "太极实业"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "证金持股",
+      "sinaLabel": "证金持股",
+      "changePercent": 0.0018,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "宁波银行",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "宁波银行"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "红利破净股",
+      "sinaLabel": "红利破净股",
+      "changePercent": 0.0018,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "南京银行",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "南京银行"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "DRG/DIP",
+      "sinaLabel": "DRG/DIP",
+      "changePercent": 0.0017,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "ST荣科",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "ST荣科"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "ST股",
+      "sinaLabel": "ST股",
+      "changePercent": 0.0016,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "ST荣科",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "ST荣科"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "被动元件概念",
+      "sinaLabel": "被动元件概念",
+      "changePercent": 0.0015,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "华金资本",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "华金资本"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "互联网金融",
+      "sinaLabel": "互联网金融",
+      "changePercent": 0.0013,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "新力金融",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "新力金融"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "高带宽内存",
+      "sinaLabel": "高带宽内存",
+      "changePercent": 0.0004,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "德邦科技",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "德邦科技"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "中特估",
+      "sinaLabel": "中特估",
+      "changePercent": 0.0001,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "天地科技",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "天地科技"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "滨海新区",
+      "sinaLabel": "滨海新区",
+      "changePercent": -0.0002,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "津药药业",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "津药药业"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "GDR",
+      "sinaLabel": "GDR",
+      "changePercent": -0.0006,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "欣旺达",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "欣旺达"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "昨日涨停",
+      "sinaLabel": "昨日涨停",
+      "changePercent": -0.0007,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "国创高新",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "国创高新"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "昨日涨停_含一字",
+      "sinaLabel": "昨日涨停_含一字",
+      "changePercent": -0.0008,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "瑞尔特",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "瑞尔特"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "参股期货",
+      "sinaLabel": "参股期货",
+      "changePercent": -0.0009,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "张家界",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "张家界"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "REITs概念",
+      "sinaLabel": "REITs概念",
+      "changePercent": -0.0009,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "哈投股份",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "哈投股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "UWB概念",
+      "sinaLabel": "UWB概念",
+      "changePercent": -0.0011,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "环旭电子",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "环旭电子"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "电子车牌",
+      "sinaLabel": "电子车牌",
+      "changePercent": -0.0015,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "远 望 谷",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "远 望 谷"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "新能源",
+      "sinaLabel": "新能源",
+      "changePercent": -0.0015,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "闽东电力",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "闽东电力"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "PCB",
+      "sinaLabel": "PCB",
+      "changePercent": -0.0015,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "金安国纪",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "金安国纪"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "虚拟电厂",
+      "sinaLabel": "虚拟电厂",
+      "changePercent": -0.0017,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "芯能科技",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "芯能科技"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "生物质能发电",
+      "sinaLabel": "生物质能发电",
+      "changePercent": -0.0018,
+      "stockCount": 0,
+      "upCount": 0,
+      "downCount": 0,
+      "totalTurnover": 0,
+      "netInflow": 0,
+      "leaderName": "九洲集团",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "九洲集团"
       ],
       "limitUpCount": 0
     }
   ],
-  "regionSectors": [
-    {
-      "name": "京津冀一体化",
-      "changePercent": 1.82,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 37.0,
-      "netInflow": 12.65,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "福建自贸区",
-      "changePercent": 1.6015,
-      "stockCount": 3,
-      "upCount": 2,
-      "downCount": 1,
-      "totalTurnover": 0.0,
-      "netInflow": 2.44,
-      "leaderName": "福建水泥",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "福建水泥",
-        "福建高速"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "长三角一体化",
-      "changePercent": 1.55,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 32.5,
-      "netInflow": 10.62,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "黑龙江自贸区",
-      "changePercent": 1.51,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 31.9,
-      "netInflow": 10.32,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "一体化压铸",
-      "changePercent": 1.42,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 30.4,
-      "netInflow": 9.65,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "乡村振兴",
-      "changePercent": 1.23,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 27.1,
-      "netInflow": 8.22,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "天津自贸区",
-      "changePercent": 0.9741,
-      "stockCount": 2,
-      "upCount": 2,
-      "downCount": 0,
-      "totalTurnover": 0.0,
-      "netInflow": 2.58,
-      "leaderName": "天津普林",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "天津普林",
-        "天津港"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "粤港澳大湾区",
-      "changePercent": 0.65,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 17.5,
-      "netInflow": 3.88,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "中韩自贸区",
-      "changePercent": 0.52,
-      "stockCount": 25,
-      "upCount": 12,
-      "downCount": 13,
-      "totalTurnover": 15.4,
-      "netInflow": 2.9,
-      "leaderName": "-",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "-",
-        "-"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "上海国企改革",
-      "changePercent": -0.7494,
-      "stockCount": 37,
-      "upCount": 7,
-      "downCount": 29,
-      "totalTurnover": 0.01,
-      "netInflow": -30.32,
-      "leaderName": "上海银行",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "上海银行",
-        "上海物贸"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "上海自贸区",
-      "changePercent": -0.7494,
-      "stockCount": 37,
-      "upCount": 7,
-      "downCount": 29,
-      "totalTurnover": 0.01,
-      "netInflow": -30.32,
-      "leaderName": "上海银行",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "上海银行",
-        "上海物贸"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "西部大开发",
-      "changePercent": -1.025,
-      "stockCount": 8,
-      "upCount": 2,
-      "downCount": 6,
-      "totalTurnover": 0.0,
-      "netInflow": -6.46,
-      "leaderName": "西部黄金",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "西部黄金",
-        "西部证券"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "深圳国企改革",
-      "changePercent": -1.472,
-      "stockCount": 6,
-      "upCount": 1,
-      "downCount": 4,
-      "totalTurnover": 0.0,
-      "netInflow": -5.65,
-      "leaderName": "深圳能源",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "深圳能源",
-        "深圳机场"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "广东自贸区",
-      "changePercent": -1.868,
-      "stockCount": 5,
-      "upCount": 0,
-      "downCount": 4,
-      "totalTurnover": 0.0,
-      "netInflow": -6.8,
-      "leaderName": "广东建工",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "广东建工",
-        "广东明珠"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "新疆振兴",
-      "changePercent": -2.1003,
-      "stockCount": 4,
-      "upCount": 0,
-      "downCount": 4,
-      "totalTurnover": 0.0,
-      "netInflow": -6.52,
-      "leaderName": "新疆火炬",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "新疆火炬",
-        "新疆众和"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "海南自贸区",
-      "changePercent": -5.1179,
-      "stockCount": 8,
-      "upCount": 2,
-      "downCount": 5,
-      "totalTurnover": 0.0,
-      "netInflow": -15.28,
-      "leaderName": "海南瑞泽",
-      "leaderChangePercent": 0,
-      "topStocks": [
-        "海南瑞泽",
-        "海南矿业"
-      ],
-      "limitUpCount": 0
-    }
-  ],
+  "regionSectors": [],
   "breakoutStocks": [
     {
       "code": "002204",
