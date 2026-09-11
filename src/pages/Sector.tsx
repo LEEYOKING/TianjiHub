@@ -72,6 +72,8 @@ export default function Sector({ data }: { data: ReportData }) {
             items={topGain.map((s, i) => ({ ...s, idx: i + 1, sign: 1 }))}
             maxAbs={Math.max(...topGain.map((s) => Math.abs(s.changePercent))) * 1.15}
             type="gain"
+            emptyText="今日暂无上涨行业板块"
+            emptySub="全市场行业板块均处于下跌或平盘状态"
           />
         </div>
         <div className="sector-chart-card">
@@ -80,6 +82,8 @@ export default function Sector({ data }: { data: ReportData }) {
             items={topLose.map((s, i) => ({ ...s, idx: i + 1, sign: -1 }))}
             maxAbs={Math.max(...topLose.map((s) => Math.abs(s.changePercent))) * 1.15}
             type="lose"
+            emptyText="今日暂无下跌行业板块"
+            emptySub="全市场行业板块均处于上涨或平盘状态"
           />
         </div>
       </div>
@@ -91,12 +95,16 @@ export default function Sector({ data }: { data: ReportData }) {
           data={sectorTopGain}
           defaultSort="desc"
           showNetInflow={false}
+          emptyText="今日暂无上涨行业板块"
+          emptySub="全市场行业板块均处于下跌或平盘状态"
         />
         <DetailTableCard
           title="行业主力净流入 TOP15"
           data={sectorTopNetIn}
           defaultSort="netInflow"
           showNetInflow={true}
+          emptyText="今日暂无主力净流入为正的行业板块"
+          emptySub="全市场行业板块主力资金均为净流出"
         />
       </div>
 
@@ -106,11 +114,15 @@ export default function Sector({ data }: { data: ReportData }) {
           title="概念板块 TOP15"
           data={conceptTopGain}
           defaultSort="desc"
+          emptyText="今日暂无上涨概念板块"
+          emptySub="所有概念板块均处于下跌或平盘状态"
         />
         <DetailTableCard
           title="地域板块 TOP15"
           data={regionTopGain}
           defaultSort="desc"
+          emptyText="今日暂无上涨地域板块"
+          emptySub="所有地域板块均处于下跌或平盘状态"
         />
       </div>
     </div>
@@ -141,12 +153,31 @@ const responsiveStyle = `
   }
 `;
 
+// ====== 空状态(复用 ChangeDistributionCard 的居中灰字样式,支持主文案 + 副文案) ======
+function EmptyState({ text, sub, height = 240 }: { text: string; sub?: string; height?: number }) {
+  return (
+    <div style={{
+      height,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af' }}>{text}</div>
+      {sub && <div style={{ fontSize: 12, color: '#B0B6C0' }}>{sub}</div>}
+    </div>
+  );
+}
+
 // ====== 横向条形图卡(左对齐 + 右侧数值 + 圆角) ======
-function BarChartCard({ title, items, maxAbs, type: _type }: {
+function BarChartCard({ title, items, maxAbs, type: _type, emptyText = '暂无数据', emptySub }: {
   title: string;
   items: (SectorItem & { idx: number; sign: number })[];
   maxAbs: number;
   type: 'gain' | 'lose';
+  emptyText?: string;
+  emptySub?: string;
 }) {
   const labels = items.map((it) => it.name).reverse();
   const absValues = items.map((it) => Math.abs(it.changePercent)).reverse();
@@ -245,14 +276,18 @@ function BarChartCard({ title, items, maxAbs, type: _type }: {
 
   return (
     <Card title={title}>
-      {/* 用户 #1 反馈:宽度自适应 */}
-      <ReactECharts option={option} style={{ height: 360, width: '100%' }} notMerge lazyUpdate />
+      {/* 用户 #1 反馈:宽度自适应;极端行情(如全市场下跌)下 items 为空 → 居中空状态 */}
+      {items.length === 0 ? (
+        <EmptyState text={emptyText} sub={emptySub} height={360} />
+      ) : (
+        <ReactECharts option={option} style={{ height: 360, width: '100%' }} notMerge lazyUpdate />
+      )}
     </Card>
   );
 }
 
 // ====== 详细表卡(支持涨跌幅升降序 + 表格样式 + 首列居中 + 列名不换行) ======
-function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = false }: { title: string; data: SectorItem[]; defaultSort?: 'desc' | 'asc' | 'netInflow' | 'turnover'; showNetInflow?: boolean }) {
+function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = false, emptyText = '暂无数据', emptySub }: { title: string; data: SectorItem[]; defaultSort?: 'desc' | 'asc' | 'netInflow' | 'turnover'; showNetInflow?: boolean; emptyText?: string; emptySub?: string }) {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc' | 'netInflow' | 'turnover'>(defaultSort === 'turnover' ? 'turnover' : defaultSort);
 
   const sorted = useMemo(() => {
@@ -336,6 +371,21 @@ function DetailTableCard({ title, data, defaultSort = 'desc', showNetInflow = fa
             </tr>
           </thead>
           <tbody>
+            {/* 极端行情(如全市场下跌/主力全净流出)→ data 为空时居中空状态提示,避免空表格 */}
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan={showNetInflow ? 7 : 6} style={{
+                  textAlign: 'center',
+                  padding: '56px 16px',
+                  color: '#86909C',
+                  borderTop: 'none',
+                  fontSize: 13,
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#86909C', marginBottom: 6 }}>{emptyText}</div>
+                  {emptySub && <div style={{ fontSize: 12, color: '#B0B6C0' }}>{emptySub}</div>}
+                </td>
+              </tr>
+            )}
             {sorted.map((s) => {
               const pct = s.changePercent;
               const limitCount = s.limitUpCount ?? 0;
