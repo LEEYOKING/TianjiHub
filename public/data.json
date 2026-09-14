@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-09-14 22:22:47",
-    "tradeDate": "20260914",
-    "tradeDateSlash": "26/09/14",
+    "generatedAt": "2026-09-15 00:29:38",
+    "tradeDate": "20260915",
+    "tradeDateSlash": "26/09/15",
     "dataSource": "akshare (新浪/腾讯/东方财富)",
     "stockCodes": [
       "sz000001",
@@ -5570,11 +5570,11 @@
     "lhbFallback": false
   },
   "marketOverview": {
-    "tradeDate": "20260914",
-    "tradeDateSlash": "26/09/14",
-    "generatedAt": "2026-09-14 22:22",
+    "tradeDate": "20260915",
+    "tradeDateSlash": "26/09/15",
+    "generatedAt": "2026-09-15 00:29",
     "marketTurnover": 16431.26,
-    "turnoverDiff": -3440.63,
+    "turnoverDiff": 0.0,
     "marketTemperature": {
       "temperature": 60,
       "status": "常温震荡",
@@ -5585,10 +5585,10 @@
         "max_boards": 4,
         "broken_rate": "35%",
         "broken_count": 30,
-        "yest_perf": "+3.2%",
-        "yest_perf_value": 3.21,
-        "promote_rate": "21%",
-        "promote_rate_value": 0.21212121212121213,
+        "yest_perf": "+11.3%",
+        "yest_perf_value": 11.28,
+        "promote_rate": "16%",
+        "promote_rate_value": 0.1590909090909091,
         "limit_ratio": "3.4"
       },
       "dimension_scores": {
@@ -7659,7 +7659,7 @@
       "sz128142"
     ],
     "mainCapitalFlow20d": {
-      "date": "2026-09-14",
+      "date": "2026-09-15",
       "total_net_inflow": -149.04,
       "industries": [
         {
@@ -8502,6 +8502,14 @@
     },
     {
       "date": "2026-09-14",
+      "volume": 16431.26,
+      "limitUp": 55,
+      "limitDown": 16,
+      "up": 3125,
+      "down": 2224
+    },
+    {
+      "date": "2026-09-15",
       "volume": 16431.26,
       "limitUp": 55,
       "limitDown": 16,
@@ -11320,6 +11328,22 @@
       "topStocks": [
         "广东建科",
         "广东鸿图"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "西部大开发",
+      "changePercent": -1.6928,
+      "stockCount": 8,
+      "upCount": 3,
+      "downCount": 5,
+      "totalTurnover": 0.0,
+      "netInflow": -6.06,
+      "leaderName": "西部创业",
+      "leaderChangePercent": 0,
+      "topStocks": [
+        "西部创业",
+        "西部建设"
       ],
       "limitUpCount": 0
     },
