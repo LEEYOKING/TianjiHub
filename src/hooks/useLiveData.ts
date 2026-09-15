@@ -393,10 +393,16 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
     // — 修法:卡片也用 live.today 覆盖,跟曲线图末点同源
     // — 跟 v2.0.7bi 一样处理 limitUp/limitDown(同花顺"当前封板"近似)
     if (live.today && (live.today.up > 0 || live.today.down > 0) && live.today.volume > 0) {
-      // v2.0.8gj:盘中动态算 turnoverDiff = 今日实时成交额 - 昨日收盘成交额(baseData 覆盖前的值)
       const _prevTurnover = next.marketOverview.marketTurnover;
       next.marketOverview.marketTurnover = live.today.volume;
-      next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover * _tradingProgressCN()) * 100) / 100;
+      // v2.0.8gk:仅在盘中(交易进度<1)动态算「较上一日增量」;盘后(进度=1)保留 baseData 值
+      // — 盘后 cron 把 baseData.marketTurnover 更新成今日收盘额后,若仍按 progress=1 算:
+      //   今日实时成交额 - 今日收盘成交额 = 0,且不再更新 → 用户反馈收盘后「较上一日增量」变 0
+      // — 盘后正确值(今日收盘 - 昨日收盘)已由 fetch_real_data 盘后 cron 算好存入 baseData,前端不覆盖
+      const _liveProgress = _tradingProgressCN();
+      if (_liveProgress < 1) {
+        next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover * _liveProgress) * 100) / 100;
+      }
       next.marketOverview.upCount = live.today.up;
       next.marketOverview.downCount = live.today.down;
       // v2.0.7ex:fetchTodaySnapshot 也加 flatCount 字段(用现价/昨收算涨跌幅,精度 0.001%)
@@ -428,7 +434,11 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         // v2.0.8gj:盘中动态算 turnoverDiff(与 live.today 分支同口径)
         const _prevTurnover2 = next.marketOverview.marketTurnover;
         next.marketOverview.marketTurnover = live.market!.totalTurnover;
-        next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * _tradingProgressCN()) * 100) / 100;
+        // v2.0.8gk:与 live.today 分支同口径 — 仅盘中动态算「较上一日增量」,盘后保留 baseData 值避免自减成 0
+        const _liveProgress2 = _tradingProgressCN();
+        if (_liveProgress2 < 1) {
+          next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * _liveProgress2) * 100) / 100;
+        }
         next.marketOverview.upCount = live.market!.upCount;
         next.marketOverview.downCount = live.market!.downCount;
         next.marketOverview.flatCount = live.market!.flatCount;
