@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-09-15 20:51:52",
+    "generatedAt": "2026-09-15 23:13:41",
     "tradeDate": "20260915",
     "tradeDateSlash": "26/09/15",
     "dataSource": "akshare (新浪/腾讯/东方财富)",
@@ -5572,7 +5572,7 @@
   "marketOverview": {
     "tradeDate": "20260915",
     "tradeDateSlash": "26/09/15",
-    "generatedAt": "2026-09-15 20:51",
+    "generatedAt": "2026-09-15 23:13",
     "marketTurnover": 16253.65,
     "turnoverDiff": -177.61,
     "marketTemperature": {
@@ -9672,7 +9672,7 @@
       "totalTurnover": 112.8,
       "netInflow": -3.84,
       "leaderName": "云煤能源",
-      "leaderChangePercent": 8.1,
+      "leaderChangePercent": 7.09,
       "leaderCode": "600792",
       "topStocks": [
         "云煤能源"
@@ -9982,7 +9982,7 @@
       "totalTurnover": 356.45,
       "netInflow": -83.61,
       "leaderName": "返利科技",
-      "leaderChangePercent": 6.21,
+      "leaderChangePercent": 6.41,
       "leaderCode": "600228",
       "topStocks": [
         "返利科技"
@@ -10062,7 +10062,7 @@
       "totalTurnover": 71.97,
       "netInflow": -78.7,
       "leaderName": "金春股份",
-      "leaderChangePercent": 3.15,
+      "leaderChangePercent": 3.19,
       "leaderCode": "300877",
       "topStocks": [
         "金春股份"
