@@ -355,6 +355,24 @@ function _tradingProgressCN(): number {
 
 /** 把 live snapshot 合并到 ReportData(覆盖涨跌幅/家数等实时字段)
  * v2.0.7:全市场/ETF/可转债 涨跌停数也用 live 覆盖(10s 实时) */
+// v2.0.8hg:取"上一交易日收盘全市场成交额"(亿元)
+// — 从 history 取最后一个非今日日期的 volume(恒为收盘真值、由盘后脚本生成)
+// — 不能用 next.marketOverview.marketTurnover —— 盘中 baseData 可能被"当日 localStorage 快照"替代
+//   (App.tsx loadLiveSnapshot + saveLiveSnapshot 把 merge 后的实时值写回快照),
+//   此时 marketTurnover 已是"今日实时成交额",若误当"昨日收盘":
+//   较上一日增量 = 今日实时×(1-进度):早上进度 0.03 → 显示 ≈ 0.97×成交额(用户反馈"早上+100变+6000亿")
+function _prevSettleTurnover(hist: { date: string; volume: number }[] | undefined): number {
+  if (!hist || hist.length === 0) return 0;
+  const todayStr = getCNTodayYMD();
+  for (let i = hist.length - 1; i >= 0; i--) {
+    const h = hist[i];
+    if (!h || !h.date) continue;
+    if (h.date !== todayStr) {
+      return Number(h.volume) || 0;  // 最后一个非今日 = 上一交易日收盘
+    }
+  }
+  return 0;
+}
 export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData {
   if (live.fetchedAt === 0) return data;
   const next: ReportData = JSON.parse(JSON.stringify(data));
@@ -393,14 +411,15 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
     // — 修法:卡片也用 live.today 覆盖,跟曲线图末点同源
     // — 跟 v2.0.7bi 一样处理 limitUp/limitDown(同花顺"当前封板"近似)
     if (live.today && (live.today.up > 0 || live.today.down > 0) && live.today.volume > 0) {
-      const _prevTurnover = next.marketOverview.marketTurnover;
+      // v2.0.8hg:前一交易日收盘成交额从 history 取(不能用 marketTurnover,可能被当日快照污染)
+      const _prevTurnover = _prevSettleTurnover(next.history);
       next.marketOverview.marketTurnover = live.today.volume;
       // v2.0.8gk:仅在盘中(交易进度<1)动态算「较上一日增量」;盘后(进度=1)保留 baseData 值
       // — 盘后 cron 把 baseData.marketTurnover 更新成今日收盘额后,若仍按 progress=1 算:
       //   今日实时成交额 - 今日收盘成交额 = 0,且不再更新 → 用户反馈收盘后「较上一日增量」变 0
       // — 盘后正确值(今日收盘 - 昨日收盘)已由 fetch_real_data 盘后 cron 算好存入 baseData,前端不覆盖
       const _liveProgress = _tradingProgressCN();
-      if (_liveProgress < 1) {
+      if (_liveProgress < 1 && _prevTurnover > 0) {
         next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover * _liveProgress) * 100) / 100;
       }
       next.marketOverview.upCount = live.today.up;
@@ -432,11 +451,12 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         // v2.0.7d:成交量也实时刷新 + turnoverDiff 由 fetch_real_data 5 cron 算(末 1 vs 末 2 收盘对比)
         // v2.0.7bb:em 不覆盖 turnoverDiff(避免 8/13 跑出 25659 - 25673 = -14.46 自减)
         // v2.0.8gj:盘中动态算 turnoverDiff(与 live.today 分支同口径)
-        const _prevTurnover2 = next.marketOverview.marketTurnover;
+        // v2.0.8hg:与 live.today 分支同口径(前一交易日收盘从 history 取)
+        const _prevTurnover2 = _prevSettleTurnover(next.history);
         next.marketOverview.marketTurnover = live.market!.totalTurnover;
-        // v2.0.8gk:与 live.today 分支同口径 — 仅盘中动态算「较上一日增量」,盘后保留 baseData 值避免自减成 0
+        // v2.0.8gk:仅盘中动态算「较上一日增量」,盘后保留 baseData 值避免自减成 0
         const _liveProgress2 = _tradingProgressCN();
-        if (_liveProgress2 < 1) {
+        if (_liveProgress2 < 1 && _prevTurnover2 > 0) {
           next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * _liveProgress2) * 100) / 100;
         }
         next.marketOverview.upCount = live.market!.upCount;
