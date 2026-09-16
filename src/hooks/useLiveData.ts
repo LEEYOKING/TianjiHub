@@ -414,13 +414,16 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       // v2.0.8hg:前一交易日收盘成交额从 history 取(不能用 marketTurnover,可能被当日快照污染)
       const _prevTurnover = _prevSettleTurnover(next.history);
       next.marketOverview.marketTurnover = live.today.volume;
-      // v2.0.8gk:仅在盘中(交易进度<1)动态算「较上一日增量」;盘后(进度=1)保留 baseData 值
-      // — 盘后 cron 把 baseData.marketTurnover 更新成今日收盘额后,若仍按 progress=1 算:
-      //   今日实时成交额 - 今日收盘成交额 = 0,且不再更新 → 用户反馈收盘后「较上一日增量」变 0
-      // — 盘后正确值(今日收盘 - 昨日收盘)已由 fetch_real_data 盘后 cron 算好存入 baseData,前端不覆盖
+      // v2.0.8hh:统一盘中+盘后计算「较上一日增量」= 今日 - 昨收 × min(进度,1)
+      // — 盘中: 今日实时 - 昨收×进度(昨日同期估算)
+      // — 盘后(进度≥1):今日收盘 - 昨收 —— 仅当 baseData 仍是昨日(cron 未更新当日 data.json)时覆盖,
+      //   此时 baseData 走当日快照、turnoverDiff 无权威值,前端用 live 收盘定格值自算
+      // — baseData 已是今日(15:35 cron 跑过,turnoverDiff=脚本权威值)时保留,不覆盖
       const _liveProgress = _tradingProgressCN();
-      if (_liveProgress < 1 && _prevTurnover > 0) {
-        next.marketOverview.turnoverDiff = Math.round((live.today.volume - _prevTurnover * _liveProgress) * 100) / 100;
+      const _baseIsToday = String(data.meta?.tradeDate) === getCNTodayYMD();
+      if (!_baseIsToday && _prevTurnover > 0) {
+        const _diff = live.today.volume - _prevTurnover * Math.min(_liveProgress, 1);
+        next.marketOverview.turnoverDiff = Math.round(_diff * 100) / 100;
       }
       next.marketOverview.upCount = live.today.up;
       next.marketOverview.downCount = live.today.down;
@@ -454,10 +457,11 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         // v2.0.8hg:与 live.today 分支同口径(前一交易日收盘从 history 取)
         const _prevTurnover2 = _prevSettleTurnover(next.history);
         next.marketOverview.marketTurnover = live.market!.totalTurnover;
-        // v2.0.8gk:仅盘中动态算「较上一日增量」,盘后保留 baseData 值避免自减成 0
+        // v2.0.8hh:盘中+盘后统一计算(同 today 分支,进度取 min(进度,1))
         const _liveProgress2 = _tradingProgressCN();
-        if (_liveProgress2 < 1 && _prevTurnover2 > 0) {
-          next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * _liveProgress2) * 100) / 100;
+        const _baseIsToday2 = String(data.meta?.tradeDate) === getCNTodayYMD();
+        if (!_baseIsToday2 && _prevTurnover2 > 0) {
+          next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * Math.min(_liveProgress2, 1)) * 100) / 100;
         }
         next.marketOverview.upCount = live.market!.upCount;
         next.marketOverview.downCount = live.market!.downCount;
