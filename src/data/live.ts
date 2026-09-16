@@ -586,6 +586,7 @@ export interface EMIndustryItem {
   leaderName: string;      // 领涨股
   leaderChangePercent: number;
   stockCount: number;
+  netInflow: number;       // v2.0.8hg:主力净流入(亿,东财 f62 元/1e8)— 修复 TOP15 净流入盘中被估算覆盖
 }
 
 /** 拉取 em 申万板块实时数据(行业/概念/地域)
@@ -593,7 +594,8 @@ export interface EMIndustryItem {
  * 返回: Map<name, EMIndustryItem> */
 async function fetchEMSectors(fs: string, pn = 1): Promise<Map<string, EMIndustryItem>> {
   // v2.0.8:pz 改 100(东财单页上限,原来 pz=200 实际也被截断),支持 pn 翻页
-  const params = `pn=${pn}&pz=100&po=1&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f128&fid=f3`;
+  // v2.0.8hg:fields 加 f62(主力净流入额,元) — 之前只拉 f3/f12/f14/f128,netInflow 无法实时覆盖
+  const params = `pn=${pn}&pz=100&po=1&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f62,f128&fid=f3`;
   const result = new Map<string, EMIndustryItem>();
   for (const domain of ['https://push2.eastmoney.com', 'https://push2delay.eastmoney.com', 'https://82.push2.eastmoney.com']) {
     try {
@@ -610,6 +612,7 @@ async function fetchEMSectors(fs: string, pn = 1): Promise<Map<string, EMIndustr
             leaderName: s.f128 || '-',
             leaderChangePercent: 0,
             stockCount: 0,
+            netInflow: s.f62 != null ? Math.round((s.f62 / 1e8) * 100) / 100 : 0, // 元→亿,保留 2 位
           });
         }
         break;

@@ -509,6 +509,12 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         if (isCrossDay || Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
           s.changePercent = bestMatch.changePercent;
           if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
+          // v2.0.8hg:同步覆盖真实主力净流入(东财 f62)— 之前只覆盖涨跌幅,净流入停留 baseData 晚间估算值,
+          // 导致「行业主力净流入 TOP15」盘中只剩 1 条(估算按前一日收盘涨跌幅,几乎全负)
+          const _emInflow = (bestMatch as any).netInflow;
+          if (typeof _emInflow === 'number') {
+            s.netInflow = Math.round(_emInflow * 100) / 100;
+          }
         }
       }
     }
@@ -522,7 +528,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
     totalTurnover: 0,
     leaderName: item.leaderName && item.leaderName !== '-' ? item.leaderName : '-',
     leaderChangePercent: 0,
-    netInflow: 0,
+    netInflow: typeof item.netInflow === 'number' ? Math.round(item.netInflow * 100) / 100 : 0,
     topStocks: [item.leaderName && item.leaderName !== '-' ? item.leaderName : '-', '-'],
     limitUpCount: 0,
     upCount: 0,
@@ -545,6 +551,10 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         if (bestMatch && (isCrossDay || Math.abs(bestMatch.changePercent - s.changePercent) <= 3)) {
           s.changePercent = bestMatch.changePercent;
           if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
+          // v2.0.8hg:概念/地域也同步覆盖真实主力净流入(东财 f62)
+          if (typeof bestMatch.netInflow === 'number') {
+            s.netInflow = Math.round(bestMatch.netInflow * 100) / 100;
+          }
         }
       }
     } else {

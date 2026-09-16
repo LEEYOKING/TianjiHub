@@ -1188,7 +1188,7 @@ def _fetch_em_level1():
         try:
             for pn in range(1, 7):
                 url = (f'{domain}/api/qt/clist/get?pn={pn}&pz=100&po=1&np=1&fltt=2&invt=2'
-                       f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f104,f105,f128,f136,f140&fid=f3')
+                       f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f62,f104,f105,f128,f136,f140&fid=f3')
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
                 data = _json.loads(urllib.request.urlopen(req, timeout=10, context=_ssl_l1._create_unverified_context()).read().decode('utf-8', 'ignore'))
                 diff = (data.get('data') or {}).get('diff') or []
@@ -1212,6 +1212,8 @@ def _fetch_em_level1():
                 'upCount': safe_int(s.get('f104', 0)),
                 'downCount': safe_int(s.get('f105', 0)),
                 'totalTurnover': round(safe_float(s.get('f6', 0)) / 1e8, 2),
+                # v2.0.8hg:真实主力净流入(东财 f62,元 → 亿)— 之前用了估算公式,导致净流入 TOP15 几乎全负
+                'netInflow': round(safe_float(s.get('f62', 0)) / 1e8, 2),
                 'leaderName': safe_str(s.get('f128'), '-'),
                 'leaderChangePercent': round(safe_float(s.get('f136', 0)), 2),
                 'leaderCode': safe_str(s.get('f140'), ''),
@@ -1225,8 +1227,8 @@ _em_level1_rows = _fetch_em_level1()
 if len(_em_level1_rows) < 20:
     print(f"  东财申万一级直连失败(仅 {len(_em_level1_rows)} 个),用 31 个固定名兜底(值 0)")
     _em_level1_rows = [{'name': n, 'changePercent': 0, 'upCount': 0, 'downCount': 0,
-                        'totalTurnover': 0, 'leaderName': '-', 'leaderChangePercent': 0,
-                        'leaderCode': ''} for n in SW_LEVEL1]
+                        'totalTurnover': 0, 'netInflow': 0, 'leaderName': '-',
+                        'leaderChangePercent': 0, 'leaderCode': ''} for n in SW_LEVEL1]
 
 sectors = []
 for row in _em_level1_rows:
@@ -1244,8 +1246,11 @@ for row in _em_level1_rows:
             cnt += 1
             if second == '-' and s['name'] != leader:
                 second = s['name']
-    # 主力净流入(综合公式:涨幅 × 2 + 涨跌家数差 + 成交额/50,与旧逻辑口径一致)
-    net_inflow = pct * 2 + (up_n - down_n) + turnover / 50
+    # 主力净流入:优先用东财真实值(f62,盘后/盘中都是权威),失败才用综合估算兜底
+    net_inflow = row.get('netInflow')
+    if net_inflow is None:
+        # 综合公式:涨幅 × 2 + 涨跌家数差 + 成交额/50(旧逻辑口径)
+        net_inflow = pct * 2 + (up_n - down_n) + turnover / 50
     sectors.append({
         'name': name,
         'changePercent': round(pct, 4),  # v2.0.7v:4 位精度避免并列
@@ -1271,7 +1276,7 @@ def _fetch_em_sector_fallback(fs, limit=30, label='概念'):
     out = []
     for domain in ['https://push2.eastmoney.com', 'https://82.push2.eastmoney.com', 'https://push2his.eastmoney.com', 'https://push2delay.eastmoney.com']:
         try:
-            url = f'{domain}/api/qt/clist/get?pn=1&pz={limit}&po=1&np=1&fltt=2&invt=2&fs={fs}&fields=f3,f12,f14,f128&fid=f3'
+            url = f'{domain}/api/qt/clist/get?pn=1&pz={limit}&po=1&np=1&fltt=2&invt=2&fs={fs}&fields=f3,f12,f14,f62,f128&fid=f3'
             req = urllib.request.Request(url, headers={
                 'User-Agent': 'Mozilla/5.0',
                 'Referer': 'https://quote.eastmoney.com/',
@@ -1292,7 +1297,8 @@ def _fetch_em_sector_fallback(fs, limit=30, label='概念'):
                             'upCount': 0,
                             'downCount': 0,
                             'totalTurnover': 0,
-                            'netInflow': 0,
+                            # v2.0.8hg:真实主力净流入(东财 f62,元 → 亿)
+                            'netInflow': round(safe_float(s.get('f62', 0)) / 1e8, 2),
                             'leaderName': leader if leader and leader != '--' else '-',
                             'leaderChangePercent': 0,
                             'topStocks': [leader] if leader and leader != '--' else ['-', '-'],
