@@ -3,6 +3,9 @@
 每日盘后 15:30 后跑一次即可。
 输出:public/data.json
 """
+# v2.0.8hh:兼容 Python 3.9(macOS 自带 python3=3.9.6)— `str | None` 注解 3.10+ 才支持,
+# 不加此行在 3.9 会 TypeError: unsupported operand type(s) for | (2026-09-16 实际踩坑)
+from __future__ import annotations
 import akshare as ak
 import json
 import warnings

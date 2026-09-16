@@ -27,7 +27,10 @@ fi
 # 2. 跑数据脚本
 #    NO_PROXY 用于绕过 macOS 系统代理残留（代理软件没开时 51926 端口会挡 requests）
 echo "[2/4] 拉取盘后数据（约 10-15 分钟，请耐心等待）..."
-NO_PROXY="*" no_proxy="*" python3 scripts/fetch_real_data.py
+# v2.0.8hh:优先用 Python 3.14(macOS PATH 变化时 python3 可能变成 3.9,脚本带 3.9 future 兼容双保险)
+PYBIN="$(command -v python3.14 || command -v python3.12 || echo python3)"
+echo "  使用解释器: $PYBIN ($($PYBIN --version 2>&1))"
+NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_real_data.py
 
 # 3. 提交
 echo "[3/4] 提交数据..."
