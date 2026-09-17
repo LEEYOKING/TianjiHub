@@ -381,6 +381,21 @@ function _prevSettleTurnover(hist: { date: string; volume: number }[] | undefine
   }
   return 0;
 }
+
+// v2.0.8hh:指数口径全市场成交额 = 上证指数 + 深证成指 + 北证50 的成交额之和(亿)
+// — 与脚本 fetch_real_data 的 total_turnover 口径一致(同花顺一致)
+// — 不能用 live.today.volume(全市场 5563 只个股累计),口径偏大(含深证非成分股/北证非50 股票),
+//   与 history 昨收(指数口径)不可比 → 盘中 turnoverDiff 虚高约 2462 亿、量能维度偏差
+function _indexTurnover(indices: { name?: string; turnover: number }[] | undefined): number {
+  if (!indices || indices.length === 0) return 0;
+  let sum = 0;
+  for (const it of indices) {
+    if (it.name === '上证指数' || it.name === '深证成指' || it.name === '北证50') {
+      sum += it.turnover || 0;
+    }
+  }
+  return sum;
+}
 export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData {
   if (live.fetchedAt === 0) return data;
   const next: ReportData = JSON.parse(JSON.stringify(data));
@@ -421,7 +436,10 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
     if (live.today && (live.today.up > 0 || live.today.down > 0) && live.today.volume > 0) {
       // v2.0.8hg:前一交易日收盘成交额从 history 取(不能用 marketTurnover,可能被当日快照污染)
       const _prevTurnover = _prevSettleTurnover(next.history);
-      next.marketOverview.marketTurnover = live.today.volume;
+      // v2.0.8hh:今日成交额改用指数口径(上证+深证成指+北证50,来自 live.indices),与历史/脚本/同花顺对齐
+      const _todayIdxVol = _indexTurnover(live.indices);
+      const _todayVol = _todayIdxVol > 0 ? _todayIdxVol : live.today.volume;
+      next.marketOverview.marketTurnover = _todayVol;
       // v2.0.8hh:统一盘中+盘后计算「较上一日增量」= 今日 - 昨收 × min(进度,1)
       // — 盘中: 今日实时 - 昨收×进度(昨日同期估算)
       // — 盘后(进度≥1):今日收盘 - 昨收 —— 仅当 baseData 仍是昨日(cron 未更新当日 data.json)时覆盖,
@@ -430,7 +448,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       const _liveProgress = _tradingProgressCN();
       const _baseIsToday = String(data.meta?.tradeDate) === getCNTodayYMD();
       if (!_baseIsToday && _prevTurnover > 0) {
-        const _diff = live.today.volume - _prevTurnover * Math.min(_liveProgress, 1);
+        const _diff = _todayVol - _prevTurnover * Math.min(_liveProgress, 1);
         next.marketOverview.turnoverDiff = Math.round(_diff * 100) / 100;
       }
       next.marketOverview.upCount = live.today.up;
@@ -464,12 +482,15 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         // v2.0.8gj:盘中动态算 turnoverDiff(与 live.today 分支同口径)
         // v2.0.8hg:与 live.today 分支同口径(前一交易日收盘从 history 取)
         const _prevTurnover2 = _prevSettleTurnover(next.history);
-        next.marketOverview.marketTurnover = live.market!.totalTurnover;
+        // v2.0.8hh:今日成交额改用指数口径,与 live.today 分支同口径
+        const _todayIdxVol2 = _indexTurnover(live.indices);
+        const _todayVol2 = _todayIdxVol2 > 0 ? _todayIdxVol2 : live.market!.totalTurnover;
+        next.marketOverview.marketTurnover = _todayVol2;
         // v2.0.8hh:盘中+盘后统一计算(同 today 分支,进度取 min(进度,1))
         const _liveProgress2 = _tradingProgressCN();
         const _baseIsToday2 = String(data.meta?.tradeDate) === getCNTodayYMD();
         if (!_baseIsToday2 && _prevTurnover2 > 0) {
-          next.marketOverview.turnoverDiff = Math.round((live.market!.totalTurnover - _prevTurnover2 * Math.min(_liveProgress2, 1)) * 100) / 100;
+          next.marketOverview.turnoverDiff = Math.round((_todayVol2 - _prevTurnover2 * Math.min(_liveProgress2, 1)) * 100) / 100;
         }
         next.marketOverview.upCount = live.market!.upCount;
         next.marketOverview.downCount = live.market!.downCount;
