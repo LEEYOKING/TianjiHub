@@ -18,6 +18,11 @@ import {
 import { getCNTodayYMD, type ReportData } from '../data/loader';
 import { calcLiveEmotionTemperature } from '../utils/marketTemperature';
 
+// v2.0.8hh:市场情绪温度节流缓存 — 用户要求盘中 5-10 分钟刷新一次(而非每 10s 跟随 fastTick 跳变)
+// 模块级缓存:温度每 EMOTION_REFRESH_MS 才真正重算一次,期间复用上次结果
+let _emoThrottle: { ts: number; value: any } | null = null;
+const EMOTION_REFRESH_MS = 5 * 60 * 1000;  // 5 分钟
+
 // 判断是否在 A 股交易时段(供组件 UI 用)
 // v2.0.7dh:用东八区时间(跟 isPreMarket 一致)— 之前用 new Date() 本地时间
 //  → 海外 user 浏览器(UTC)11:30 北京 = 03:30 UTC,isLiveMarket 返 false
@@ -626,19 +631,31 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       };
     }
   }
-  // 7. v2.0.8:市场情绪温度盘中实时重算 — 用实时 3 维度(涨跌停对比/上涨占比/大涨大跌)
+  // 7. v2.0.8:市场情绪温度盘中实时重算 — 用实时 5 维度加权(指数方向/市场宽度/涨跌停对比/赚钱效应/量能)
+  // v2.0.8hh:加 5 分钟节流,避免每 10s 跟着 fastTick 跳变(用户要求 5-10 分钟刷新)
   // 盘后温度仍由脚本用原 5 维度超短框架算,盘中用本函数覆盖 temperature/status。
   if (next.marketOverview.marketTemperature) {
-    const bt = next.marketOverview.marketTemperature;
-    next.marketOverview.marketTemperature = calcLiveEmotionTemperature({
-      upCount: next.marketOverview.upCount,
-      downCount: next.marketOverview.downCount,
-      limitUp: next.marketOverview.limitUpCount,
-      limitDown: next.marketOverview.limitDownCount,
-      distribution: next.marketOverview.changeDistribution,
-      baseMaxBoards: bt.details.max_boards,
-      baseBrokenCount: bt.details.broken_count,
-    });
+    const _now = Date.now();
+    if (!_emoThrottle || _now - _emoThrottle.ts >= EMOTION_REFRESH_MS) {
+      const bt = next.marketOverview.marketTemperature;
+      _emoThrottle = {
+        ts: _now,
+        value: calcLiveEmotionTemperature({
+          indices: next.marketOverview.indices,
+          upCount: next.marketOverview.upCount,
+          downCount: next.marketOverview.downCount,
+          limitUp: next.marketOverview.limitUpCount,
+          limitDown: next.marketOverview.limitDownCount,
+          distribution: next.marketOverview.changeDistribution,
+          marketTurnover: next.marketOverview.marketTurnover,
+          prevTurnover: _prevSettleTurnover(next.history),
+          progress: _tradingProgressCN(),
+          baseMaxBoards: bt.details.max_boards,
+          baseBrokenCount: bt.details.broken_count,
+        }),
+      };
+    }
+    next.marketOverview.marketTemperature = _emoThrottle.value;
   }
   return next;
 }
