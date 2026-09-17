@@ -363,11 +363,14 @@ function _tradingProgressCN(): number {
 //   较上一日增量 = 今日实时×(1-进度):早上进度 0.03 → 显示 ≈ 0.97×成交额(用户反馈"早上+100变+6000亿")
 function _prevSettleTurnover(hist: { date: string; volume: number }[] | undefined): number {
   if (!hist || hist.length === 0) return 0;
-  const todayStr = getCNTodayYMD();
+  // v2.0.8hh:归一化日期比较 — history.date 是 "YYYY-MM-DD"(带横杠),getCNTodayYMD() 是 "YYYYMMDD"(无横杠),
+  // 直接比较永远不等 → 永远返回最后一条(盘中快照末点=今日实时值),导致增量 = 今日×(1-进度) 虚高
+  const todayCompact = getCNTodayYMD();
   for (let i = hist.length - 1; i >= 0; i--) {
     const h = hist[i];
     if (!h || !h.date) continue;
-    if (h.date !== todayStr) {
+    const hCompact = String(h.date).replace(/-/g, '');
+    if (hCompact !== todayCompact) {
       return Number(h.volume) || 0;  // 最后一个非今日 = 上一交易日收盘
     }
   }
