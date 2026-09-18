@@ -32,9 +32,18 @@ PYBIN="$(command -v python3.14 || command -v python3.12 || echo python3)"
 echo "  使用解释器: $PYBIN ($($PYBIN --version 2>&1))"
 NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_real_data.py
 
+# 2.5 手术台/预览数据(fetch_surgery_data 生成 surgery.json + prescan.json — 8/21 后无人调度,一直不更新)
+# v2.0.8hh:接入刷新链路,让「涨跌停封成比动态评分」每日更新;失败不阻断主流程
+echo "[2.5/4] 拉取手术台数据(封成比评分/亏钱传导/北向)..."
+if NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_surgery_data.py; then
+  echo "  ✓ surgery.json / prescan.json 已更新"
+else
+  echo "  ! 手术台数据拉取失败(akshare 风控/限流),本次跳过,不影响主数据"
+fi
+
 # 3. 提交
 echo "[3/4] 提交数据..."
-git add public/data.json public/sectorKlines.json scripts/fetch_real_data.py
+git add public/data.json public/sectorKlines.json public/surgery.json public/prescan.json scripts/fetch_real_data.py
 if git diff --cached --quiet; then
   echo "  ! 无数据变化，跳过提交"
 else

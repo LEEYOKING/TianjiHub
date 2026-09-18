@@ -74,8 +74,95 @@ print("=" * 50)
 
 # ========== 1. 全市场快照(用于 BigLoser 池) ==========
 print("\n[1/5] 全市场快照...")
-spot_df = ak.stock_zh_a_spot()
-print(f"  {len(spot_df)} 只")
+def _tencent_market_snapshot(sample_n=5500):
+    """腾讯 qt.gtimg.cn 全市场快照(主脚本同源,比 sina stock_zh_a_spot 稳)— 返回 list[dict]
+    v2.0.8hh:sina 盘后常返 HTML/风控 → 用真实代码列表拉腾讯,避开硬编码区间的无效代码(会超时)"""
+    import urllib.request as _ur
+    import ssl as _ssl_ctx
+    import json as _json
+    import time as _t2
+    # 1) 先拿真实 A 股代码(新浪 hs_a 节点;失败用上一份 data.json stockCodes)
+    codes = []
+    try:
+        for _pg in range(1, 60):
+            url = ("https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/"
+                   "Market_Center.getHQNodeData?page=%d&num=100&sort=symbol&asc=1&node=hs_a&symbol=&_s_r_a=page"
+                   % _pg)
+            data = None
+            for _att in range(3):
+                try:
+                    req = _ur.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://finance.sina.com.cn/'})
+                    with _ur.urlopen(req, timeout=10, context=_ssl_ctx._create_unverified_context()) as r:
+                        data = _json.loads(r.read().decode('utf-8', errors='ignore'))
+                    break
+                except Exception:
+                    _t2.sleep(1.5 * (_att + 1))
+            if not isinstance(data, list) or len(data) == 0:
+                break
+            for it in data:
+                sym = it.get('symbol') or it.get('code')
+                if sym:
+                    codes.append(sym)
+            if len(data) < 100:
+                break
+            _t2.sleep(0.1)
+    except Exception:
+        codes = []
+    if len(codes) < 1000:
+        # 兜底:读上一份 data.json stockCodes;仍无则硬编码
+        try:
+            with open(os.path.join(OUT_DIR, 'data.json'), 'r', encoding='utf-8') as _f:
+                codes = list((json.load(_f) or {}).get('meta', {}).get('stockCodes', []))
+        except Exception:
+            codes = []
+    if len(codes) < 1000:
+        codes = []
+        for i in range(600000, 606000): codes.append(f'sh{i:06d}')
+        for i in range(688000, 690000): codes.append(f'sh{i:06d}')
+        for i in range(1, 4000): codes.append(f'sz{i:06d}')
+        for i in range(300000, 302000): codes.append(f'sz{i:06d}')
+    # 2) 分页拉腾讯(100/批,短 URL 避免超时)
+    out = []
+    for start in range(0, len(codes), 100):
+        batch = codes[start:start + 100]
+        url = "https://qt.gtimg.cn/q=" + ",".join(batch)
+        try:
+            req = _ur.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'})
+            with _ur.urlopen(req, timeout=10, context=_ssl_ctx._create_unverified_context()) as r:
+                txt = r.read().decode('gbk', errors='ignore')
+            for line in txt.split(';'):
+                if '=' not in line: continue
+                raw = line.split('=', 1)[1].strip().strip('";')
+                f = raw.split('~')
+                if len(f) < 50: continue
+                nm = f[1]
+                if '退' in nm: continue
+                code_raw = f[2]
+                close = safe_float(f[3]); prev = safe_float(f[4])
+                pct = safe_float(f[32])
+                turnover_rate = safe_float(f[38]) if len(f) > 38 else 0
+                out.append({'代码': code_raw, '名称': nm, '现价': close, '昨收': prev,
+                            '涨跌幅': pct, '换手率': turnover_rate, '行业': '-'})
+        except Exception:
+            continue
+        if len(out) >= sample_n:
+            break
+    return out
+
+try:
+    spot_df = ak.stock_zh_a_spot()
+    print(f"  sina 全市场 {len(spot_df)} 只")
+except Exception as _e_spot:
+    print(f"  sina stock_zh_a_spot 失败({_e_spot}),改用腾讯 qt.gtimg.cn")
+    _tx_spot = _tencent_market_snapshot()
+    if _tx_spot:
+        import pandas as _pd_s
+        spot_df = _pd_s.DataFrame(_tx_spot)
+        print(f"  腾讯全市场 {len(spot_df)} 只")
+    else:
+        print("  ⚠ 腾讯全市场也失败,surgery 退出(封成比需全市场快照)")
+        import sys as _sys
+        _sys.exit(1)
 
 # ========== 2. 涨停 + 封成比评分 ==========
 print("\n[2/5] 涨停板 + 封成比评分...")
