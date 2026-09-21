@@ -1152,54 +1152,99 @@ _SW_LEVEL2_SET = set(SW_LEVEL2)
 
 # 东财 行业板块(m:90 t:2 = 申万一/二/三级)直连拉取,过滤出 128 个二级
 print("  行业板块(东财 申万二级 128 个)...")
+# v2.0.8ii:东财 push2 clist 对海外/云 IP 间歇性全封锁(实测 9/21 晚 本机+GitHub Actions 全域名
+# Remote end closed)—— 单靠东财会整页 sectors 变 0。策略:东财多域名+双轮重试 → 同花顺 90 兜底 → 固定名
+_EM_DOMAINS = [
+    'https://push2.eastmoney.com', 'https://82.push2.eastmoney.com',
+    'https://47.push2.eastmoney.com', 'https://90.push2.eastmoney.com',
+    'https://push2delay.eastmoney.com', 'https://1.push2.eastmoney.com',
+]
 def _fetch_em_level2():
     """直连东财 push2 拉申万二级 128 个。双向拉取(涨端降序+跌端升序)拉全 m:90+t:2(496 个)再过滤到 128 个二级。
     之前只降序翻页,东财对跌幅榜页(pn≈4~6)限流,跌幅行业拿不到 →「跌幅前10」为空。失败返空 list。"""
     import ssl as _ssl_l2
     out = {}
-    for po in [1, 0]:  # 1=降序(涨幅), 0=升序(跌幅)
-        for domain in ['https://push2.eastmoney.com', 'https://82.push2.eastmoney.com', 'https://push2delay.eastmoney.com']:
-            _rows = []
-            try:
-                for pn in range(1, 4):
-                    url = (f'{domain}/api/qt/clist/get?pn={pn}&pz=100&po={po}&np=1&fltt=2&invt=2'
-                           f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f62,f104,f105,f128,f136,f140&fid=f3')
-                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
-                    data = _json.loads(urllib.request.urlopen(req, timeout=10, context=_ssl_l2._create_unverified_context()).read().decode('utf-8', 'ignore'))
-                    diff = (data.get('data') or {}).get('diff') or []
-                    if not diff:
-                        break
-                    _rows.extend(diff)
-                    if len(diff) < 100:
-                        break
-                    time.sleep(0.15)
-            except Exception:
-                continue
-            if not _rows:
-                continue
-            for s in _rows:
-                nm = safe_str(s.get('f14'))
-                if nm not in _SW_LEVEL2_SET:
+    # 双轮:东财封锁是间歇性的(秒~分钟级),第一轮全失败时隔 1.5s 再来一轮
+    for _round in range(2):
+        for po in [1, 0]:  # 1=降序(涨幅), 0=升序(跌幅)
+            for domain in _EM_DOMAINS:
+                _rows = []
+                try:
+                    for pn in range(1, 4):
+                        url = (f'{domain}/api/qt/clist/get?pn={pn}&pz=100&po={po}&np=1&fltt=2&invt=2'
+                               f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f62,f104,f105,f128,f136,f140&fid=f3')
+                        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
+                        data = _json.loads(urllib.request.urlopen(req, timeout=10, context=_ssl_l2._create_unverified_context()).read().decode('utf-8', 'ignore'))
+                        diff = (data.get('data') or {}).get('diff') or []
+                        if not diff:
+                            break
+                        _rows.extend(diff)
+                        if len(diff) < 100:
+                            break
+                        time.sleep(0.15)
+                except Exception:
                     continue
-                out[nm] = {
-                    'name': nm,
-                    'changePercent': round(safe_float(s.get('f3', 0)), 4),
-                    'upCount': safe_int(s.get('f104', 0)),
-                    'downCount': safe_int(s.get('f105', 0)),
-                    'totalTurnover': round(safe_float(s.get('f6', 0)) / 1e8, 2),
-                    'netInflow': round(safe_float(s.get('f62', 0)) / 1e8, 2),
-                    'leaderName': safe_str(s.get('f128'), '-'),
-                    'leaderChangePercent': round(safe_float(s.get('f136', 0)), 2),
-                    'leaderCode': safe_str(s.get('f140'), ''),
-                }
+                if not _rows:
+                    continue
+                for s in _rows:
+                    nm = safe_str(s.get('f14'))
+                    if nm not in _SW_LEVEL2_SET:
+                        continue
+                    out[nm] = {
+                        'name': nm,
+                        'changePercent': round(safe_float(s.get('f3', 0)), 4),
+                        'upCount': safe_int(s.get('f104', 0)),
+                        'downCount': safe_int(s.get('f105', 0)),
+                        'totalTurnover': round(safe_float(s.get('f6', 0)) / 1e8, 2),
+                        'netInflow': round(safe_float(s.get('f62', 0)) / 1e8, 2),
+                        'leaderName': safe_str(s.get('f128'), '-'),
+                        'leaderChangePercent': round(safe_float(s.get('f136', 0)), 2),
+                        'leaderCode': safe_str(s.get('f140'), ''),
+                    }
+                if len(out) >= 120:
+                    break
             if len(out) >= 120:
                 break
+        if len(out) >= 20:
+            break
+        time.sleep(1.5)
     return list(out.values())
 
+# v2.0.8ii:同花顺 90 行业兜底 — 东财 push2 全被封时用(akshare 走 q.10jqka 域名,与东财不同)
+# 名称是 ths 风格(白酒/证券/银行),与 SW_LEVEL2 精确重合 ~49 个;前端热力图按关键词归类、跌幅榜按
+# changePercent 过滤均可用。仅作为东财不可用时的降级,正常时仍走东财 128 个申万二级。
+def _fetch_ths_level2():
+    """akshare 同花顺 90 行业(涨跌幅/成交额/净流入/领涨股),失败返空 list。"""
+    try:
+        df = ak.stock_board_industry_summary_ths()
+    except Exception as e:
+        print(f"  同花顺行业兜底失败: {e}")
+        return []
+    out = []
+    for _, r in df.iterrows():
+        nm = safe_str(r.get('板块'))
+        if not nm or nm in ('-', '--'):
+            continue
+        out.append({
+            'name': nm,
+            'changePercent': round(safe_float(r.get('涨跌幅')), 4),
+            'upCount': safe_int(r.get('上涨家数')),
+            'downCount': safe_int(r.get('下跌家数')),
+            'totalTurnover': round(safe_float(r.get('总成交额')), 2),      # ths 已是亿单位
+            'netInflow': round(safe_float(r.get('净流入')), 2),            # ths 已是亿单位
+            'leaderName': safe_str(r.get('领涨股'), '-'),
+            'leaderChangePercent': round(safe_float(r.get('领涨股-涨跌幅')), 2),
+            'leaderCode': '',
+        })
+    return out
+
 _em_level2_rows = _fetch_em_level2()
-# 东财直连失败时用固定名兜底(值 0,前端 em 实时会覆盖),避免 sectors 空导致板块页空白
 if len(_em_level2_rows) < 20:
-    print(f"  东财申万二级直连失败(仅 {len(_em_level2_rows)} 个),用 {len(SW_LEVEL2)} 个固定名兜底(值 0)")
+    print(f"  东财申万二级直连失败(仅 {len(_em_level2_rows)} 个),降级同花顺 90 行业(真值)...")
+    _em_level2_rows = _fetch_ths_level2()
+# 双数据源都失败时用固定名兜底(值 0,前端 em 实时会覆盖),避免 sectors 空导致板块页空白
+if len(_em_level2_rows) < 20:
+    print(f"  同花顺兜底也失败(仅 {len(_em_level2_rows)} 个),用 {len(SW_LEVEL2)} 个固定名兜底(值 0)")
     _em_level2_rows = [{'name': n, 'changePercent': 0, 'upCount': 0, 'downCount': 0,
                         'totalTurnover': 0, 'netInflow': 0, 'leaderName': '-',
                         'leaderChangePercent': 0, 'leaderCode': ''} for n in SW_LEVEL2]
