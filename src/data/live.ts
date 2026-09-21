@@ -70,13 +70,27 @@ export const INDEX_NAMES = ['上证指数', '深证成指', '创业板指', '北
 // v2.0.8:申万一级行业 31 个——行业板块统一用这一级,与脚本 data.json 的 sectors、热力图 classifySW28 对齐。
 // 旧版前端用 em m:90+t:2(494 个申万二/三级)按"最长子串"模糊匹配同花顺 90 细分类,会把
 // 医疗服务→其他医疗服务、电机→电机Ⅲ,把跌幅前10负值覆盖成正的三级子板块值,导致行业板块涨跌错乱。
-export const SW_LEVEL1 = [
-  '煤炭', '石油石化', '钢铁', '有色金属', '电子', '汽车', '家用电器', '食品饮料',
-  '纺织服饰', '轻工制造', '医药生物', '公用事业', '交通运输', '房地产', '商贸零售',
-  '社会服务', '综合', '建筑材料', '建筑装饰', '电力设备', '国防军工', '计算机', '传媒',
-  '通信', '银行', '非银金融', '机械设备', '环保', '美容护理', '农林牧渔', '基础化工',
+// v2.0.8hh:申万二级行业(~128 个)— 之前用申万一级 31 个,粒度太粗,细分行业(贵金属/电池/风电设备等)
+// 的下跌被合并进一级抹平,导致「行业板块跌幅前10」在一级普涨时为空。
+export const SW_LEVEL2 = [
+  'IT服务Ⅱ', '一般零售', '专业工程', '专业服务', '专业连锁Ⅱ', '专用设备', '个护用品', '中药Ⅱ',
+  '乘用车', '互联网电商', '休闲食品', '体育Ⅱ', '保险Ⅱ', '元件', '光伏设备', '光学光电子',
+  '其他家电Ⅱ', '其他电子Ⅱ', '其他电源设备Ⅱ', '养殖业', '军工电子Ⅱ', '农业综合Ⅱ', '农产品加工', '农化制品',
+  '冶钢原料', '出版', '动物保健Ⅱ', '包装印刷', '化妆品', '化学制品', '化学制药', '化学原料',
+  '化学纤维', '医疗器械', '医疗服务', '医疗美容', '医药商业', '半导体', '厨卫电器', '商用车',
+  '地面兵装Ⅱ', '基础建设', '塑料', '多元金融', '家居用品', '家电零部件Ⅱ', '小家电', '小金属',
+  '工业金属', '工程咨询服务Ⅱ', '工程机械', '广告营销', '影视院线', '房地产开发', '房地产服务', '房屋建设Ⅱ',
+  '摩托车及其他', '教育', '数字媒体', '文娱用品', '旅游及景区', '旅游零售Ⅱ', '普钢', '服装家纺',
+  '林业Ⅱ', '橡胶', '水泥', '汽车服务', '汽车零部件', '油服工程', '油气开采Ⅱ', '消费电子',
+  '渔业', '游戏Ⅱ', '炼化及贸易', '焦炭Ⅱ', '煤炭开采', '照明设备Ⅱ', '燃气Ⅱ', '物流',
+  '特钢Ⅱ', '环保设备Ⅱ', '环境治理', '玻璃玻纤', '生物制品', '电力', '电子化学品Ⅱ', '电机Ⅱ',
+  '电池', '电网设备', '电视广播Ⅱ', '白色家电', '白酒Ⅱ', '种植业', '纺织制造', '综合Ⅱ',
+  '能源金属', '自动化设备', '航天装备Ⅱ', '航海装备Ⅱ', '航空机场', '航空装备Ⅱ', '航运港口', '装修建材',
+  '装修装饰Ⅱ', '计算机设备', '证券Ⅱ', '调味发酵品Ⅱ', '贵金属', '贸易Ⅱ', '轨交设备Ⅱ', '软件开发',
+  '通信服务', '通信设备', '通用设备', '造纸', '酒店餐饮', '金属新材料', '铁路公路', '银行Ⅱ',
+  '非白酒', '非金属材料Ⅱ', '风电设备', '食品加工', '饮料乳品', '饰品', '饲料', '黑色家电',
 ];
-const SW_LEVEL1_SET = new Set(SW_LEVEL1);
+const SW_LEVEL1_SET = new Set(SW_LEVEL2);
 
 const TENCENT_BASE = 'https://qt.gtimg.cn/q=';
 const SINA_API = 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData';
@@ -592,10 +606,11 @@ export interface EMIndustryItem {
 /** 拉取 em 申万板块实时数据(行业/概念/地域)
  * fs: m:90+t:2(申万行业) / m:90+t:3(申万概念) / m:90+t:1(申万地域)
  * 返回: Map<name, EMIndustryItem> */
-async function fetchEMSectors(fs: string, pn = 1): Promise<Map<string, EMIndustryItem>> {
+async function fetchEMSectors(fs: string, pn = 1, po = 1): Promise<Map<string, EMIndustryItem>> {
   // v2.0.8:pz 改 100(东财单页上限,原来 pz=200 实际也被截断),支持 pn 翻页
   // v2.0.8hg:fields 加 f62(主力净流入额,元) — 之前只拉 f3/f12/f14/f128,netInflow 无法实时覆盖
-  const params = `pn=${pn}&pz=100&po=1&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f62,f128&fid=f3`;
+  // v2.0.8hh:po 可传 0(升序/跌幅在前),用于单独拉跌幅榜(东财对后几页限流,降序翻页拿不到下跌行业)
+  const params = `pn=${pn}&pz=100&po=${po}&np=1&fltt=2&invt=2&fs=${fs}&fields=f3,f12,f14,f62,f128&fid=f3`;
   const result = new Map<string, EMIndustryItem>();
   for (const domain of ['https://push2.eastmoney.com', 'https://push2delay.eastmoney.com', 'https://82.push2.eastmoney.com']) {
     try {
@@ -624,12 +639,22 @@ async function fetchEMSectors(fs: string, pn = 1): Promise<Map<string, EMIndustr
   return result;
 }
 
-/** em 申万一级行业(31 个) — v2.0.8:分页拉全 494 个再过滤到 31 个一级,确保涨幅/跌幅两端的一级行业都能取到
- * (旧版单页 pz=200 被东财截成 100 且按涨幅降序,只能取到涨幅前 100 个,跌幅行业永远取不到 → 跌幅前10 不实时) */
+/** em 申万一级行业(31 个) — 双向拉取:涨端(降序)+跌端(升序)各拉前几页
+ * v2.0.8hh:东财按 fid=f3 排序,降序翻页到跌幅榜(pn≈4~6)会频繁限流(Remote end closed),
+ * 导致下跌行业永远拿不到 → 改为升序单独拉跌幅榜,跌幅最深的一级行业在第一页就能取到 */
 export const fetchEMIndustries = async (): Promise<Map<string, EMIndustryItem>> => {
   const result = new Map<string, EMIndustryItem>();
-  for (let pn = 1; pn <= 6; pn++) {
-    const page = await fetchEMSectors('m:90+t:2+f:!50', pn);
+  // 涨端:降序前 300(涨幅榜)
+  for (let pn = 1; pn <= 3; pn++) {
+    const page = await fetchEMSectors('m:90+t:2+f:!50', pn, 1);
+    if (page.size === 0) break;
+    for (const [name, item] of page) {
+      if (SW_LEVEL1_SET.has(name)) result.set(name, item);
+    }
+  }
+  // 跌端:升序前 300(跌幅榜)— 修复「跌幅前10」为空
+  for (let pn = 1; pn <= 3; pn++) {
+    const page = await fetchEMSectors('m:90+t:2+f:!50', pn, 0);
     if (page.size === 0) break;
     for (const [name, item] of page) {
       if (SW_LEVEL1_SET.has(name)) result.set(name, item);

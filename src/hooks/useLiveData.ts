@@ -92,7 +92,7 @@ export interface LiveSnapshot {
   /** 49 个 sina 行业实时数据(60s 拉) */
   sinaIndustries: Map<string, { changePercent: number; totalTurnover: number; leaderName: string; leaderChangePercent: number; stockCount: number } | null>;
   // v2.0.7ax:em 申万 90 行业(跟 ths 90 细分类 一一对应,60s 实时)
-  emIndustries?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number }>;
+  emIndustries?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number; netInflow?: number }>;
   // v2.0.7gg:em 申万概念 + 地域(概念/地域板块盘中实时覆盖)
   emConcepts?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number }>;
   emRegions?: Map<string, { name: string; changePercent: number; leaderName: string; totalTurnover: number; leaderChangePercent: number; stockCount: number }>;
@@ -539,32 +539,21 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
   const isCrossDay = String(data.meta?.tradeDate) !== getCNTodayYMD();
   if (live.emIndustries && live.emIndustries.size > 0) {
     for (const s of next.sectors) {
-      const thsName = s.name || '';
-      if (!thsName) continue;
-      let bestMatch: { name: string; changePercent: number; leaderName: string } | null = null;
-      let bestLen = 0;
-      for (const [emName, emItem] of live.emIndustries) {
-        if (!emName) continue;
-        // 完全相等或包含
-        if (thsName === emName || thsName.includes(emName) || emName.includes(thsName)) {
-          // 取最长的匹配(避免"医疗服务"误匹配到"医疗器械"等)
-          if (emName.length > bestLen) {
-            bestLen = emName.length;
-            bestMatch = emItem;
-          }
-        }
-      }
-      if (bestMatch) {
+      const sName = s.name || '';
+      if (!sName) continue;
+      // v2.0.8hh:行业已统一为申万二级(名字完全一致),精确匹配即可;之前用 includes 子串模糊匹配,
+      // 二级名之间(半导体/半导体设备、电池/锂电等)会误匹配到错误板块
+      const emItem = live.emIndustries.get(sName);
+      if (emItem) {
         // v2.0.7du:em 申万 跟 ths 14:00 数字差 > 3% 时跳过覆盖(走 ths 14:00)
         // — em 申万是 em 实时,ths 14:00 是 fetch-data 14:00 cron 写
-        // — em 申万 +0.17% vs ths +9.38% 差异大 → em 申万 stale(限流返 8/17)— 跳过
         // — 数字差 ≤ 3% 时正常覆盖(em 实时比 ths 14:00 更近)
-        if (isCrossDay || Math.abs(bestMatch.changePercent - s.changePercent) <= 3) {
-          s.changePercent = bestMatch.changePercent;
-          if (bestMatch.leaderName && bestMatch.leaderName !== '-') s.leaderName = bestMatch.leaderName;
+        if (isCrossDay || Math.abs(emItem.changePercent - s.changePercent) <= 3) {
+          s.changePercent = emItem.changePercent;
+          if (emItem.leaderName && emItem.leaderName !== '-') s.leaderName = emItem.leaderName;
           // v2.0.8hg:同步覆盖真实主力净流入(东财 f62)— 之前只覆盖涨跌幅,净流入停留 baseData 晚间估算值,
           // 导致「行业主力净流入 TOP15」盘中只剩 1 条(估算按前一日收盘涨跌幅,几乎全负)
-          const _emInflow = (bestMatch as any).netInflow;
+          const _emInflow = emItem.netInflow;
           if (typeof _emInflow === 'number') {
             s.netInflow = Math.round(_emInflow * 100) / 100;
           }

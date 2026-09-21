@@ -1128,124 +1128,95 @@ print("\n[7/7] 板块 + 龙虎榜 + 异动...")
 # 旧:ak.stock_board_industry_summary_ths() 90 个,名字跟前端 em m:90+t:2(494 个申万二/三级)对不上,
 #    前端模糊匹配按"最长子串"选到三级子板块(如 医疗服务→其他医疗服务、电机→电机Ⅲ),把跌幅前10的
 #    负涨幅覆盖成正的三级子板块值 → 行业板块涨跌幅完全错乱。
-SW_LEVEL1 = ['煤炭', '石油石化', '钢铁', '有色金属', '电子', '汽车', '家用电器', '食品饮料',
-             '纺织服饰', '轻工制造', '医药生物', '公用事业', '交通运输', '房地产', '商贸零售',
-             '社会服务', '综合', '建筑材料', '建筑装饰', '电力设备', '国防军工', '计算机', '传媒',
-             '通信', '银行', '非银金融', '机械设备', '环保', '美容护理', '农林牧渔', '基础化工']
-_SW_LEVEL1_SET = set(SW_LEVEL1)
+# v2.0.8hh:申万二级行业(~128 个)— 之前用申万一级 31 个,粒度太粗,细分行业(贵金属/电池/风电设备等)
+# 的下跌被合并进一级抹平,导致「行业板块跌幅前10」在一级普涨时为空。
+SW_LEVEL2 = [
+    'IT服务Ⅱ', '一般零售', '专业工程', '专业服务', '专业连锁Ⅱ', '专用设备', '个护用品', '中药Ⅱ',
+    '乘用车', '互联网电商', '休闲食品', '体育Ⅱ', '保险Ⅱ', '元件', '光伏设备', '光学光电子',
+    '其他家电Ⅱ', '其他电子Ⅱ', '其他电源设备Ⅱ', '养殖业', '军工电子Ⅱ', '农业综合Ⅱ', '农产品加工', '农化制品',
+    '冶钢原料', '出版', '动物保健Ⅱ', '包装印刷', '化妆品', '化学制品', '化学制药', '化学原料',
+    '化学纤维', '医疗器械', '医疗服务', '医疗美容', '医药商业', '半导体', '厨卫电器', '商用车',
+    '地面兵装Ⅱ', '基础建设', '塑料', '多元金融', '家居用品', '家电零部件Ⅱ', '小家电', '小金属',
+    '工业金属', '工程咨询服务Ⅱ', '工程机械', '广告营销', '影视院线', '房地产开发', '房地产服务', '房屋建设Ⅱ',
+    '摩托车及其他', '教育', '数字媒体', '文娱用品', '旅游及景区', '旅游零售Ⅱ', '普钢', '服装家纺',
+    '林业Ⅱ', '橡胶', '水泥', '汽车服务', '汽车零部件', '油服工程', '油气开采Ⅱ', '消费电子',
+    '渔业', '游戏Ⅱ', '炼化及贸易', '焦炭Ⅱ', '煤炭开采', '照明设备Ⅱ', '燃气Ⅱ', '物流',
+    '特钢Ⅱ', '环保设备Ⅱ', '环境治理', '玻璃玻纤', '生物制品', '电力', '电子化学品Ⅱ', '电机Ⅱ',
+    '电池', '电网设备', '电视广播Ⅱ', '白色家电', '白酒Ⅱ', '种植业', '纺织制造', '综合Ⅱ',
+    '能源金属', '自动化设备', '航天装备Ⅱ', '航海装备Ⅱ', '航空机场', '航空装备Ⅱ', '航运港口', '装修建材',
+    '装修装饰Ⅱ', '计算机设备', '证券Ⅱ', '调味发酵品Ⅱ', '贵金属', '贸易Ⅱ', '轨交设备Ⅱ', '软件开发',
+    '通信服务', '通信设备', '通用设备', '造纸', '酒店餐饮', '金属新材料', '铁路公路', '银行Ⅱ',
+    '非白酒', '非金属材料Ⅱ', '风电设备', '食品加工', '饮料乳品', '饰品', '饲料', '黑色家电',
+]
+_SW_LEVEL2_SET = set(SW_LEVEL2)
 
-# 申万一级 → 关键词(把涨停股"所属行业"(东财二级名)归到一级,算 limitUpCount)
-_SW_LEVEL1_KEYWORDS = {
-    '煤炭': ['煤炭', '焦炭', '焦煤', '动力煤'],
-    '石油石化': ['石油', '石化', '油气', '油服', '炼化', '炼油'],
-    '钢铁': ['钢铁', '特钢', '普钢', '冶钢', '板材', '长材'],
-    '有色金属': ['有色', '金属', '黄金', '铜', '铝', '锌', '铅', '锂', '钴', '镍', '稀土', '钨', '钼', '贵金属', '小金属', '工业金属', '能源金属'],
-    '电子': ['电子', '半导体', '元件', '光学', '消费电子', '集成电路', '芯片', '印制电路', '面板', 'LED', '分立器件'],
-    '汽车': ['汽车', '乘用车', '商用车', '摩托车'],
-    '家用电器': ['家电', '家用电器', '厨卫', '白色家电', '黑色家电', '小家电'],
-    '食品饮料': ['白酒', '啤酒', '饮料', '食品', '乳品', '调味', '零食', '烘焙', '酒'],
-    '纺织服饰': ['纺织', '服装', '服饰', '家纺', '鞋帽'],
-    '轻工制造': ['造纸', '包装', '印刷', '家居', '文具', '珠宝', '饰品', '文娱'],
-    '医药生物': ['医药', '中药', '化学制药', '生物', '医疗器械', '医疗服务', '疫苗', '原料药', '诊断', '生物制品'],
-    '公用事业': ['电力', '燃气', '水务', '供热', '发电'],
-    '交通运输': ['航空', '机场', '港口', '航运', '物流', '铁路', '公路', '公交', '快递'],
-    '房地产': ['房地产', '物业', '住宅', '商业地产', '产业地产'],
-    '商贸零售': ['零售', '贸易', '百货', '超市', '电商', '连锁'],
-    '社会服务': ['旅游', '酒店', '餐饮', '教育', '体育', '会展'],
-    '综合': ['综合'],
-    '建筑材料': ['建材', '水泥', '玻璃', '玻纤', '防水', '瓷砖'],
-    '建筑装饰': ['建筑', '装修', '装饰', '基建', '工程'],
-    '电力设备': ['电力设备', '电池', '光伏', '风电', '电网', '电机', '电气', '储能', '锂电', '输变电'],
-    '国防军工': ['军工', '国防', '航空装备', '航天', '兵装', '舰船', '航海'],
-    '计算机': ['计算机', '软件', 'IT服务', '互联网', '人工智能', '云计算', '大数据'],
-    '传媒': ['传媒', '游戏', '影视', '互联网', '出版', '广告', '院线', '视频'],
-    '通信': ['通信', '电信', '天线', '光模块', '光通信', '线缆'],
-    '银行': ['银行'],
-    '非银金融': ['保险', '证券', '多元金融', '信托', '期货', '金控'],
-    '机械设备': ['机械', '设备', '自动化', '专用', '通用', '工程机械', '机床', '机器人', '仪器'],
-    '环保': ['环保', '固废', '大气', '水治理', '环境'],
-    '美容护理': ['美容', '护理', '化妆品', '医美'],
-    '农林牧渔': ['农林', '种植', '林业', '渔业', '养殖', '农产品', '饲料', '种子', '生猪', '水产'],
-    '基础化工': ['化工', '化学', '农化', '橡胶', '塑料', '化纤', '新材料', '钛白粉', '纯碱', '农药', '化肥'],
-}
-
-def _level1_of(industry_name: str) -> str | None:
-    """把涨停股"所属行业"(东财二级名)归到申万一级;匹配不到返 None"""
-    if not industry_name:
-        return None
-    for lv1, kws in _SW_LEVEL1_KEYWORDS.items():
-        for kw in kws:
-            if kw in industry_name:
-                return lv1
-    return None
-
-# 东财 行业板块(m:90 t:2 = 申万一/二/三级)直连拉取,过滤出 31 个一级
-print("  行业板块(东财 申万一级 31 个)...")
-def _fetch_em_level1():
-    """直连东财 push2 拉申万一级 31 个。分页拉全 m:90+t:2(494 个申万行业)再过滤到 31 个一级。
-    东财单页 pz 上限 100,只拉 1 页会漏掉大部分一级(涨幅榜前100里一级行业很少)。失败返空 list。"""
-    import ssl as _ssl_l1
-    out = []
-    for domain in ['https://push2.eastmoney.com', 'https://82.push2.eastmoney.com', 'https://push2delay.eastmoney.com']:
-        _rows = []
-        try:
-            for pn in range(1, 7):
-                url = (f'{domain}/api/qt/clist/get?pn={pn}&pz=100&po=1&np=1&fltt=2&invt=2'
-                       f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f62,f104,f105,f128,f136,f140&fid=f3')
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
-                data = _json.loads(urllib.request.urlopen(req, timeout=10, context=_ssl_l1._create_unverified_context()).read().decode('utf-8', 'ignore'))
-                diff = (data.get('data') or {}).get('diff') or []
-                if not diff:
-                    break
-                _rows.extend(diff)
-                if len(diff) < 100:
-                    break
-                time.sleep(0.15)
-        except Exception:
-            continue
-        if not _rows:
-            continue
-        for s in _rows:
-            nm = safe_str(s.get('f14'))
-            if nm not in _SW_LEVEL1_SET:
+# 东财 行业板块(m:90 t:2 = 申万一/二/三级)直连拉取,过滤出 128 个二级
+print("  行业板块(东财 申万二级 128 个)...")
+def _fetch_em_level2():
+    """直连东财 push2 拉申万二级 128 个。双向拉取(涨端降序+跌端升序)拉全 m:90+t:2(496 个)再过滤到 128 个二级。
+    之前只降序翻页,东财对跌幅榜页(pn≈4~6)限流,跌幅行业拿不到 →「跌幅前10」为空。失败返空 list。"""
+    import ssl as _ssl_l2
+    out = {}
+    for po in [1, 0]:  # 1=降序(涨幅), 0=升序(跌幅)
+        for domain in ['https://push2.eastmoney.com', 'https://82.push2.eastmoney.com', 'https://push2delay.eastmoney.com']:
+            _rows = []
+            try:
+                for pn in range(1, 4):
+                    url = (f'{domain}/api/qt/clist/get?pn={pn}&pz=100&po={po}&np=1&fltt=2&invt=2'
+                           f'&fs=m:90+t:2+f:!50&fields=f3,f6,f12,f14,f62,f104,f105,f128,f136,f140&fid=f3')
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://quote.eastmoney.com/'})
+                    data = _json.loads(urllib.request.urlopen(req, timeout=10, context=_ssl_l2._create_unverified_context()).read().decode('utf-8', 'ignore'))
+                    diff = (data.get('data') or {}).get('diff') or []
+                    if not diff:
+                        break
+                    _rows.extend(diff)
+                    if len(diff) < 100:
+                        break
+                    time.sleep(0.15)
+            except Exception:
                 continue
-            out.append({
-                'name': nm,
-                'changePercent': round(safe_float(s.get('f3', 0)), 4),
-                'upCount': safe_int(s.get('f104', 0)),
-                'downCount': safe_int(s.get('f105', 0)),
-                'totalTurnover': round(safe_float(s.get('f6', 0)) / 1e8, 2),
-                # v2.0.8hg:真实主力净流入(东财 f62,元 → 亿)— 之前用了估算公式,导致净流入 TOP15 几乎全负
-                'netInflow': round(safe_float(s.get('f62', 0)) / 1e8, 2),
-                'leaderName': safe_str(s.get('f128'), '-'),
-                'leaderChangePercent': round(safe_float(s.get('f136', 0)), 2),
-                'leaderCode': safe_str(s.get('f140'), ''),
-            })
-        if out:
-            break
-    return out
+            if not _rows:
+                continue
+            for s in _rows:
+                nm = safe_str(s.get('f14'))
+                if nm not in _SW_LEVEL2_SET:
+                    continue
+                out[nm] = {
+                    'name': nm,
+                    'changePercent': round(safe_float(s.get('f3', 0)), 4),
+                    'upCount': safe_int(s.get('f104', 0)),
+                    'downCount': safe_int(s.get('f105', 0)),
+                    'totalTurnover': round(safe_float(s.get('f6', 0)) / 1e8, 2),
+                    'netInflow': round(safe_float(s.get('f62', 0)) / 1e8, 2),
+                    'leaderName': safe_str(s.get('f128'), '-'),
+                    'leaderChangePercent': round(safe_float(s.get('f136', 0)), 2),
+                    'leaderCode': safe_str(s.get('f140'), ''),
+                }
+            if len(out) >= 120:
+                break
+    return list(out.values())
 
-_em_level1_rows = _fetch_em_level1()
-# 东财直连失败时用 31 个固定名兜底(值 0,前端 em 实时会覆盖),避免 sectors 空导致板块页空白
-if len(_em_level1_rows) < 20:
-    print(f"  东财申万一级直连失败(仅 {len(_em_level1_rows)} 个),用 31 个固定名兜底(值 0)")
-    _em_level1_rows = [{'name': n, 'changePercent': 0, 'upCount': 0, 'downCount': 0,
+_em_level2_rows = _fetch_em_level2()
+# 东财直连失败时用固定名兜底(值 0,前端 em 实时会覆盖),避免 sectors 空导致板块页空白
+if len(_em_level2_rows) < 20:
+    print(f"  东财申万二级直连失败(仅 {len(_em_level2_rows)} 个),用 {len(SW_LEVEL2)} 个固定名兜底(值 0)")
+    _em_level2_rows = [{'name': n, 'changePercent': 0, 'upCount': 0, 'downCount': 0,
                         'totalTurnover': 0, 'netInflow': 0, 'leaderName': '-',
-                        'leaderChangePercent': 0, 'leaderCode': ''} for n in SW_LEVEL1]
+                        'leaderChangePercent': 0, 'leaderCode': ''} for n in SW_LEVEL2]
 
 sectors = []
-for row in _em_level1_rows:
+for row in _em_level2_rows:
     name = row['name']
     pct = row['changePercent']
     up_n = row['upCount']
     down_n = row['downCount']
     turnover = row['totalTurnover']
     leader = row['leaderName'] if row['leaderName'] not in ('-', '--', '') else '-'
-    # 涨停股数 + 第二只领涨股(把涨停股"所属行业"归到本一级)
+    # 涨停股数 + 第二只领涨股(涨停股"所属行业"是东财二级名,精确匹配本二级行业)
     cnt = 0
     second = '-'
     for s in limit_up_stocks:
-        if _level1_of(s['industry']) == name:
+        if safe_str(s.get('industry')) == name:
             cnt += 1
             if second == '-' and s['name'] != leader:
                 second = s['name']
@@ -1269,7 +1240,7 @@ for row in _em_level1_rows:
         'limitUpCount': cnt,
     })
 sectors.sort(key=lambda s: s['changePercent'], reverse=True)
-print(f"  行业板块(东财申万一级) {len(sectors)} 个")
+print(f"  行业板块(东财申万二级) {len(sectors)} 个")
 
 # v2.0.7ed:概念 / 地域 fallback 函数 — ths 限流时用 em 申万概念 / 申万地域
 def _fetch_em_sector_fallback(fs, limit=30, label='概念'):
