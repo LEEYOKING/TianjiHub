@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-09-22 21:02:58",
+    "generatedAt": "2026-09-22 23:21:15",
     "tradeDate": "20260922",
     "tradeDateSlash": "26/09/22"
   },
@@ -896,7 +896,7 @@
       "industry": "元件",
       "consecutiveDays": 1,
       "firstSealTime": "11:22:27",
-      "bombedCount": 6,
+      "bombedCount": 5,
       "sealedAmount": 0.16,
       "turnover": 13.03,
       "changePercent": 9.99,
