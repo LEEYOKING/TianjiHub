@@ -138,6 +138,39 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
   const bondCodesRef = useRef<string[] | undefined>(bondCodes);
   useEffect(() => { etfCodesRef.current = etfCodes; bondCodesRef.current = bondCodes; }, [etfCodes, bondCodes]);
 
+  // v2.0.8jk:跨期自愈 — 页面长期不刷新(跨天/跨假期)后,到新交易日盘中无法自动更新,只能手动刷新。
+  // 根因:下面主发布 effect 依赖仅 [enabled](App 恒传 true 从不变化),且非盘中直接 return 不建定时器;
+  //   挂机跨期后页面在非盘中,effect 无定时器;进入盘中 enabled 不变 → effect 不重跑 → 永不更新。
+  // 修法(三管齐下,全程无感):
+  //  1) 常驻 30s 探针 interval 更新 clock,主 effect 依赖改为 [enabled, clock]
+  //     → 非盘中期间仍在"tick",进入盘中 30s 内被识别 → 自动重建定时器,无需手动刷新。
+  //  2) 主机 effect 每次 running 时把"立即拉一次"暴露到 forceRefreshRef;
+  //  3) 常驻可见性 effect:页面从后台/系统睡眠/切回前台(visibilitychange/focus/pageshow)
+  //     时强制刷新一次 + 立即更新 clock,后台节流/节能回收的定时器也能即时恢复。
+  const [clock, setClock] = useState(0);
+  const forceRefreshRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    // 探针:常驻 30s 一次 setClock,让主 effect 能识别盘中/非盘中边界变化
+    const t = setInterval(() => setClock((c) => c + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    const force = () => {
+      forceRefreshRef.current?.();   // 若盘中且已建定时器 → 立即强制刷新
+      setClock((c) => c + 1);        // 无论盘中与否 → 唤醒探针尽快重评估
+    };
+    const onVis = () => { if (document.visibilityState === 'visible') force(); };
+    const onFocus = () => force();
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, []);
+
   useEffect(() => {
     if (!enabled) return;
     // v2.0.7dc:非盘中(15:00-次日 9:30 + 周末/节假日)直接 return — 不拉 em/sina
@@ -270,6 +303,12 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
     };
 
     marketTickRef.current = marketTick;
+    // v2.0.8jk:暴露"立即拉一次"给常驻可见性监听 — 后台/节能回收定时器切回前台时强制恢复
+    forceRefreshRef.current = () => {
+      indexTick();
+      marketTick();
+      slowTick();
+    };
 
     indexTick();
     marketTick();
@@ -283,8 +322,9 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
       clearInterval(indexIntv);
       clearInterval(marketIntv);
       clearInterval(slowIntv);
+      forceRefreshRef.current = null;   // v2.0.8jk:非盘中清理引用(避免误触发 stale tick)
     };
-  }, [enabled]);
+  }, [enabled, clock]);   // v2.0.8jk:依赖加 clock — 探针驱动,跨期进入盘中也自动重建定时器
 
   return snap;
 }
