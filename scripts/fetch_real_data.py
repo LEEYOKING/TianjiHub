@@ -660,6 +660,20 @@ if TODAY.weekday() < 5:  # 周一到周五才 append
     # 修法:append 前先 removeIf 8/18 末点 — 8/18 当日只保留最新 1 个末点
     today_date = TODAY.strftime('%Y-%m-%d')
     history[:] = [h for h in history if h.get('date') != today_date]
+    # v2.0.8km:数据源陈旧一致性校验(根治"标今日却昨日数值")
+    # — 2026-09-29 盘后 bug:数据源(腾讯指数/全市场)未刷新,拉到昨日 17,168.51 亿,
+    #   脚本却把它当成"今日"写进 history 末点(up 898/down 4553 全是昨日),线上"日期对、数值错"
+    # — 修法:若今日拉取的成交额与上一交易日"几乎完全相等"(数据源陈旧,返回昨日缓存),
+    #   则判定本轮数据无效 → 直接终止生成,线上保持上一交易日真值(诚实,而非"错标今日")
+    #   等数据源恢复、拉到真实今日数据后再正常写入 → 下一档 cron / 手动触发即自愈
+    _prev_yd_list = [h for h in _prev_history if h.get('date') != today_date]
+    _prev_yd_last = _prev_yd_list[-1] if _prev_yd_list else None
+    _yest_vol = _prev_yd_last.get('volume', 0) if _prev_yd_last else 0
+    if total_turnover > 0 and _yest_vol > 0 and abs(total_turnover - _yest_vol) < 0.5:
+        import sys
+        print(f"  ⚠ 数据源陈旧:今日成交额 {total_turnover} 亿 与上一交易日 {_yest_vol} 亿 完全一致")
+        print("    判定数据源未刷新(返回昨日缓存),本轮不生成,线上保持上一交易日真值(避免'标今日却昨日数值')")
+        sys.exit(0)
     # v2.0.7dt:写完整字段(之前只写 volume — up/down/limitUp/limitDown 都 undefined,React 组件读 history 末点时 0:0)
     history.append({
         'date': today_date,
