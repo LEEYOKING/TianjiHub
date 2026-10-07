@@ -626,6 +626,8 @@ export function PageHeader({ title, tradeDateSlash, subtitle, liveTag, liveColor
   // v2.0.7fl:user 反馈 移动端顶部标题栏文字挤在一起 — 用 isMobile 改 column 布局(标题+tag 上,date+time 下)
   // — PC 端保持 flex row space-between(零变化)
   const _isMobile = useIsMobile();
+  // v2.0.8kn:读 live context 的 nextTradeDate(交易日历),用于判断"今天是否开盘"
+  const _liveCtx = useLive();
   // 用户 #3 反馈:6 个表格"收盘复盘数据"标签文字色 #4b5563(原 #86909C)
   // 用户 #17 反馈:6 个表格复用大盘总览盘后灰色样式
   // 用户 #19 反馈:PreScan "隔夜数据" 背景用同色系浅蓝色
@@ -673,7 +675,11 @@ export function PageHeader({ title, tradeDateSlash, subtitle, liveTag, liveColor
     const _now = new Date(Date.now() + 8 * 3600 * 1000);
     const _mins = _now.getUTCHours() * 60 + _now.getUTCMinutes();
     const _todayYMD = `${_now.getUTCFullYear()}${String(_now.getUTCMonth() + 1).padStart(2, '0')}${String(_now.getUTCDate()).padStart(2, '0')}`;
-    if (_mins >= 8 * 60 && _originalTradeDate !== _todayYMD) {
+    // v2.0.8kn:仅当"今天确实是交易日"时才把日期覆盖为今天 — 否则(周末/法定假期)保持 data 的交易日,
+    // 避免顶部出现"假期当天"(如 10/7 国庆)这种与数据不符的日期
+    const _nextTdYMD = String(_liveCtx?.nextTradeDate || '').replace(/-/g, '');
+    const _isTradingToday = _nextTdYMD ? _nextTdYMD === _todayYMD : true;
+    if (_mins >= 8 * 60 && _originalTradeDate !== _todayYMD && _isTradingToday) {
       const yy = String(_now.getUTCFullYear()).slice(2);
       const mm = String(_now.getUTCMonth() + 1).padStart(2, '0');
       const dd = String(_now.getUTCDate()).padStart(2, '0');

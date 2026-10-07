@@ -15,9 +15,11 @@ import { loadReportData, getCNTodayYMD, saveLiveSnapshot, loadLiveSnapshot, type
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
 
 // 全局 live context — PageHeader 通过它读 lastUpdatedAt
-const LiveContext = createContext<LiveSnapshot>({
+// v2.0.8kn:附带 nextTradeDate(交易日历) — PageHeader 据此判断今天是否开盘,非交易日不显示"假期当天"
+export type LiveContextValue = LiveSnapshot & { nextTradeDate?: string };
+const LiveContext = createContext<LiveContextValue>({
   indices: [], market: null, history: null, today: null, fetchedAt: 0,
-} as unknown as LiveSnapshot);
+} as unknown as LiveContextValue);
 export const useLive = () => useContext(LiveContext);
 
 export default function App() {
@@ -63,6 +65,12 @@ export default function App() {
     if (!baseData) return null;
     return mergeLiveData(baseData, live);
   }, [baseData, live]);
+
+  // v2.0.8kn:live context 值附带 nextTradeDate(交易日历),供 PageHeader 判断"今天是否开盘"
+  const liveCtxValue = useMemo<LiveContextValue>(
+    () => ({ ...live, nextTradeDate: baseData?.meta?.nextTradeDate }),
+    [live, baseData],
+  );
 
   // v2.0.8:盘中/收盘持续缓存今日快照(live 拉到实时后,15:00 定格值自然被缓存,刷新不丢)
   useEffect(() => {
@@ -136,7 +144,7 @@ export default function App() {
   }
 
   return (
-    <LiveContext.Provider value={live}>
+    <LiveContext.Provider value={liveCtxValue}>
       <BrowserRouter>
         <Layout data={merged}>
           {/* v2.0.7ff:lazy 加载页面 fallback — 显示简单 loading,避免白屏 */}
