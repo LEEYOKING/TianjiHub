@@ -4,10 +4,14 @@ name: Daily Data Refresh
 # cron 为 UTC 时间：
 #   35 7  * * 1-5  → 北京时间 15:35（收盘快照）
 #   35 10 * * 1-5  → 北京时间 18:35（龙虎榜 18:00 披露后补跑）
+#   30 0  * * 1-5  → 北京时间 08:30（次日早晨：补抓交易所延迟发布的融资融券终值）
+#                    — 只跑 backfill_margin.py(仅改 marginHistory),盘前/假期运行也安全
+#                    — 不加交易日门槛：假期工作日也要跑,专门覆盖"T 日后连续假期"的补齐场景
 on:
   schedule:
     - cron: '35 7 * * 1-5'
     - cron: '35 10 * * 1-5'
+    - cron: '30 0 * * 1-5'
   workflow_dispatch: {}
 
 jobs:
@@ -48,18 +52,23 @@ jobs:
           print('A股交易日' if is_td else '非交易日(周末/法定节假日),跳过')
           PY
 
+      - name: 次日早晨补抓融资融券(仅 08:30 那档)
+        if: github.event.schedule == '30 0 * * 1-5'
+        run: NO_PROXY="*" no_proxy="*" python3 scripts/backfill_margin.py
+
       - name: 拉取盘后数据
-        if: steps.trading_day.outputs.trading_day == '1'
+        if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
         run: NO_PROXY="*" no_proxy="*" python3 scripts/fetch_real_data.py
 
       - name: 拉取手术台数据(封成比评分/亏钱传导/北向)
-        if: steps.trading_day.outputs.trading_day == '1'
+        if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
         run: |
           NO_PROXY="*" no_proxy="*" python3 scripts/fetch_surgery_data.py || \
             echo "! 手术台数据拉取失败(海外 IP 风控),本次跳过"
 
       - name: 提交并推送
-        if: steps.trading_day.outputs.trading_day == '1'
+        # 早晨补抓档不设交易日门槛(假期工作日也要提交);其余档仍是交易日才提交
+        if: github.event.schedule == '30 0 * * 1-5' || steps.trading_day.outputs.trading_day == '1'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
