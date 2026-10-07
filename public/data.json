@@ -5577,7 +5577,8 @@
       "bj920985",
       "bj920992"
     ],
-    "lhbFallback": false
+    "lhbFallback": false,
+    "nextTradeDate": "2026-10-08"
   },
   "marketOverview": {
     "tradeDate": "20260930",
@@ -8064,12 +8065,6 @@
     },
     "marginHistory": [
       {
-        "date": "2026-07-07",
-        "margin_balance": 14882.28,
-        "margin_balance_diff": 0,
-        "sh_close": 3990.24
-      },
-      {
         "date": "2026-07-08",
         "margin_balance": 14804.49,
         "margin_balance_diff": -77.79,
@@ -8422,6 +8417,12 @@
         "margin_balance": 13194.82,
         "margin_balance_diff": 7.13,
         "sh_close": 3830.45
+      },
+      {
+        "date": "2026-09-30",
+        "margin_balance": 12965.21,
+        "margin_balance_diff": -229.61,
+        "sh_close": 3842.2
       }
     ]
   },
