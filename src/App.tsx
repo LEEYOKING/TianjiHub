@@ -40,7 +40,9 @@ export default function App() {
           let finalData = d;
           if (String(d.meta?.tradeDate) !== getCNTodayYMD()) {
             const snap = loadLiveSnapshot();
-            if (snap) finalData = snap;
+            // v2.0.8kn:快照的 meta 用最新 data.json 的 meta 覆盖 — 否则快照里缺 nextTradeDate(交易日历),
+            // mergeLiveData 会退化为"工作日"判断,假期盘中仍会插入假数据点
+            if (snap) finalData = { ...snap, meta: d.meta };
           }
           baseDataRef.current = finalData;
           setBaseData(finalData);

@@ -651,11 +651,15 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
   };
   applyOrBuildEmSector(next.conceptSectors as any, live.emConcepts as any, 30, (arr) => { next.conceptSectors = arr; });
   applyOrBuildEmSector(next.regionSectors as any, live.emRegions as any, 20, (arr) => { next.regionSectors = arr; });
-  // 6. 把今日实时数据 push 到 history 末尾(让曲线图含当日点)
+  // 6. 把今日实时数据 push 到 history 末尾(让曲线图含当日点) — 仅限交易日
   // v2.0.7dr:曲线图末点直接映射卡片数据(next.marketOverview.*)— 不再单独算 todayData
-  // — 之前:曲线图末点用 todayData(快 fastTick 拉 + liveLimits 阈值 600/100)— em 限流时 0:0
-  // — 现在:曲线图末点 = 卡片数字(完全一致)— 永远有值(走 baseData fallback)— 不再 0:0
-  // — 跟卡片同源,实时性靠 fastTick 推 next.marketOverview → history 末点同步
+  // v2.0.8kn:非交易日(周末/假期)不再插入"假数据点"
+  // — 根因:之前无条件 push。假期(如 10/7)时 history 末点=9/30,todayDate=10/7 ≠ 末点,
+  //   于是用卡片值(=上一交易日收盘,无实时数据时回退 baseData)造了一个标着今天的点 → 假数据
+  // — 修法:仅当"今天确实是交易日"且"有真实盘中数据"时才 push:
+  //     · today === meta.nextTradeDate(脚本按交易日历算出的下一交易日)→ 交易日
+  //     · live.fetchedAt > 0 → 确实拉到了盘中实时(避免开盘前用 baseData 旧值造点)
+  //   同一天则用实时值更新末点;其余(周末/假期)history 保持不动 → 最新数据停在上一交易日收盘
   if (next.history && next.history.length > 0) {
     const lastDate = next.history[next.history.length - 1].date;
     // 东八区"今天"日期(海外 user 浏览器本地时区不对时统一用 UTC+8)
@@ -670,16 +674,25 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       limitUp: next.marketOverview.limitUpCount,
       limitDown: next.marketOverview.limitDownCount,
     };
-    if (todayDate !== lastDate) {
-      // 新一天 — push 新点
+    const _nextTd = String((data.meta as any)?.nextTradeDate || '');
+    const _hasLive = live.fetchedAt > 0;
+    // today 是否为交易日:优先用交易日历;日历缺失时退化为"工作日"判断(至少排除周末)
+    const _isTradingToday = _nextTd
+      ? todayDate === _nextTd
+      : (now8.getUTCDay() >= 1 && now8.getUTCDay() <= 5);
+    if (todayDate === lastDate) {
+      // 同一交易日 — 用实时值更新末点(仅在有真实实时数据时,避免把旧值重复写)
+      if (_hasLive) {
+        next.history[next.history.length - 1] = {
+          ...next.history[next.history.length - 1],
+          ...todayPoint,
+        };
+      }
+    } else if (_isTradingToday && _hasLive) {
+      // 今天是交易日且有真实盘中数据 — push 新点
       next.history.push(todayPoint);
-    } else {
-      // 同一天 — 更新末点(volume/up/down/limitUp/limitDown 都用卡片)
-      next.history[next.history.length - 1] = {
-        ...next.history[next.history.length - 1],
-        ...todayPoint,
-      };
     }
+    // 其余(周末/法定假期)— 不插入任何点,最新数据停留在上一交易日收盘
   }
   // 7. v2.0.8:市场情绪温度盘中实时重算 — 用实时 5 维度加权(指数方向/市场宽度/涨跌停对比/赚钱效应/量能)
   // v2.0.8hh:加 5 分钟节流,避免每 10s 跟着 fastTick 跳变(用户要求 5-10 分钟刷新)

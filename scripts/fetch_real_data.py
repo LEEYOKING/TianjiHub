@@ -1846,11 +1846,37 @@ first_board = [s for s in limit_up_stocks if s['consecutiveDays'] == 1]
 first_board.sort(key=lambda s: s['code'])
 
 # ========== 拼装输出 ==========
+# v2.0.8kn:下一交易日 — 前端据此判断"今天是否开盘",非交易日不再插入"假数据点"
+# — 之前前端 mergeLiveData 无条件把"今天"push 进 history,假期(如 10/7)会用上一交易日
+#   收盘值造一个标着今天的点(假数据)。改由这里提供权威的下一交易日,前端只在
+#   today == nextTradeDate 时才允许 append
+# — akshare 交易日历含未来日期(交易所年度日历,覆盖到当年年底)
+def _compute_next_trade_date(dash_date):
+    # dash_date: 'YYYY-MM-DD';返回其后第一个交易日(同样格式),失败返 ''
+    try:
+        _cal = ak.tool_trade_date_hist_sina()
+        _ds = sorted(str(x) for x in _cal['trade_date'].tolist())
+        for _d in _ds:
+            if _d > dash_date:
+                return _d
+    except Exception as _e:
+        print(f"  ⚠ 交易日历获取失败({_e}),nextTradeDate 退化为'下一工作日'")
+    # 兜底:下一工作日(跳过周末;不含法定节假日识别)
+    _base = datetime.strptime(dash_date, '%Y-%m-%d')
+    _nxt = _base + timedelta(days=1)
+    while _nxt.weekday() >= 5:
+        _nxt += timedelta(days=1)
+    return _nxt.strftime('%Y-%m-%d')
+
+_next_trade_date = _compute_next_trade_date(TRADE_DATE_DASH)
+print(f"  下一交易日: {_next_trade_date or '未知'}")
+
 data = {
     'meta': {
         'generatedAt': TODAY.strftime('%Y-%m-%d %H:%M:%S'),
         'tradeDate': TRADE_DATE,
         'tradeDateSlash': TRADE_DATE_SLASH,
+        'nextTradeDate': _next_trade_date,  # v2.0.8kn:'YYYY-MM-DD' — 前端判断今天是否开盘
         'dataSource': 'akshare (新浪/腾讯/东方财富)',
         # v2.0.7ee:股票代码列表 — React useLiveData 读这个拉腾讯 qt.gtimg.cn
         # — fetch-data 跑时 akshare 拿真实 5,547 只,React 不靠硬编码

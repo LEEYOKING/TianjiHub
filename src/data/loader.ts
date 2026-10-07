@@ -21,6 +21,8 @@ export interface ReportData {
     dataSource: string;
     // v2.0.7ee:股票代码列表(akshare 真实 5,547 只)— React useLiveData 拿这个拉腾讯
     stockCodes?: string[];
+    // v2.0.8kn:下一交易日 'YYYY-MM-DD' — 前端据此判断"今天是否开盘",非交易日不插入假数据点
+    nextTradeDate?: string;
   };
   marketOverview: MarketOverview;
   history: HistoryPoint[];
