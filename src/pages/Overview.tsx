@@ -576,15 +576,11 @@ export default function Overview({ data }: { data: ReportData }) {
   // — baseData 周末没刷新,history 末 1/2 条会是周六/周日的 0 数据(或 weekend 量)
   // — 8/15 周六(2026)被 user 反馈:图表显示 0:0 tooltip,看起来是 "数据缺失"
   // — 过滤后图表只显示真实交易日,周末/节假日自动跳过
-  // v2.0.7ff:按"自然日"切片(user 反馈 "30日" 应是近 30 个日历日,允许跨月 + 周末断点)
-  // — 之前 slice(-range) 是取最后 N 个交易日,history 只有 19 天时 "30日" 实际只显示 19 天
-  // — 现在取 (today - range 天) ~ today 所有 history 记录,周末/缺失自然断点
+  // v2.0.8kq:按"交易日"切片 — 取最后 N 个交易日(含最新交易日)
+  // — 之前按自然日:假期(如 10/7)cutoff=today-7=09-30 → "7日"只剩 09-30 一个点(曲线退化为单点)
+  // — 现在 slice(-range):"7日"=最近 7 个交易日(最后一个交易日含 + 往前 6 个),不足则取全部
   function sliceHistory(range: number) {
-    const today = new Date();
-    const cutoff = new Date(today);
-    cutoff.setDate(today.getDate() - range);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-    return history.filter((h: HistoryPoint) => h.date >= cutoffStr);
+    return history.slice(-range);
   }
 }
 
