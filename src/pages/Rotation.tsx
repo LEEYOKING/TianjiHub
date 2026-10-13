@@ -1,11 +1,12 @@
 // 【板块轮动档案】单页视图 —— 已合并原「轮动档案」+「轮动时间轴」两页
 // 页面结构(自上而下,含跨模块联动):
 //   ① 规则栏(全局唯一口径)
-//   ② 第一层 每日强弱榜单档案 —— 最新交易日最强/最弱
-//   ③ 第二层 板块行为画像   —— 4 张概览卡 + 榜单切换(反复活跃/最近重新活跃/趋势持续性) + 行为统计表
+//   ② 每日强弱榜单       —— 最新交易日最强/最弱
+//   ③ 板块行为画像       —— 4 张概览卡 + 榜单切换(反复活跃/最近重新活跃/趋势持续性) + 行为统计表
 //      行为统计表 = 全页的「选择器」:点某一行 → 时间轴聚焦该板块并滚动过去
-//   ④ 事件热力时间轴       —— Canvas 网格(可点格子看判定依据),复用统计表的筛选条件
-//   ⑤ 第三层 板块轮动关系   —— 同步活跃 / 先后关系 / 市场环境分层
+//   ④ 事件热力时间轴     —— Canvas 网格(可点格子看判定依据),复用统计表的筛选条件
+//   ⑤ 板块轮动关系       —— 同步活跃 / 先后关系 / 市场环境分层
+// 注:卡片标题不使用"第一/二/三层"这类实现内部分层用语,避免终端用户困惑
 // 设计原则:所有模块共用同一份 rule 与同一份 filteredStats,避免"改一个阈值后各模块口径不一致"
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +29,8 @@ const TL_LARGE_DOWN = '#089b55';
 const TL_WEAK = COLOR_DOWN;
 const TL_NONE = '#F0F1F2';
 const TL_NA = '#FFFFFF';
+/** hover 气泡的估算高度(3 行文字 + 上下内边距),用于判断是否改到格子上方显示 */
+const TIP_H = 76;
 
 // 「最近重新活跃」判定阈值(V1 固定值,不随规则变化 — 已在界面上明确标注)
 const REACTIVATE_AGO = 5;    // 距最近一次强势事件 ≤ 5 个交易日
@@ -125,12 +128,13 @@ function MiniTable({
 /** 榜单行(用于 反复活跃 / 最近重新活跃 / 趋势持续性 三种模式) */
 function BoardList({
   title,
-  hint,
+  headers,
   rows,
   onPick,
 }: {
   title: string;
-  hint: string;
+  /** 后三列的列名(由各模式传入真实指标名,不再用"指标1/2/3"占位) */
+  headers: [string, string, string];
   rows: { id: string; name: string; type: SectorType; v1: string; v2: string; v3: string; hot?: boolean }[];
   onPick: (id: string) => void;
 }) {
@@ -138,12 +142,11 @@ function BoardList({
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>{title}</span>
-        <span style={{ fontSize: 11, color: '#86909C' }}>{hint}</span>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
           <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
-            {['板块', '类型', '指标1', '指标2', '指标3'].map((h) => (
+            {['板块', '类型', ...headers].map((h) => (
               <th key={h} style={{ padding: '8px 10px', textAlign: h === '板块' || h === '类型' ? 'left' : 'right', fontWeight: 500 }}>
                 {h}
               </th>
@@ -243,7 +246,7 @@ export default function Rotation() {
         .map((r) => ({ ...r, type: typeById.get(r.id) || ('industry' as SectorType) }))
     : [];
 
-  // 第二层 4 张概览卡
+  // 概览卡:4 个画像入口的高亮
   const profile = useMemo(() => {
     if (!computed || !computed.stats.length) return null;
     const ss = computed.stats;
@@ -292,6 +295,14 @@ export default function Rotation() {
         v3: `相对基准 ${s.relStrength == null ? '—' : `${(s.relStrength * 100).toFixed(2)}%`}`,
       }));
   }, [filteredStats, boardMode, reactivated]);
+
+  // 榜单后三列的真实列名(随模式变化)
+  const boardHeaders: [string, string, string] =
+    boardMode === 'active'
+      ? ['强势次数', '弱势次数', '强势频率']
+      : boardMode === 'reactivate'
+        ? ['距上次强势', '此前空档', '窗口内次数 · 累计收益']
+        : ['累计收益', '最大回撤', '相对基准超额'];
 
   // 时间轴行:聚焦某板块时只画它一行(放大便于看),否则画活跃度前 N 行
   const tlRows = useMemo<SectorStats[]>(() => {
@@ -413,12 +424,12 @@ export default function Rotation() {
         }}
       />
 
-      {/* ① 第一层 */}
+      {/* ① 每日强弱榜单 */}
       <Card
-        title="第一层 · 每日强弱榜单档案"
+        title="每日强弱榜单"
         right={
           <span style={{ fontSize: 11, color: '#86909C' }}>
-            基础层 · {latest?.date || '-'} · 当日有效板块 {latest?.total ?? 0} 个
+            {latest?.date || '-'} · 当日有效板块 {latest?.total ?? 0} 个
           </span>
         }
       >
@@ -437,11 +448,11 @@ export default function Rotation() {
         </div>
       </Card>
 
-      {/* ② 第二层 */}
+      {/* ② 板块行为画像 */}
       <div style={{ height: 16 }} />
       <Card
-        title="第二层 · 板块行为画像"
-        right={<span style={{ fontSize: 11, color: '#86909C' }}>核心层 · 近 {rule.windowDays} 个交易日</span>}
+        title="板块行为画像"
+        right={<span style={{ fontSize: 11, color: '#86909C' }}>近 {rule.windowDays} 个交易日</span>}
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16 }}>
           {[
@@ -500,13 +511,7 @@ export default function Rotation() {
             title={
               boardMode === 'active' ? '反复进入强势榜 TOP 10' : boardMode === 'reactivate' ? '最近重新活跃 TOP 10' : '趋势持续性 TOP 10'
             }
-            hint={
-              boardMode === 'active'
-                ? '指标1=强势次数 / 指标2=弱势次数 / 指标3=强势频率'
-                : boardMode === 'reactivate'
-                  ? '指标1=距上次强势 / 指标2=此前空档 / 指标3=窗口内次数与累计'
-                  : '指标1=累计收益 / 指标2=最大回撤 / 指标3=相对基准超额'
-            }
+            headers={boardHeaders}
             rows={boardRows}
             onPick={pickSector}
           />
@@ -737,7 +742,9 @@ export default function Rotation() {
                 </div>
               ))}
             </div>
-            <div ref={wrapRef} style={{ overflowX: 'auto', position: 'relative', flex: 1 }}>
+            {/* 画布 + 横轴放在同一个横向滚动容器内,保证滚动时日期刻度与格子严格对齐;
+                overflowY: hidden → hover 气泡即使贴着边缘也不会把容器撑出纵向滚动条 */}
+            <div ref={wrapRef} style={{ overflowX: 'auto', overflowY: 'hidden', position: 'relative', flex: 1 }}>
               <canvas
                 ref={canvasRef}
                 onMouseMove={(e) => setHover(toCell(e))}
@@ -745,12 +752,28 @@ export default function Rotation() {
                 onClick={(e) => setPicked(toCell(e))}
                 style={{ display: 'block', cursor: 'pointer' }}
               />
+              {/* 横轴日期:水平排布(不再 rotate,避免被容器裁切),按间隔抽样显示 */}
+              <div style={{ display: 'flex', width: cols * cellW, height: 16 }}>
+                {computed.comp.dates.map((d, i) => {
+                  const step = cols > 60 ? 10 : cols > 30 ? 5 : 2;
+                  return (
+                    <div
+                      key={d}
+                      style={{ width: cellW, flexShrink: 0, fontSize: 9, color: '#86909C', whiteSpace: 'nowrap', lineHeight: '14px' }}
+                    >
+                      {i % step === 0 ? d.slice(5) : ''}
+                    </div>
+                  );
+                })}
+              </div>
               {hover && hoverEv && hoverSeries && (
                 <div
                   style={{
                     position: 'absolute',
-                    left: Math.min(hover.c * cellW + 12, Math.max(0, (wrapRef.current?.clientWidth || 600) - 220)),
-                    top: hover.r * cellH + cellH + 4,
+                    // 横向:贴右边缘时左移,避免超出内容宽度
+                    left: Math.min(hover.c * cellW + 12, Math.max(0, cols * cellW - 220)),
+                    // 纵向:末 5 行改为显示在格子上方,否则气泡会溢出画布底部导致容器可上下滚动
+                    top: hover.r >= tlRows.length - 5 ? Math.max(0, hover.r * cellH - TIP_H - 4) : hover.r * cellH + cellH + 4,
                     background: '#fff',
                     border: `1px solid ${COLOR_BORDER}`,
                     borderRadius: 8,
@@ -779,33 +802,6 @@ export default function Rotation() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <div style={{ width: 108, flexShrink: 0 }} />
-            <div style={{ overflow: 'hidden', flex: 1 }}>
-              <div style={{ display: 'flex', width: cols * cellW }}>
-                {computed.comp.dates.map((d, i) => {
-                  const step = cols > 60 ? 10 : cols > 30 ? 5 : 2;
-                  return (
-                    <div
-                      key={d}
-                      style={{
-                        width: cellW,
-                        flexShrink: 0,
-                        fontSize: 9,
-                        color: '#86909C',
-                        transform: 'rotate(-60deg)',
-                        transformOrigin: 'left top',
-                        height: 26,
-                      }}
-                    >
-                      {i % step === 0 ? d.slice(5) : ''}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
@@ -875,9 +871,9 @@ export default function Rotation() {
         </Card>
       </div>
 
-      {/* ④ 第三层 */}
+      {/* ④ 板块轮动关系 */}
       <div style={{ height: 16 }} />
-      <Card title="第三层 · 板块轮动关系" right={<span style={{ fontSize: 11, color: '#86909C' }}>进阶层 · 历史统计关联</span>}>
+      <Card title="板块轮动关系" right={<span style={{ fontSize: 11, color: '#86909C' }}>历史统计关联 · 非因果</span>}>
         <RotationRelations data={data} rule={rule} comp={computed.comp} stats={computed.stats} />
       </Card>
     </div>
