@@ -42,13 +42,13 @@ const LINK_CSS = `
   .tj-rot-link:hover { color: #1890FF; border-bottom-color: #1890FF; }
 `;
 
-/** 表头行（背景 #F7F9FC + 字色 #86909C） */
-function Head({ cols }: { cols: { label: string; align?: 'left' | 'right' }[] }) {
+/** 表头行（背景 #F7F9FC + 字色 #86909C）。v2.0.8kw:未显式指定时默认水平居中(首列由调用方传 'left') */
+function Head({ cols }: { cols: { label: string; align?: 'left' | 'right' | 'center' }[] }) {
   return (
     <thead>
       <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
         {cols.map((c) => (
-          <th key={c.label} style={{ ...TH, textAlign: c.align ?? 'right' }}>
+          <th key={c.label} style={{ ...TH, textAlign: c.align ?? 'center' }}>
             {c.label}
           </th>
         ))}
@@ -194,7 +194,7 @@ export function RotationRelations(props: {
                 <Head
                   cols={[
                     { label: '板块 A', align: 'left' },
-                    { label: '板块 B', align: 'left' },
+                    { label: '板块 B' },
                     { label: '共同活跃天数' },
                     { label: '各自活跃天数' },
                     { label: '重合率(Jaccard)' },
@@ -210,17 +210,17 @@ export function RotationRelations(props: {
                           {p.a.name}
                         </Link>
                       </td>
-                      <td style={{ padding: '8px 10px' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                         <Link to={`/rotation/sector/${p.b.id}`} style={LINK_STYLE} className="tj-rot-link">
                           {p.b.name}
                         </Link>
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: COLOR_UP, fontWeight: 600 }}>{p.coDays}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#86909C' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'center', color: COLOR_UP, fontWeight: 600 }}>{p.coDays}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center', color: '#86909C' }}>
                         {p.aDays} / {p.bDays}
                       </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right' }}>{pct1(p.jaccard)}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: liftColor(p.lift) }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>{pct1(p.jaccard)}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: liftColor(p.lift) }}>
                         {p.lift.toFixed(2)}
                       </td>
                     </tr>
@@ -283,20 +283,23 @@ export function RotationRelations(props: {
                   <tbody>
                     {leadRows.map((r) => (
                       <tr key={r.sector.id} style={{ borderBottom: `1px solid ${COLOR_BORDER}` }}>
-                        <td style={{ padding: '8px 10px', color: COLOR_TEXT, fontWeight: 500, whiteSpace: 'nowrap' }}>
-                          {r.sector.name}
+                        {/* v2.0.8kw:首列板块名可点击 → 进入该板块行为详情 */}
+                        <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                          <Link to={`/rotation/sector/${r.sector.id}`} style={LINK_STYLE} className="tj-rot-link">
+                            {r.sector.name}
+                          </Link>
                         </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'right', color: '#86909C' }}>{pct1(r.baseFreq)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', color: '#86909C' }}>{pct1(r.baseFreq)}</td>
                         {r.cells.map((c) => (
                           <td
                             key={c.k}
                             title={`命中 ${c.hits} 次 / lift ${c.lift.toFixed(2)}`}
-                            style={{ padding: '8px 10px', textAlign: 'right', color: liftColor(c.lift), fontWeight: 600 }}
+                            style={{ padding: '8px 10px', textAlign: 'center', color: liftColor(c.lift), fontWeight: 600 }}
                           >
                             {pct1(c.condFreq)}
                           </td>
                         ))}
-                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                           {r.best ? (
                             <span style={{ color: liftColor(r.best.lift), fontWeight: 600 }}>
                               t+{r.best.k}（lift {r.best.lift.toFixed(2)}）
@@ -305,7 +308,7 @@ export function RotationRelations(props: {
                             <span style={{ color: COLOR_FLAT }}>样本不足</span>
                           )}
                         </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'right', color: '#86909C' }}>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', color: '#86909C' }}>
                           {r.samples}
                           {r.samples < 3 && <span style={{ color: COLOR_FLAT, fontSize: 10 }}> 样本不足</span>}
                         </td>
@@ -348,34 +351,37 @@ export function RotationRelations(props: {
                     const diffColor = diff > 0 ? COLOR_UP : diff < 0 ? COLOR_DOWN : COLOR_FLAT;
                     return (
                       <tr key={r.sector.id} style={{ borderBottom: `1px solid ${COLOR_BORDER}` }}>
-                        <td style={{ padding: '8px 10px', color: COLOR_TEXT, fontWeight: 500, whiteSpace: 'nowrap' }}>
-                          {r.sector.name}
+                        {/* v2.0.8kw:首列板块名可点击 → 进入该板块行为详情 */}
+                        <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                          <Link to={`/rotation/sector/${r.sector.id}`} style={LINK_STYLE} className="tj-rot-link">
+                            {r.sector.name}
+                          </Link>
                         </td>
                         <td
                           title={`上涨日 ${r.upDays} 天`}
-                          style={{ padding: '8px 10px', textAlign: 'right', color: COLOR_UP }}
+                          style={{ padding: '8px 10px', textAlign: 'center', color: COLOR_UP }}
                         >
                           {pct1(r.upFreq)}
                         </td>
                         <td
                           title={`下跌日 ${r.downDays} 天`}
-                          style={{ padding: '8px 10px', textAlign: 'right', color: COLOR_DOWN }}
+                          style={{ padding: '8px 10px', textAlign: 'center', color: COLOR_DOWN }}
                         >
                           {pct1(r.downFreq)}
                         </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, color: diffColor }}>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: diffColor }}>
                           {diff > 0 ? '+' : ''}
                           {(diff * 100).toFixed(1)}%
                         </td>
                         <td
                           title={`高波动日 ${r.highVolDays} 天`}
-                          style={{ padding: '8px 10px', textAlign: 'right' }}
+                          style={{ padding: '8px 10px', textAlign: 'center' }}
                         >
                           {pct1(r.highVolFreq)}
                         </td>
                         <td
                           title={`低波动日 ${r.lowVolDays} 天`}
-                          style={{ padding: '8px 10px', textAlign: 'right' }}
+                          style={{ padding: '8px 10px', textAlign: 'center' }}
                         >
                           {pct1(r.lowVolFreq)}
                         </td>

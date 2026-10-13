@@ -168,7 +168,8 @@ function BoardList({
         <thead>
           <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
             {['板块', '类型', ...headers].map((h) => (
-              <th key={h} style={{ padding: '8px 10px', textAlign: h === '板块' || h === '类型' ? 'left' : 'right', fontWeight: 500 }}>
+              // v2.0.8kw:除首列外,表头与单元格一律水平居中
+              <th key={h} style={{ padding: '8px 10px', textAlign: h === '板块' ? 'left' : 'center', fontWeight: 500 }}>
                 {h}
               </th>
             ))}
@@ -178,10 +179,10 @@ function BoardList({
           {rows.map((r) => (
             <tr key={r.id} onClick={() => onPick(r.id)} style={{ borderBottom: `1px solid ${COLOR_BORDER}`, cursor: 'pointer' }}>
               <td style={{ padding: '8px 10px', color: r.hot ? COLOR_UP : COLOR_TEXT, fontWeight: r.hot ? 600 : 500, whiteSpace: 'nowrap' }}>{r.name}</td>
-              <td style={{ padding: '8px 10px', color: '#86909C' }}>{TYPE_LABEL[r.type]}</td>
-              <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>{r.v1}</td>
-              <td style={{ padding: '8px 10px', textAlign: 'right' }}>{r.v2}</td>
-              <td style={{ padding: '8px 10px', textAlign: 'right', color: '#86909C' }}>{r.v3}</td>
+              <td style={{ padding: '8px 10px', color: '#86909C', textAlign: 'center' }}>{TYPE_LABEL[r.type]}</td>
+              <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600 }}>{r.v1}</td>
+              <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.v2}</td>
+              <td style={{ padding: '8px 10px', textAlign: 'center', color: '#86909C' }}>{r.v3}</td>
             </tr>
           ))}
           {!rows.length && (
@@ -595,7 +596,8 @@ export default function Rotation() {
                 {STATS_HEADERS.map((h) => (
                   <th
                     key={h}
-                    style={{ padding: '9px 10px', textAlign: h === '板块' || h === '类型' ? 'left' : 'right', fontWeight: 500, whiteSpace: 'nowrap' }}
+                    // v2.0.8kw:除首列外,表头与单元格一律水平居中
+                    style={{ padding: '9px 10px', textAlign: h === '板块' ? 'left' : 'center', fontWeight: 500, whiteSpace: 'nowrap' }}
                   >
                     {h}
                   </th>
@@ -627,31 +629,31 @@ export default function Rotation() {
                       详情 ›
                     </span>
                   </td>
-                  <td style={{ padding: '9px 10px', color: '#86909C' }}>{TYPE_LABEL[r.sector.type]}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right', color: COLOR_UP, fontWeight: 600 }}>{r.strongCount}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right', color: COLOR_DOWN, fontWeight: 600 }}>{r.weakCount}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right' }}>{(r.strongFreq * 100).toFixed(0)}%</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right' }}>
+                  <td style={{ padding: '9px 10px', color: '#86909C', textAlign: 'center' }}>{TYPE_LABEL[r.sector.type]}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_UP, fontWeight: 600 }}>{r.strongCount}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_DOWN, fontWeight: 600 }}>{r.weakCount}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>{(r.strongFreq * 100).toFixed(0)}%</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>
                     {r.gapStrong.avg != null ? `${r.gapStrong.avg.toFixed(1)} 日` : '—'}
                     {r.gapStrong.sampleInsufficient && <span style={{ color: COLOR_FLAT, fontSize: 10 }}> 样本少</span>}
                   </td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right' }}>{r.clustersStrong.length}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right' }}>
+                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>{r.clustersStrong.length}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>
                     {r.clusterGapStrong.avg != null ? `${r.clusterGapStrong.avg.toFixed(1)} 日` : '—'}
                   </td>
                   <td
                     style={{
                       padding: '9px 10px',
-                      textAlign: 'right',
+                      textAlign: 'center',
                       fontWeight: 600,
                       color: r.cumReturn > 0 ? COLOR_UP : r.cumReturn < 0 ? COLOR_DOWN : COLOR_FLAT,
                     }}
                   >
                     {(r.cumReturn * 100).toFixed(2)}%
                   </td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right', color: COLOR_DOWN }}>{(r.maxDrawdown * 100).toFixed(2)}%</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 600 }}>{r.score.toFixed(1)}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'right', color: r.coverage < 1 ? '#FA8C16' : '#86909C' }}>
+                  <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_DOWN }}>{(r.maxDrawdown * 100).toFixed(2)}%</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center', fontWeight: 600 }}>{r.score.toFixed(1)}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'center', color: r.coverage < 1 ? '#FA8C16' : '#86909C' }}>
                     {(r.coverage * 100).toFixed(0)}%
                   </td>
                 </tr>
@@ -674,64 +676,14 @@ export default function Rotation() {
         {/* v2.0.8kv:标题改'板块热力网格';图例整体移到标题行最右侧;气泡内色块置于名称左侧 */}
         <Card
           title={
-            <TitleWithTip
-              text={`板块热力网格（近${rule.windowDays}交易日）`}
-              items={tipItems(HEATMAP_LEGEND.map(({ c, t }) => ({ label: t, color: c })))}
-              title="网格颜色含义"
-            />
-          }
-          right={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 11, color: '#86909C', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              {HEATMAP_LEGEND.map((x) => (
-                <span key={x.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <i style={{ width: 11, height: 11, background: x.c, border: `1px solid ${COLOR_BORDER}`, borderRadius: 2, display: 'inline-block' }} />
-                  {x.t}
-                </span>
-              ))}
-            </div>
-          }
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-            {focusId ? (
-              <>
-                <span style={{ fontSize: 12, color: COLOR_TEXT }}>
-                  已聚焦：<b>{filteredStats.find((s) => s.sector.id === focusId)?.sector.name || focusId}</b>
-                </span>
-                <button
-                  onClick={() => {
-                    setFocusId(null);
-                    setPicked(null);
-                  }}
-                  style={{
-                    border: `1px solid ${COLOR_BORDER}`,
-                    background: '#fff',
-                    color: '#4E5969',
-                    borderRadius: 8,
-                    padding: '4px 12px',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  取消聚焦（显示活跃前 N 行）
-                </button>
-                <button
-                  onClick={() => navigate(`/rotation/sector/${focusId}`)}
-                  style={{
-                    border: 'none',
-                    background: '#1890FF',
-                    color: '#fff',
-                    borderRadius: 8,
-                    padding: '5px 14px',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  查看该板块行为详情
-                </button>
-              </>
-            ) : (
-              <>
+            // v2.0.8kw:Top20/40/80 的分段切换移到标题提示 icon 的右侧(与标题同一行)
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <TitleWithTip
+                text={`板块热力网格（近${rule.windowDays}交易日）`}
+                items={tipItems(HEATMAP_LEGEND.map(({ c, t }) => ({ label: t, color: c })))}
+                title="网格颜色含义"
+              />
+              {!focusId && (
                 <Seg
                   value={String(rowLimit)}
                   onChange={(v) => {
@@ -744,9 +696,59 @@ export default function Rotation() {
                     { label: 'Top80', value: '80' },
                   ]}
                 />
-              </>
-            )}
-          </div>
+              )}
+            </span>
+          }
+          right={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 11, color: '#86909C', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {HEATMAP_LEGEND.map((x) => (
+                <span key={x.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <i style={{ width: 11, height: 11, background: x.c, border: `1px solid ${COLOR_BORDER}`, borderRadius: 2, display: 'inline-block' }} />
+                  {x.t}
+                </span>
+              ))}
+            </div>
+          }
+        >
+          {focusId && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+              <span style={{ fontSize: 12, color: COLOR_TEXT }}>
+                已聚焦：<b>{filteredStats.find((s) => s.sector.id === focusId)?.sector.name || focusId}</b>
+              </span>
+              <button
+                onClick={() => {
+                  setFocusId(null);
+                  setPicked(null);
+                }}
+                style={{
+                  border: `1px solid ${COLOR_BORDER}`,
+                  background: '#fff',
+                  color: '#4E5969',
+                  borderRadius: 8,
+                  padding: '4px 12px',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                }}
+              >
+                取消聚焦（显示活跃前 N 行）
+              </button>
+              <button
+                onClick={() => navigate(`/rotation/sector/${focusId}`)}
+                style={{
+                  border: 'none',
+                  background: '#1890FF',
+                  color: '#fff',
+                  borderRadius: 8,
+                  padding: '5px 14px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                查看该板块行为详情
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ flexShrink: 0, width: 108 }}>
