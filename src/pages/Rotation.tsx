@@ -191,6 +191,8 @@ export default function Rotation() {
   const [rowLimit, setRowLimit] = useState(40);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [hover, setHover] = useState<{ r: number; c: number } | null>(null);
+  // Y 轴板块名自身的悬停高亮(与画布 hover 分开 — 便于用户识别"这一行可以点进详情")
+  const [hoverRow, setHoverRow] = useState<number | null>(null);
   const [picked, setPicked] = useState<{ r: number; c: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -640,14 +642,8 @@ export default function Rotation() {
       {/* ③ 事件热力时间轴(与上方筛选/选中联动) */}
       <div style={{ height: 16 }} />
       <div ref={timelineRef}>
-        <Card
-          title="板块 × 交易日 事件热力网格"
-          right={
-            <span style={{ fontSize: 11, color: '#86909C' }}>
-              近 {rule.windowDays} 个交易日 · {cols} 列 × {tlRows.length} 行 = {cols * tlRows.length} 格
-            </span>
-          }
-        >
+        {/* v2.0.8kt:标题改为'事件热力网格（近N交易日）',并删除右上角'列×行'副文本 */}
+        <Card title={`事件热力网格（近${rule.windowDays}交易日）`}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
             {focusId ? (
               <>
@@ -696,9 +692,9 @@ export default function Rotation() {
                     setPicked(null);
                   }}
                   options={[
-                    { label: '前 20 活跃', value: '20' },
-                    { label: '前 40 活跃', value: '40' },
-                    { label: '前 80 活跃', value: '80' },
+                    { label: 'Top20', value: '20' },
+                    { label: 'Top40', value: '40' },
+                    { label: 'Top80', value: '80' },
                   ]}
                 />
                 <span style={{ fontSize: 11, color: '#86909C' }}>行=活跃度前 N 的板块（已应用上方的类型/搜索筛选）；点统计表任意一行可聚焦单个板块</span>
@@ -724,14 +720,21 @@ export default function Rotation() {
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ flexShrink: 0, width: 108 }}>
               {tlRows.map((r, i) => (
+                // v2.0.8kt:Y 轴板块名可点击 → 进入该板块行为详情
                 <div
                   key={r.sector.id}
-                  title={r.sector.name}
+                  title={`${r.sector.name} — 点击查看行为详情`}
+                  onClick={() => navigate(`/rotation/sector/${r.sector.id}`)}
+                  onMouseEnter={() => setHoverRow(i)}
+                  onMouseLeave={() => setHoverRow(null)}
                   style={{
                     height: cellH,
                     lineHeight: `${cellH}px`,
                     fontSize: 11,
-                    color: '#4E5969',
+                    // 可点击语义用链接色 + 下划线提示(悬停加深)
+                    color: hoverRow === i ? '#1890FF' : '#4E5969',
+                    textDecoration: hoverRow === i ? 'underline' : 'none',
+                    cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',

@@ -242,32 +242,32 @@ export default function RotationDetail() {
         </div>
       </Card>
 
-      {/* 自动生成描述 */}
+      {/* v2.0.8kt:两块卡片并排一行两列(窄屏自动堆叠);grid 默认 align-items:stretch → 两卡高度始终一致 */}
       <div style={{ height: 16 }} />
-      <Card title="系统自动生成的描述" right={<span style={{ fontSize: 11, color: '#86909C' }}>由统计口径确定性生成 · 非 AI 预测</span>}>
-        <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#4E5969', lineHeight: 2.1 }}>
-          {desc.map((line, i) => (
-            <li key={i}>{line}</li>
-          ))}
-        </ul>
-        <div style={{ fontSize: 11, color: '#86909C', marginTop: 12, lineHeight: 1.8 }}>
-          以上文字由模板引擎按已计算字段生成，可复现、可审计；不构成买卖建议，也不代表未来概率。
-        </div>
-      </Card>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, alignItems: 'stretch' }}>
+        <Card title="板块AI总结" right={<span style={{ fontSize: 11, color: '#86909C' }}>按统计口径自动生成 · 非预测</span>}>
+          <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#4E5969', lineHeight: 2.1 }}>
+            {desc.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+          <div style={{ fontSize: 11, color: '#86909C', marginTop: 12, lineHeight: 1.8 }}>
+            以上文字由规则引擎按已计算字段自动生成，可复现、可审计；不构成买卖建议，也不代表未来概率。
+          </div>
+        </Card>
 
-      {/* 计算口径 */}
-      <div style={{ height: 16 }} />
-      <Card title="计算口径（透明可解释）">
-        <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 2 }}>
-          <div>· 统计窗口:最近 <b>{rule.windowDays}</b> 个交易日（有效日 {stats.validDays} 天，缺失日不计为 0 涨跌幅）</div>
-          <div>· 强势事件 = {rule.riseRankEnabled ? `进入涨幅 TOP ${rule.topN}` : ''}{rule.riseRankEnabled && rule.riseThreshold ? ` ${rule.eventLogic === 'AND' ? '且' : '或'} ` : ''}涨幅 ≥ {rule.riseThreshold}%</div>
-          <div>· 弱势事件 = {rule.fallRankEnabled ? `进入跌幅 TOP ${rule.topN}` : ''}{rule.fallRankEnabled && rule.fallThreshold ? ` ${rule.eventLogic === 'AND' ? '且' : '或'} ` : ''}跌幅 ≤ -{rule.fallThreshold}%</div>
-          <div>· 间隔 = 交易日序号差（相邻事件日相差 1 表示间隔 1 个交易日步长）</div>
-          <div>· 独立活跃周期 = 以冷却期 {rule.cooldownDays} 个交易日合并相邻事件日；周期间隔按<b>周期起始日</b>相减</div>
-          <div>· 排名并列时按板块代码升序（稳定排序，结果可复现）</div>
-          <div>· 间隔样本少于 4 个时标注"样本不足"，不计算集中度</div>
-        </div>
-      </Card>
+        <Card title="计算口径">
+          <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 2 }}>
+            <div>· 统计窗口:最近 <b>{rule.windowDays}</b> 个交易日（有效日 {stats.validDays} 天，缺失日不计为 0 涨跌幅）</div>
+            <div>· 强势事件 = {rule.riseRankEnabled ? `进入涨幅 TOP ${rule.topN}` : ''}{rule.riseRankEnabled && rule.riseThreshold ? ` ${rule.eventLogic === 'AND' ? '且' : '或'} ` : ''}涨幅 ≥ {rule.riseThreshold}%</div>
+            <div>· 弱势事件 = {rule.fallRankEnabled ? `进入跌幅 TOP ${rule.topN}` : ''}{rule.fallRankEnabled && rule.fallThreshold ? ` ${rule.eventLogic === 'AND' ? '且' : '或'} ` : ''}跌幅 ≤ -{rule.fallThreshold}%</div>
+            <div>· 间隔 = 交易日序号差（相邻事件日相差 1 表示间隔 1 个交易日步长）</div>
+            <div>· 独立活跃周期 = 以冷却期 {rule.cooldownDays} 个交易日合并相邻事件日；周期间隔按<b>周期起始日</b>相减</div>
+            <div>· 排名并列时按板块代码升序（稳定排序，结果可复现）</div>
+            <div>· 间隔样本少于 4 个时标注"样本不足"，不计算集中度</div>
+          </div>
+        </Card>
+      </div>
 
       {/* 强弱事件明细 */}
       <div style={{ height: 16 }} />

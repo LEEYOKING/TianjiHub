@@ -5,6 +5,7 @@
 // 免责：以下均为历史统计关联，不代表因果，也不代表未来必然重现；样本不足处已标注。
 
 import { useMemo, useState, type ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 import type { RotationData, RotationRuleSet } from '../utils/rotation/types';
 import type { WindowComputation } from '../utils/rotation/ruleEngine';
@@ -20,6 +21,18 @@ const COLOR_MID = '#FA8C16'; // 中档 lift(1.2~1.5)
 
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 12 };
 const TH: React.CSSProperties = { padding: '8px 10px', fontWeight: 500, color: '#86909C', whiteSpace: 'nowrap' };
+
+// v2.0.8kt:板块名链接样式(与站点卡片体系一致;悬停变色由下方 <style> 提供)
+const LINK_STYLE: React.CSSProperties = {
+  color: COLOR_TEXT,
+  fontWeight: 500,
+  textDecoration: 'none',
+  borderBottom: '1px dashed #D5DAE2',
+};
+const LINK_CSS = `
+  .tj-rot-link { transition: color .15s, border-color .15s; }
+  .tj-rot-link:hover { color: #1890FF; border-bottom-color: #1890FF; }
+`;
 
 /** 表头行（背景 #F7F9FC + 字色 #86909C） */
 function Head({ cols }: { cols: { label: string; align?: 'left' | 'right' }[] }) {
@@ -131,6 +144,8 @@ export function RotationRelations(props: {
 
   return (
     <div>
+      {/* v2.0.8kt:板块名链接的悬停样式(全局限定在 .tj-rot-link,不影响其它页面) */}
+      <style>{LINK_CSS}</style>
       {/* 分段切换 */}
       <div style={{ marginBottom: 14 }}>
         <Seg
@@ -180,8 +195,17 @@ export function RotationRelations(props: {
                 <tbody>
                   {syncPairs.map((p) => (
                     <tr key={`${p.a.id}-${p.b.id}`} style={{ borderBottom: `1px solid ${COLOR_BORDER}` }}>
-                      <td style={{ padding: '8px 10px', color: COLOR_TEXT, fontWeight: 500 }}>{p.a.name}</td>
-                      <td style={{ padding: '8px 10px', color: COLOR_TEXT, fontWeight: 500 }}>{p.b.name}</td>
+                      {/* v2.0.8kt:板块名可点击 → 进入该板块行为详情 */}
+                      <td style={{ padding: '8px 10px' }}>
+                        <Link to={`/rotation/sector/${p.a.id}`} style={LINK_STYLE} className="tj-rot-link">
+                          {p.a.name}
+                        </Link>
+                      </td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <Link to={`/rotation/sector/${p.b.id}`} style={LINK_STYLE} className="tj-rot-link">
+                          {p.b.name}
+                        </Link>
+                      </td>
                       <td style={{ padding: '8px 10px', textAlign: 'right', color: COLOR_UP, fontWeight: 600 }}>{p.coDays}</td>
                       <td style={{ padding: '8px 10px', textAlign: 'right', color: '#86909C' }}>
                         {p.aDays} / {p.bDays}
