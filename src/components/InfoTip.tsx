@@ -11,7 +11,9 @@ export interface TipItem {
   /** 表头字段名(与表格实际表头一致) */
   label: string;
   /** 含义 / 计算公式(精简一句话) */
-  desc: string;
+  desc?: string;
+  /** 可选:色块颜色。传入后会在名称左侧渲染一个同色小方块(用于热力图图例说明) */
+  color?: string;
 }
 
 /** 字段名 → 说明。集中维护,保证各表口径措辞一致 */
@@ -113,9 +115,12 @@ export const GLOSSARY: Record<string, string> = {
   低波动频率: '按基准 20 日滚动波动率中位数分档后,低波动档内的强势事件频率',
 };
 
-/** 由表头字段名列表生成气泡条目(label 必须能在 GLOSSARY 找到) */
-export function tipItems(labels: string[]): TipItem[] {
-  return labels.map((l) => ({ label: l, desc: GLOSSARY[l] || '' }));
+/** 由表头字段名生成气泡条目(label 必须能在 GLOSSARY 找到);也支持传入 {label,color} 以附带色块 */
+export function tipItems(labels: Array<string | TipItem>): TipItem[] {
+  return labels.map((l) => {
+    if (typeof l === 'string') return { label: l, desc: GLOSSARY[l] || '' };
+    return { ...l, desc: l.desc ?? GLOSSARY[l.label] ?? '' };
+  });
 }
 
 /**
@@ -130,6 +135,21 @@ export function InfoTip({ items, title, width = 380 }: { items: TipItem[]; title
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {items.map((it) => (
           <div key={it.label}>
+            {it.color && (
+              // v2.0.8kv:色块置于名称左侧(热力图图例说明)
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: 11,
+                  height: 11,
+                  background: it.color,
+                  border: '1px solid #EBEEF5',
+                  borderRadius: 2,
+                  marginRight: 6,
+                  verticalAlign: -1,
+                }}
+              />
+            )}
             <span style={{ color: COLOR_TEXT, fontWeight: 600 }}>{it.label}</span>
             {it.desc ? <span> — {it.desc}</span> : null}
           </div>

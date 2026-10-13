@@ -44,7 +44,15 @@ const STATS_HEADERS = [
 ];
 const BOARD_HEADERS_BASE = ['板块', '类型'];
 const MINI_TABLE_HEADERS = ['序号', '板块', '类型', '涨跌幅'];
-const HEATMAP_LEGEND = ['大涨(达阈值)', '强势(进涨幅榜)', '大跌(达阈值)', '弱势(进跌幅榜)', '未触发', '无数据'];
+// v2.0.8kv:热力网格图例(色块 + 名称) —— 标题行最右侧展示,同一份数据复用给感叹号气泡(色块在名称左侧)
+const HEATMAP_LEGEND: { c: string; t: string }[] = [
+  { c: TL_LARGE_UP, t: '大涨(达阈值)' },
+  { c: TL_STRONG, t: '强势(进涨幅榜)' },
+  { c: TL_LARGE_DOWN, t: '大跌(达阈值)' },
+  { c: TL_WEAK, t: '弱势(进跌幅榜)' },
+  { c: TL_NONE, t: '未触发' },
+  { c: TL_NA, t: '无数据' },
+];
 const PROFILE_CARD_LABELS = ['反复活跃次数', '活跃间隔', '最近重新活跃', '趋势与持续性'];
 
 function dashToSlash(d?: string): string {
@@ -374,6 +382,9 @@ export default function Rotation() {
       }
     }
     if (hover) {
+      // v2.0.8kv:鼠标所在格子所属的整行加一层极浅高亮(表明当前选中该行)
+      ctx.fillStyle = 'rgba(24, 144, 255, 0.06)';
+      ctx.fillRect(0, hover.r * cellH + 0.5, w, cellH - 1);
       ctx.strokeStyle = '#111827';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(hover.c * cellW + 0.5, hover.r * cellH + 0.5, cellW - 1, cellH - 1);
@@ -660,8 +671,25 @@ export default function Rotation() {
       <div ref={timelineRef}>
         {/* v2.0.8kt:标题改为'事件热力网格（近N交易日）',并删除右上角'列×行'副文本 */}
         {/* v2.0.8ku:标题右侧加感叹号说明(图例各色含义) */}
+        {/* v2.0.8kv:标题改'板块热力网格';图例整体移到标题行最右侧;气泡内色块置于名称左侧 */}
         <Card
-          title={<TitleWithTip text={`事件热力网格（近${rule.windowDays}交易日）`} items={tipItems(HEATMAP_LEGEND)} title="网格颜色含义" />}
+          title={
+            <TitleWithTip
+              text={`板块热力网格（近${rule.windowDays}交易日）`}
+              items={tipItems(HEATMAP_LEGEND.map(({ c, t }) => ({ label: t, color: c })))}
+              title="网格颜色含义"
+            />
+          }
+          right={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 11, color: '#86909C', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {HEATMAP_LEGEND.map((x) => (
+                <span key={x.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <i style={{ width: 11, height: 11, background: x.c, border: `1px solid ${COLOR_BORDER}`, borderRadius: 2, display: 'inline-block' }} />
+                  {x.t}
+                </span>
+              ))}
+            </div>
+          }
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
             {focusId ? (
@@ -716,24 +744,8 @@ export default function Rotation() {
                     { label: 'Top80', value: '80' },
                   ]}
                 />
-                <span style={{ fontSize: 11, color: '#86909C' }}>行=活跃度前 N 的板块（已应用上方的类型/搜索筛选）；点统计表任意一行可聚焦单个板块</span>
               </>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 'auto', fontSize: 11, color: '#86909C', flexWrap: 'wrap' }}>
-              {[
-                { c: TL_LARGE_UP, t: '大涨(达阈值)' },
-                { c: TL_STRONG, t: '强势(进涨幅榜)' },
-                { c: TL_LARGE_DOWN, t: '大跌(达阈值)' },
-                { c: TL_WEAK, t: '弱势(进跌幅榜)' },
-                { c: TL_NONE, t: '未触发' },
-                { c: TL_NA, t: '无数据' },
-              ].map((x) => (
-                <span key={x.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <i style={{ width: 11, height: 11, background: x.c, border: `1px solid ${COLOR_BORDER}`, borderRadius: 2, display: 'inline-block' }} />
-                  {x.t}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
