@@ -746,7 +746,9 @@ export function PageHeader({ title, tradeDateSlash, subtitle, liveTag, liveColor
 
 // 白色卡片:加浅灰外投影(用户 #18 反馈:全站圆角 14px + #6 反馈:box-shadow 改)
 // 用户 #16 反馈:全站白色卡片加 1px solid #E5E7EB border
-export function Card({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
+// v2.0.8ku:title 由 string 放宽为 ReactNode —— 便于在标题右侧挂"感叹号"说明气泡
+// (既有调用全部传字符串,仍然兼容)
+export function Card({ title, right, children }: { title: React.ReactNode; right?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{
       background: '#fff',

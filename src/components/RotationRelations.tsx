@@ -6,6 +6,7 @@
 
 import { useMemo, useState, type ReactElement } from 'react';
 import { Link } from 'react-router-dom';
+import { InfoTip, tipItems } from './InfoTip';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 import type { RotationData, RotationRuleSet } from '../utils/rotation/types';
 import type { WindowComputation } from '../utils/rotation/ruleEngine';
@@ -18,6 +19,13 @@ import {
 } from '../utils/rotation/relations';
 
 const COLOR_MID = '#FA8C16'; // 中档 lift(1.2~1.5)
+
+// v2.0.8ku:三个子表的表头字段(与下方 Head cols 一一对应)—— 用于感叹号气泡说明
+const MODE_HEADERS: Record<'sync' | 'lead' | 'regime', string[]> = {
+  sync: ['板块 A', '板块 B', '共同活跃天数', '各自活跃天数', '重合率(Jaccard)', 'Lift'],
+  lead: ['跟随板块', '基准频率', 't+1', 't+2', 't+3', 't+4', 't+5', '最佳滞后', '命中样本'],
+  regime: ['板块', '上涨日频率', '下跌日频率', '差值', '高波动频率', '低波动频率'],
+};
 
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 12 };
 const TH: React.CSSProperties = { padding: '8px 10px', fontWeight: 500, color: '#86909C', whiteSpace: 'nowrap' };
@@ -146,8 +154,8 @@ export function RotationRelations(props: {
     <div>
       {/* v2.0.8kt:板块名链接的悬停样式(全局限定在 .tj-rot-link,不影响其它页面) */}
       <style>{LINK_CSS}</style>
-      {/* 分段切换 */}
-      <div style={{ marginBottom: 14 }}>
+      {/* 分段切换 + 当前子表字段说明(感叹号气泡随模式切换字段) */}
+      <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         <Seg
           value={mode}
           onChange={setMode}
@@ -157,6 +165,7 @@ export function RotationRelations(props: {
             { label: '市场环境分层', value: 'regime' as const },
           ]}
         />
+        <InfoTip items={tipItems(MODE_HEADERS[mode])} title="列含义 / 计算公式" />
       </div>
 
       {/* (a) 同步活跃 */}

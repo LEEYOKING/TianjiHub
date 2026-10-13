@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, PageHeader } from './Overview';
+import { InfoTip, TitleWithTip, tipItems } from '../components/InfoTip';
 import { RotationRuleBar } from '../components/RotationRulePanel';
 import { RotationRelations } from '../components/RotationRelations';
 import { useRotationData, useRotationRule } from '../data/rotationData';
@@ -35,6 +36,16 @@ const TIP_H = 76;
 // 「最近重新活跃」判定阈值(V1 固定值,不随规则变化 — 已在界面上明确标注)
 const REACTIVATE_AGO = 5;    // 距最近一次强势事件 ≤ 5 个交易日
 const REACTIVATE_GAP = 10;   // 且此前空档 ≥ 10 个交易日
+
+// v2.0.8ku:表头字段提为常量 —— 渲染表头与"感叹号"气泡说明共用同一份,避免两处措辞漂移
+const STATS_HEADERS = [
+  '板块', '类型', '强势次数', '弱势次数', '强势频率', '平均间隔',
+  '独立周期', '独立间隔', '累计收益', '最大回撤', '活跃度', '覆盖率',
+];
+const BOARD_HEADERS_BASE = ['板块', '类型'];
+const MINI_TABLE_HEADERS = ['序号', '板块', '类型', '涨跌幅'];
+const HEATMAP_LEGEND = ['大涨(达阈值)', '强势(进涨幅榜)', '大跌(达阈值)', '弱势(进跌幅榜)', '未触发', '无数据'];
+const PROFILE_CARD_LABELS = ['反复活跃次数', '活跃间隔', '最近重新活跃', '趋势与持续性'];
 
 function dashToSlash(d?: string): string {
   if (!d || d.length < 10) return '';
@@ -142,6 +153,8 @@ function BoardList({
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>{title}</span>
+        {/* v2.0.8ku:榜单表头说明气泡(随榜单模式自动切换字段) */}
+        <InfoTip items={tipItems([...BOARD_HEADERS_BASE, ...headers])} title="列含义" />
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
@@ -428,7 +441,7 @@ export default function Rotation() {
 
       {/* ① 每日强弱榜单 */}
       <Card
-        title="每日强弱榜单"
+        title={<TitleWithTip text="每日强弱榜单" items={tipItems(MINI_TABLE_HEADERS)} title="列含义" />}
         right={
           <span style={{ fontSize: 11, color: '#86909C' }}>
             {latest?.date || '-'} · 当日有效板块 {latest?.total ?? 0} 个
@@ -453,7 +466,7 @@ export default function Rotation() {
       {/* ② 板块行为画像 */}
       <div style={{ height: 16 }} />
       <Card
-        title="板块行为画像"
+        title={<TitleWithTip text="板块行为画像" items={tipItems(PROFILE_CARD_LABELS)} title="概览指标含义" />}
         right={<span style={{ fontSize: 11, color: '#86909C' }}>近 {rule.windowDays} 个交易日</span>}
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16 }}>
@@ -527,7 +540,10 @@ export default function Rotation() {
 
         {/* 全量统计表(= 全页选择器) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>板块行为统计表</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            板块行为统计表
+            <InfoTip items={tipItems(STATS_HEADERS)} title="列含义 / 计算公式" />
+          </span>
           <Seg
             value={typeFilter}
             onChange={(v) => {
@@ -565,7 +581,7 @@ export default function Rotation() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 980 }}>
             <thead>
               <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
-                {['板块', '类型', '强势次数', '弱势次数', '强势频率', '平均间隔', '独立周期', '独立间隔', '累计收益', '最大回撤', '活跃度', '覆盖率'].map((h) => (
+                {STATS_HEADERS.map((h) => (
                   <th
                     key={h}
                     style={{ padding: '9px 10px', textAlign: h === '板块' || h === '类型' ? 'left' : 'right', fontWeight: 500, whiteSpace: 'nowrap' }}
@@ -643,7 +659,10 @@ export default function Rotation() {
       <div style={{ height: 16 }} />
       <div ref={timelineRef}>
         {/* v2.0.8kt:标题改为'事件热力网格（近N交易日）',并删除右上角'列×行'副文本 */}
-        <Card title={`事件热力网格（近${rule.windowDays}交易日）`}>
+        {/* v2.0.8ku:标题右侧加感叹号说明(图例各色含义) */}
+        <Card
+          title={<TitleWithTip text={`事件热力网格（近${rule.windowDays}交易日）`} items={tipItems(HEATMAP_LEGEND)} title="网格颜色含义" />}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
             {focusId ? (
               <>
@@ -876,7 +895,16 @@ export default function Rotation() {
 
       {/* ④ 板块轮动关系 */}
       <div style={{ height: 16 }} />
-      <Card title="板块轮动关系" right={<span style={{ fontSize: 11, color: '#86909C' }}>历史统计关联 · 非因果</span>}>
+      <Card
+        title={
+          <TitleWithTip
+            text="板块轮动关系"
+            title="核心指标含义"
+            items={tipItems(['共同活跃天数', '重合率(Jaccard)', 'Lift', '基准频率', '最佳滞后', '命中样本', '上涨日频率', '差值'])}
+          />
+        }
+        right={<span style={{ fontSize: 11, color: '#86909C' }}>历史统计关联 · 非因果</span>}
+      >
         <RotationRelations data={data} rule={rule} comp={computed.comp} stats={computed.stats} />
       </Card>
     </div>

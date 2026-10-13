@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import { Card, PageHeader } from './Overview';
+import { TitleWithTip, tipItems } from '../components/InfoTip';
 import { RotationRuleBar, pctColor } from '../components/RotationRulePanel';
 import { useRotationData, useRotationRule } from '../data/rotationData';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
@@ -16,6 +17,18 @@ const COLOR_WEAK = COLOR_DOWN;
 const COLOR_LARGE_UP = '#d9363e';
 const COLOR_LARGE_DOWN = '#089b55';
 const COLOR_NONE = '#F0F1F2';
+
+// v2.0.8ku:各卡片的"感叹号"气泡字段清单 —— 与卡片内实际出现的字段/图例一一对应
+const STATS_LABELS = [
+  '有效交易日', '强势榜出现次数', '弱势榜出现次数', '大涨事件日', '大跌事件日',
+  '强势事件平均间隔', '最近一次强势事件', '当前连续强势', '当前连续弱势', '独立活跃周期',
+  '窗口累计收益', '相对基准超额', '最大回撤', '活跃度评分', '间隔集中度',
+];
+const TIMELINE_LEGEND = ['大涨', '进强势榜', '大跌', '进弱势榜', '未进榜'];
+const NAV_LABELS = ['累计净值曲线', '基准'];
+const DETAIL_LABELS = [
+  '强势事件日期', '弱势事件日期', '起始日', '结束日', '事件日数', '簇内最大涨幅', '簇内累计收益', '事件日',
+];
 
 function dashToSlash(d?: string): string {
   if (!d || d.length < 10) return '';
@@ -159,7 +172,10 @@ export default function RotationDetail() {
       <RotationRuleBar rule={rule} onChange={setRule} />
 
       {/* 关键指标 */}
-      <Card title="统计摘要" right={<span style={{ fontSize: 11, color: '#86909C' }}>有效交易日 {stats.validDays} / {dates.length}</span>}>
+      <Card
+        title={<TitleWithTip text="统计摘要" items={tipItems(STATS_LABELS)} title="指标含义 / 计算公式" />}
+        right={<span style={{ fontSize: 11, color: '#86909C' }}>有效交易日 {stats.validDays} / {dates.length}</span>}
+      >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(168px, 1fr))', gap: 12 }}>
           <KV label="强势榜出现次数" value={`${stats.strongCount} 次`} color={COLOR_UP} sub={`频率 ${freqWord(stats.strongFreq)}`} />
           <KV label="弱势榜出现次数" value={`${stats.weakCount} 次`} color={COLOR_DOWN} sub={`频率 ${freqWord(stats.weakFreq)}`} />
@@ -185,7 +201,7 @@ export default function RotationDetail() {
       {/* 事件时间轴 */}
       <div style={{ height: 16 }} />
       <Card
-        title={`${dates.length} 个交易日的强弱事件时间轴`}
+        title={<TitleWithTip text={`${dates.length} 个交易日的强弱事件时间轴`} items={tipItems(TIMELINE_LEGEND)} title="色块含义" />}
         right={
           <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#86909C' }}>
             {[
@@ -235,7 +251,7 @@ export default function RotationDetail() {
 
       {/* 净值曲线 */}
       <div style={{ height: 16 }} />
-      <Card title="窗口净值曲线（板块 vs 基准，复合累计）">
+      <Card title={<TitleWithTip text="窗口净值曲线（板块 vs 基准，复合累计）" items={tipItems(NAV_LABELS)} title="图线含义" />}>
         <ReactECharts option={chartOption} style={{ height: 300, width: '100%' }} notMerge lazyUpdate />
         <div style={{ fontSize: 11, color: '#86909C', marginTop: 8, lineHeight: 1.8 }}>
           板块指数收益用于行情研究，<b>不等于投资者实际可实现的收益</b>（不可直接交易板块指数，且未考虑手续费与冲击成本）。
@@ -271,7 +287,10 @@ export default function RotationDetail() {
 
       {/* 强弱事件明细 */}
       <div style={{ height: 16 }} />
-      <Card title="事件明细" right={<span style={{ fontSize: 11, color: '#86909C' }}>最近 12 条</span>}>
+      <Card
+        title={<TitleWithTip text="事件明细" items={tipItems(DETAIL_LABELS)} title="字段含义 / 计算公式" />}
+        right={<span style={{ fontSize: 11, color: '#86909C' }}>最近 12 条</span>}
+      >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_UP, marginBottom: 8 }}>强势事件日期（{stats.strongDates.length}）</div>
