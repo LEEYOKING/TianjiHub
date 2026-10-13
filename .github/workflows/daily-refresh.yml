@@ -66,6 +66,16 @@ jobs:
           NO_PROXY="*" no_proxy="*" python3 scripts/fetch_surgery_data.py || \
             echo "! 手术台数据拉取失败(海外 IP 风控),本次跳过"
 
+      # v2.0.8kr:板块轮动历史归档(独立文件 public/rotation.json)
+      # — 与既有数据链路完全解耦:失败只跳过,不影响 data.json / sectorKlines.json 等
+      # — 全窗口重建(250 交易日 × 665 板块 ≈ 4~5 分钟),失败时不写盘,线上保持上一份
+      - name: 拉取板块轮动历史归档
+        if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
+        timeout-minutes: 12
+        run: |
+          NO_PROXY="*" no_proxy="*" python3 scripts/fetch_rotation.py --days 250 || \
+            echo "! 板块轮动归档失败,本次跳过(线上保持上一份 rotation.json)"
+
       - name: 提交并推送
         # 早晨补抓档不设交易日门槛(假期工作日也要提交);其余档仍是交易日才提交
         if: github.event.schedule == '30 0 * * 1-5' || steps.trading_day.outputs.trading_day == '1'
@@ -73,6 +83,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/data.json public/sectorKlines.json public/surgery.json public/prescan.json
+          # v2.0.8kr:板块轮动归档(存在才 add,避免脚本失败时报错)
+          [ -f public/rotation.json ] && git add public/rotation.json || true
           if git diff --cached --quiet; then
             echo "无数据变化,跳过提交"
             exit 0

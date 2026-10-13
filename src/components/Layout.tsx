@@ -76,6 +76,11 @@ export default function Layout({ data, children }: Props) {
   const MENU = [
     { key: '/overview', label: '大盘总览', icon: Icons.Chart, count: 0 },
     { key: '/sector', label: '板块涨跌', icon: Icons.Grid, count: 0 },
+    // v2.0.8kr:新增【板块轮动】大板块(分组标题 + 缩进的子项)
+    // — 只新增条目,不改动既有条目与跳转逻辑
+    { group: '板块轮动' },
+    { key: '/rotation', label: '轮动档案', icon: Icons.Flame, count: 0, indent: true },
+    { key: '/rotation/timeline', label: '轮动时间轴', icon: Icons.Scan, count: 0, indent: true },
     { key: '/limit-up', label: '连板天梯', icon: Icons.Ladder, count: counts.limitUp },
     { key: '/limit-down', label: '跌停梯队', icon: Icons.Down, count: counts.limitDown },
     { key: '/breakout', label: '放量突破', icon: Icons.UpArrow, count: counts.breakout },
@@ -88,8 +93,27 @@ export default function Layout({ data, children }: Props) {
   // v2.0.7fd:抽 menu 渲染成函数 — PC sidebar + 移动端 drawer 复用
   const renderMenu = (onItemClick?: () => void) => (
     <>
-      {MENU.map((m) => {
-        const active = location.pathname === m.key;
+      {MENU.map((m: any) => {
+        // v2.0.8kr:分组标题(纯展示,不是链接)
+        if (m.group) {
+          return (
+            <div
+              key={'g-' + m.group}
+              style={{
+                padding: isMobile ? '12px 20px 4px' : '10px 24px 4px',
+                fontSize: 11,
+                fontWeight: 600,
+                color: '#86909C',
+                letterSpacing: 0.4,
+              }}
+            >
+              {m.group}
+            </div>
+          );
+        }
+        // v2.0.8kr:/rotation/sector/:id 详情页时,「轮动档案」保持选中
+        const active =
+          location.pathname === m.key || (m.key === '/rotation' && location.pathname.startsWith('/rotation/'));
         // v2.0.7fh:user 反馈 #6 — 切换 tab 自动滚到新页面顶部
         // — 之前 React Router 切路由不重置 scroll,保留上页滚动位置
         // — 用 useLocation pathname 监听路由变化,变化时 scrollTo(0, 0)
@@ -115,6 +139,8 @@ export default function Layout({ data, children }: Props) {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: isMobile ? '14px 20px' : '9px 24px',  // v2.0.7fr:user 反馈 PC 端 11px → 9px(更紧凑)
+              // v2.0.8kr:分组子项左侧缩进(视觉上从属于「板块轮动」)
+              paddingLeft: m.indent ? (isMobile ? 34 : 38) : undefined,
               textDecoration: 'none',
               // 用户 #14 反馈:未选中 Tab 文字颜色改 #4b5563
               color: active ? '#fff' : '#4b5563',

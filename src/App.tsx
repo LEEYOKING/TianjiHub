@@ -11,6 +11,10 @@ const DragonTiger = lazy(() => import('./pages/DragonTiger'));
 const Surgery = lazy(() => import('./pages/Surgery'));
 const PreScan = lazy(() => import('./pages/PreScan'));
 const FirstBoard = lazy(() => import('./pages/FirstBoard'));
+// v2.0.8kr:板块轮动(新分组) — 同样懒加载,不进入首屏 bundle
+const Rotation = lazy(() => import('./pages/Rotation'));
+const RotationTimeline = lazy(() => import('./pages/RotationTimeline'));
+const RotationDetail = lazy(() => import('./pages/RotationDetail'));
 import { loadReportData, getCNTodayYMD, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
 
@@ -162,6 +166,10 @@ export default function App() {
               <Route path="/surgery" element={<Surgery data={merged} />} />
               <Route path="/prescan" element={<PreScan />} />
               <Route path="/firstboard" element={<FirstBoard data={merged} />} />
+              {/* v2.0.8kr:板块轮动 — 独立数据源(rotation.json),不依赖 merged,零影响既有页面 */}
+              <Route path="/rotation" element={<Rotation />} />
+              <Route path="/rotation/timeline" element={<RotationTimeline />} />
+              <Route path="/rotation/sector/:id" element={<RotationDetail />} />
             </Routes>
           </Suspense>
         </Layout>
