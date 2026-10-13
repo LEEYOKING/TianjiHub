@@ -230,7 +230,7 @@ def fetch_kline(secid: str, bars: int) -> tuple[str, list[list]]:
 # ---------- 3. 主流程 ----------
 def main() -> int:
     ap = argparse.ArgumentParser(description='板块轮动 P1 历史归档')
-    ap.add_argument('--days', type=int, default=250, help='回补最近 N 个交易日(默认 250)')
+    ap.add_argument('--days', type=int, default=120, help='回补最近 N 个交易日(默认 120,兼顾研究深度与仓库体积)')
     ap.add_argument('--only', default='all', choices=['all', 'region', 'industry', 'concept'])
     ap.add_argument('--limit', type=int, default=0, help='只拉前 N 个板块(联调用)')
     ap.add_argument('--out', default=DEFAULT_OUT, help='输出路径')

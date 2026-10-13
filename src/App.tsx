@@ -11,9 +11,8 @@ const DragonTiger = lazy(() => import('./pages/DragonTiger'));
 const Surgery = lazy(() => import('./pages/Surgery'));
 const PreScan = lazy(() => import('./pages/PreScan'));
 const FirstBoard = lazy(() => import('./pages/FirstBoard'));
-// v2.0.8kr:板块轮动(新分组) — 同样懒加载,不进入首屏 bundle
+// v2.0.8ks:板块轮动 — 原「轮动档案 / 轮动时间轴」两页已合并为单页 /rotation
 const Rotation = lazy(() => import('./pages/Rotation'));
-const RotationTimeline = lazy(() => import('./pages/RotationTimeline'));
 const RotationDetail = lazy(() => import('./pages/RotationDetail'));
 import { loadReportData, getCNTodayYMD, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
@@ -166,9 +165,9 @@ export default function App() {
               <Route path="/surgery" element={<Surgery data={merged} />} />
               <Route path="/prescan" element={<PreScan />} />
               <Route path="/firstboard" element={<FirstBoard data={merged} />} />
-              {/* v2.0.8kr:板块轮动 — 独立数据源(rotation.json),不依赖 merged,零影响既有页面 */}
+              {/* v2.0.8ks:板块轮动 — 单页档案(时间轴已并入其中);旧链接 /rotation/timeline 重定向 */}
               <Route path="/rotation" element={<Rotation />} />
-              <Route path="/rotation/timeline" element={<RotationTimeline />} />
+              <Route path="/rotation/timeline" element={<Navigate to="/rotation" replace />} />
               <Route path="/rotation/sector/:id" element={<RotationDetail />} />
             </Routes>
           </Suspense>

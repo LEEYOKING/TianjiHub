@@ -68,12 +68,12 @@ jobs:
 
       # v2.0.8kr:板块轮动历史归档(独立文件 public/rotation.json)
       # — 与既有数据链路完全解耦:失败只跳过,不影响 data.json / sectorKlines.json 等
-      # — 全窗口重建(250 交易日 × 665 板块 ≈ 4~5 分钟),失败时不写盘,线上保持上一份
+      # — 全窗口重建(120 交易日 × 665 板块 ≈ 4~5 分钟),失败时不写盘,线上保持上一份
       - name: 拉取板块轮动历史归档
         if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
         timeout-minutes: 12
         run: |
-          NO_PROXY="*" no_proxy="*" python3 scripts/fetch_rotation.py --days 250 || \
+          NO_PROXY="*" no_proxy="*" python3 scripts/fetch_rotation.py --days 120 || \
             echo "! 板块轮动归档失败,本次跳过(线上保持上一份 rotation.json)"
 
       - name: 提交并推送

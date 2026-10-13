@@ -41,6 +41,8 @@ export interface SectorStats {
   currentStrongStreak: number; longestStrongStreak: number;
   currentWeakStreak: number; longestWeakStreak: number;
   lastStrongAgo: number | null; lastWeakAgo: number | null; // 距窗口最后一个交易日的交易日数
+  /** 最近一次强势事件「之前」的那个间隔(交易日步长);不足两个事件时为 null */
+  lastGapBefore: number | null;
   cumReturn: number;      // 复合收益(小数)
   upDayRatio: number; avgPct: number; volatility: number;
   maxDrawdown: number;    // 负数或 0
@@ -135,6 +137,8 @@ export function analyzeSector(series: SectorEventSeries, data: RotationData, rul
   const weakCount = weakGlobals.length;
   const strongDates = strongGlobals.map((g) => data.dates[g]);
   const weakDates = weakGlobals.map((g) => data.dates[g]);
+  // 最近一次强势事件「之前」的间隔：最后两个强势事件日的全局下标差（<2 个事件为 null）
+  const lastGapBefore = strongCount >= 2 ? strongGlobals[strongCount - 1] - strongGlobals[strongCount - 2] : null;
   const strongFreq = validDays > 0 ? strongCount / validDays : 0;
   const weakFreq = validDays > 0 ? weakCount / validDays : 0;
 
@@ -220,6 +224,7 @@ export function analyzeSector(series: SectorEventSeries, data: RotationData, rul
     longestWeakStreak: weakStreak.longest,
     lastStrongAgo: strongStreak.ago,
     lastWeakAgo: weakStreak.ago,
+    lastGapBefore,
     cumReturn,
     upDayRatio, avgPct, volatility,
     maxDrawdown,
