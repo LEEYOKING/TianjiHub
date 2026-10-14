@@ -387,20 +387,102 @@ export function buildNavSeries(data: RotationData, comp: WindowComputation, seri
   };
 }
 
+// ===================== 行为特征分析（五段式，任务书 §6.5） =====================
+
 /**
- * 生成单板块的确定性模板文本（非 AI）。
- * 事件日序号由 lastStrongAgo 锚定（最后一个事件日 = win - lastStrongAgo），
- * 再用间隔序列反推全部事件日，因此无需额外数据即可还原“第 X 天”。
+ * 板块行为特征的五段式解释。
+ * A 历史行为 / B 活跃模式 / C 收益与风险 / D 统计局限 / E 后续观察。
+ * 定位是「数据解释器」，不是行情预测器：只陈述已发生的事实与"可继续验证的条件"，
+ * 不出现"即将启动""必然反弹""资金必然回流"这类结论（任务书 §6.5 明令禁止）。
  */
-export function describeSector(stats: SectorStats, rule: RotationRuleSet): string[] {
+export interface BehaviorSummary {
+  history: string[];
+  activity: string[];
+  returnRisk: string[];
+  limits: string[];
+  nextSteps: string[];
+}
+
+export function summarizeBehavior(
+  stats: SectorStats,
+  rule: RotationRuleSet,
+  opts: { benchAvailable: boolean; benchmark?: string },
+): BehaviorSummary {
   const win = Math.max(1, Math.floor(rule.windowDays));
-  const lines: string[] = [];
-  lines.push(`最近 ${win} 个交易日，进入强势榜 ${stats.strongCount} 次，进入弱势榜 ${stats.weakCount} 次。`);
-  lines.push(...describeSide('强势', win, stats.strongCount, stats.lastStrongAgo, stats.gapStrong));
-  lines.push(...describeSide('弱势', win, stats.weakCount, stats.lastWeakAgo, stats.gapWeak));
-  // 口径提示必须位于末尾
-  lines.push(`统计口径：窗口 ${rule.windowDays} 个交易日，TOP ${rule.topN}，大涨阈值 +${rule.riseThreshold}%，组合方式 ${rule.eventLogic}。`);
-  return lines;
+  const pct1 = (x: number) => `${(x * 100).toFixed(1)}%`;
+  const pct2 = (x: number) => `${(x * 100).toFixed(2)}%`;
+  const benchName = opts.benchmark || '基准指数';
+
+  // —— A. 历史行为 ——
+  const history: string[] = [
+    `过去 ${win} 个有效交易日内（该板块有数据 ${stats.validDays} 天）：强势事件 ${stats.strongCount} 次、弱势事件 ${stats.weakCount} 次；其中大涨事件 ${stats.largeUpCount} 次、大跌事件 ${stats.largeDownCount} 次。`,
+    `强势事件频率 ${pct1(stats.strongFreq)}、弱势事件频率 ${pct1(stats.weakFreq)}（分母为该板块的有效交易日数，不是窗口长度）。`,
+  ];
+
+  // —— B. 活跃模式 ——
+  const activity: string[] = [];
+  if (stats.strongCount === 0) {
+    activity.push('窗口内未出现强势事件，暂不构成强势活跃形态。');
+  } else {
+    const cdText = rule.cooldownDays > 0 ? `（冷却期 ${rule.cooldownDays} 个交易日）` : '（未设冷却期合并）';
+    activity.push(
+      stats.clustersStrong.length > 1
+        ? `强势事件分散在 ${stats.clustersStrong.length} 个独立活跃周期中${cdText}。`
+        : `强势事件集中在 1 个活跃周期内${cdText}。`,
+    );
+    activity.push(
+      stats.currentStrongStreak > 0
+        ? `自最后一个交易日往前连续强势 ${stats.currentStrongStreak} 天；窗口内最长连续 ${stats.longestStrongStreak} 天。`
+        : `当前不处于连续强势；窗口内最长连续 ${stats.longestStrongStreak} 天。`,
+    );
+    activity.push(
+      stats.lastStrongAgo === null
+        ? '窗口内没有可定位的强势事件日。'
+        : stats.lastStrongAgo === 0
+          ? '最近一次强势事件就发生在窗口的最后一个交易日。'
+          : `最近一次强势事件在 ${stats.lastStrongAgo} 个交易日前。`,
+    );
+    activity.push(
+      stats.gapStrong.sampleInsufficient
+        ? `相邻强势事件仅 ${stats.gapStrong.count} 个间隔样本，不足以判断间隔规律。`
+        : `相邻强势事件平均间隔 ${stats.gapStrong.avg!.toFixed(1)} 个交易日（中位 ${stats.gapStrong.median!.toFixed(1)} 个交易日）。`,
+    );
+  }
+
+  // —— C. 收益与风险 ——
+  const returnRisk: string[] = [
+    `窗口复合收益 ${pct2(stats.cumReturn)}（∏(1+r)−1，不可把每日涨跌幅直接相加）。`,
+    stats.relStrength === null
+      ? '相对基准超额：基准在窗口内不可用，无法计算（未做任何替代估算）。'
+      : `相对 ${benchName} 超额 ${pct2(stats.relStrength)}（简单超额口径：板块累计收益 − 基准累计收益）。`,
+    `最大回撤 ${pct2(stats.maxDrawdown)}（窗口净值自峰值回落的最大幅度）；波动率 ${pct2(stats.volatility)}，上涨日占比 ${pct1(stats.upDayRatio)}。`,
+  ];
+
+  // —— D. 统计局限 ——
+  const limits: string[] = [
+    `有效样本 ${stats.validDays} / ${win} 个交易日，覆盖率 ${pct1(stats.coverage)}。${stats.coverage < 1 ? '存在缺失日；缺失日不计为 0 涨跌幅，也不进入任何分母。' : ''}`,
+    `强势事件间隔样本 ${stats.gapStrong.count} 个${stats.gapStrong.sampleInsufficient ? '（少于 4 个，不计算集中度，也不宜据此判断规律）' : ''}。`,
+    opts.benchAvailable
+      ? '基准在窗口内有可用行情，相对表现为真实计算结果。'
+      : '基准在窗口内缺失，本页相对表现模块整体不可用（不伪造基准曲线）。',
+    '以上均为对历史数据的统计描述；样本有限时结论的稳定性会下降。',
+  ];
+
+  // —— E. 后续观察（只给"可继续验证的条件"，不预测） ——
+  const riseSide = rule.riseRankEnabled ? `进入涨幅 TOP ${rule.topN}` : '';
+  const riseAbs = rule.riseThreshold > 0 ? `涨幅 ≥ ${rule.riseThreshold}%` : '';
+  const joinWord = rule.eventLogic === 'AND' ? ' 且' : ' 或';
+  const ruleText = [riseSide, riseAbs].filter(Boolean).join(joinWord) || '（当前规则未启用强势条件）';
+  const nextSteps: string[] = [
+    `可继续跟踪的客观条件：接下来的交易日是否再次满足强势事件规则（${ruleText}）。`,
+    rule.cooldownDays > 0
+      ? `若在 ${rule.cooldownDays} 个交易日内再次出现强势事件，该事件与当前活跃周期可视为同簇（按冷却期口径分组）。`
+      : '当前冷却期为 0（不合并），每个强势事件日各自构成一个独立周期。',
+    `可与历史对照的比较项：本次强势事件间隔是否落在关注区间 ${rule.gapMin}~${rule.gapMax} 个交易日；相对基准超额是否仍为正。`,
+    '上述均为「可继续验证的条件」，不是对未来的判断，也不构成买卖建议。',
+  ];
+
+  return { history, activity, returnRisk, limits, nextSteps };
 }
 
 /** 生成全市场汇总文本（确定性） */
@@ -556,36 +638,4 @@ function streakInfo(
   }
 
   return { current, longest, ago };
-}
-
-/** 由间隔序列与锚点反推事件日的窗口内 1-based 序号 */
-function eventDayNumbers(win: number, lastAgo: number, gaps: number[]): number[] {
-  let span = 0;
-  for (const g of gaps) span += g;
-  const last = win - lastAgo;   // 最后一个事件日的窗口内序号
-  const first = last - span;    // 第一个事件日
-  const nums: number[] = [first];
-  for (const g of gaps) nums.push(nums[nums.length - 1] + g);
-  return nums;
-}
-
-/** 生成单侧（强势/弱势）事件明细文本 */
-function describeSide(label: string, win: number, count: number, lastAgo: number | null, gap: GapStats): string[] {
-  const out: string[] = [];
-  if (count === 0) {
-    out.push(`窗口内未出现${label}事件。`);
-    return out;
-  }
-  if (count === 1) {
-    const day = lastAgo === null ? null : win - lastAgo;
-    out.push(day === null ? `窗口内出现 1 次${label}事件。` : `${label}事件发生在第 ${day} 天（仅 1 次，无间隔）。`);
-    return out;
-  }
-  const nums = lastAgo === null ? [] : eventDayNumbers(win, lastAgo, gap.gaps);
-  const dayText = nums.length > 0 ? `第 ${nums.join('、')} 天` : `${count} 天`;
-  out.push(`${label}事件发生在${dayText}，事件间隔分别为 ${gap.gaps.join('、')} 个交易日。`);
-  if (gap.sampleInsufficient) {
-    out.push(`⚠ 间隔样本仅 ${gap.count} 个，不足以判断规律。`);
-  }
-  return out;
 }

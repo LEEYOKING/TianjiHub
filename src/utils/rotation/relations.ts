@@ -114,6 +114,100 @@ export function computeSyncPairs(
   return out.slice(0, limit);
 }
 
+// ===================== 单板块的同步活跃伙伴（详情页用） =====================
+
+/** 指定板块与另一个板块的同步活跃统计（target 恒为本板块） */
+export interface SectorPeer {
+  peer: { id: string; name: string };
+  coDays: number;      // 共同活跃天数（同一交易日两者都发生强势事件）
+  targetDays: number;  // 本板块的强势事件日数
+  peerDays: number;    // 对方板块的强势事件日数
+  jaccard: number;     // coDays / (targetDays + peerDays − coDays)
+  lift: number;        // coDays / 随机基准期望（targetDays × peerDays / 窗口交易日数）
+}
+
+/**
+ * 计算「指定板块」与其它板块的同步活跃关系（详情页的"该板块参与的同步关系"）。
+ * 口径与 computeSyncPairs **完全一致**（同日强势共现、Jaccard、Lift 同一公式），
+ * 区别只是把统计范围限制在"与目标板块配对"的板块对上，
+ * 这样即便是活跃度不高的板块，也能拿到它自己的关系（全市场 Top N 会把它漏掉）。
+ * 结果按 Jaccard 降序（并列按 coDays 降序、对方板块 id 升序），返回前 limit 条。
+ */
+export function computeSectorPeers(
+  comp: WindowComputation,
+  stats: SectorStats[],
+  targetId: string,
+  opts?: { minCoDays?: number; limit?: number },
+): SectorPeer[] {
+  const minCoDays = opts?.minCoDays ?? 2;
+  const limit = opts?.limit ?? 10;
+
+  const n = comp.series.length;
+  const windowDays = comp.indices.length;
+
+  let ti = -1;
+  for (let i = 0; i < n; i++) {
+    if (comp.series[i].sector.id === targetId) {
+      ti = i;
+      break;
+    }
+  }
+  if (ti < 0) return [];
+
+  // 每天 → 当日发生强势事件的板块下标（稀疏索引，插入顺序随 i 递增天然升序）
+  const byDay = new Map<number, number[]>();
+  const strongDays: number[] = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    const s = comp.series[i];
+    for (let k = 0; k < s.days.length; k++) {
+      if (s.events[k]?.strong) {
+        strongDays[i]++;
+        const g = s.days[k];
+        const arr = byDay.get(g);
+        if (arr) arr.push(i);
+        else byDay.set(g, [i]);
+      }
+    }
+  }
+
+  // 只累加「目标板块当日也走强」的那些天里共同出现的板块
+  const co = new Map<number, number>();
+  for (const list of byDay.values()) {
+    if (list.indexOf(ti) < 0) continue;
+    for (const x of list) {
+      if (x === ti) continue;
+      co.set(x, (co.get(x) ?? 0) + 1);
+    }
+  }
+
+  const out: SectorPeer[] = [];
+  for (const [j, coDays] of co) {
+    if (coDays < minCoDays) continue;
+    const targetDays = strongDays[ti];
+    const peerDays = strongDays[j];
+    const union = targetDays + peerDays - coDays;
+    const jaccard = union > 0 ? coDays / union : 0;
+    const expected = windowDays > 0 ? (targetDays * peerDays) / windowDays : 0;
+    const lift = expected > 0 ? coDays / expected : 0;
+    out.push({
+      peer: { id: stats[j].sector.id, name: stats[j].sector.name },
+      coDays,
+      targetDays,
+      peerDays,
+      jaccard,
+      lift,
+    });
+  }
+
+  out.sort(
+    (p, q) =>
+      q.jaccard - p.jaccard ||
+      q.coDays - p.coDays ||
+      (p.peer.id < q.peer.id ? -1 : p.peer.id > q.peer.id ? 1 : 0),
+  );
+  return out.slice(0, limit);
+}
+
 // ===================== 先后关系（领先 → 跟随） =====================
 
 /** 单个滞后格 k：A 走强后第 k 个交易日 B 走强的条件频率 */
