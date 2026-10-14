@@ -17,8 +17,9 @@ import { InfoTip, TitleWithTip, tipItems } from '../components/InfoTip';
 import { RotationRuleBar } from '../components/RotationRulePanel';
 import { RotationRelations } from '../components/RotationRelations';
 import { useRotationData, useRotationRule } from '../data/rotationData';
+import { WATCH_LIMIT, inWatchlist, toggleWatch, useWatchlist } from '../data/watchlist';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
-import { analyzeAll, SCORE_WEIGHTS } from '../utils/rotation/analytics';
+import { analyzeAll, SCORE_WEIGHTS, sinceStatsOf } from '../utils/rotation/analytics';
 import type { SectorStats } from '../utils/rotation/analytics';
 import { computeWindow, toWindowView } from '../utils/rotation/ruleEngine';
 import type { SectorType } from '../utils/rotation/types';
@@ -249,7 +250,17 @@ function BoardList({
 }
 
 /** 近期轮动观察卡片(§5.2:板块名/标签/触发依据/关键数据/最近事件日期/覆盖率/点击进详情) */
-function ObservationCard({ o, onOpen }: { o: Observation; onOpen: (id: string) => void }) {
+function ObservationCard({
+  o,
+  onOpen,
+  watched,
+  onToggleWatch,
+}: {
+  o: Observation;
+  onOpen: (id: string) => void;
+  watched: boolean;
+  onToggleWatch: () => void;
+}) {
   const color = OBSERVATION_COLOR[o.label];
   return (
     <div
@@ -282,6 +293,25 @@ function ObservationCard({ o, onOpen }: { o: Observation; onOpen: (id: string) =
         >
           最近事件 {o.lastEventDate ? dashToSlash(o.lastEventDate) : '—'} · 数据覆盖 {(o.coverage * 100).toFixed(0)}%
         </span>
+        {/* 观察清单入口(§10);stopPropagation 避免同时触发"进入详情" */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleWatch();
+          }}
+          title={watched ? '从观察清单移除' : '加入观察清单（仅本设备）'}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            fontSize: 15,
+            lineHeight: 1,
+            padding: '2px 4px',
+            color: watched ? '#FAAD14' : '#C9CDD4',
+          }}
+        >
+          {watched ? '★' : '☆'}
+        </button>
       </div>
       <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.8, marginTop: 8 }}>
         <span style={{ color: '#86909C' }}>触发依据：</span>
@@ -311,6 +341,10 @@ export default function Rotation() {
   const [obsOpen, setObsOpen] = useState(false);
   const [advOpen, setAdvOpen] = useState(false);
   const [boardMode, setBoardMode] = useState<'active' | 'reactivate' | 'trend'>('active');
+  // 观察清单(§10):仅本设备浏览器内的"待继续验证名单"
+  const [watchList] = useWatchlist();
+  /** 加入观察清单时的"数据基准日"(用最新交易日,而非本机日期,避免节假日错位) */
+  const basisDate = data?.meta?.lastTradeDate || '';
 
   // 时间轴状态
   const [rowLimit, setRowLimit] = useState<'5' | '10' | '20' | '40' | '80' | 'all'>('40');
@@ -375,6 +409,22 @@ export default function Rotation() {
     (data?.sectors || []).forEach((s) => mp.set(s.id, s.type));
     return mp;
   }, [data]);
+
+  // 观察清单的每一行:用**当前规则 + 最新数据**重新计算"自加入以来"的区间表现(§10)
+  const watchRows = useMemo(() => {
+    if (!computed || !data) return [];
+    const mp = new Map(computed.comp.series.map((s) => [s.sector.id, s]));
+    return watchList.map((w) => {
+      const series = mp.get(w.id);
+      if (!series) return { w, missing: true as const };
+      return {
+        w,
+        missing: false as const,
+        type: typeById.get(w.id) || ('industry' as SectorType),
+        since: sinceStatsOf(data, computed.comp, series, w.basisDate),
+      };
+    });
+  }, [computed, data, watchList, typeById]);
 
   // 每日榜单同样应用本页筛选(统一口径)
   const latestRanked = useMemo(() => {
@@ -608,6 +658,17 @@ export default function Rotation() {
           <span style={{ fontSize: 10, color: '#86909C', background: '#F5F6F8', borderRadius: 4, padding: '1px 5px', marginLeft: 6 }}>
             {TYPE_LABEL[r.sector.type]}
           </span>
+          {/* 观察清单入口(§10) */}
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleWatch({ id: r.sector.id, name: r.sector.name }, basisDate);
+            }}
+            title={inWatchlist(watchList, r.sector.id) ? '从观察清单移除' : '加入观察清单（仅本设备）'}
+            style={{ cursor: 'pointer', fontSize: 13, marginLeft: 8, color: inWatchlist(watchList, r.sector.id) ? '#FAAD14' : '#C9CDD4' }}
+          >
+            {inWatchlist(watchList, r.sector.id) ? '★' : '☆'}
+          </span>
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -780,7 +841,13 @@ export default function Rotation() {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {shownObservations.map((o) => (
-                <ObservationCard key={o.sector.id} o={o} onOpen={(id) => navigate(`/rotation/sector/${id}`)} />
+                <ObservationCard
+                  key={o.sector.id}
+                  o={o}
+                  onOpen={(id) => navigate(`/rotation/sector/${id}`)}
+                  watched={inWatchlist(watchList, o.sector.id)}
+                  onToggleWatch={() => toggleWatch({ id: o.sector.id, name: o.sector.name }, basisDate)}
+                />
               ))}
             </div>
             {observations.length > OBS_DEFAULT && (
@@ -796,6 +863,108 @@ export default function Rotation() {
             <div style={{ fontSize: 11, color: '#86909C', marginTop: 12, lineHeight: 1.8 }}>
               以上分类仅为<b>观察线索</b>（由真实统计量按可解释规则生成），不代表买卖建议；每个板块只保留最有辨识度的一个标签，避免重复。
               阈值为尚未回测验证的<b>实验参数</b>，用于可解释性展示。
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* 观察清单(§10):仅本设备,回答"该把哪些板块加入清单并继续验证" */}
+      <div style={{ height: 16 }} />
+      <Card
+        title={<TitleWithTip text="我的观察清单" items={tipItems(['观察清单', '加入以来区间', '加入于', '观察起点', '相对基准超额', '仅本设备'])} title="观察清单说明" />}
+        right={
+          <span style={{ fontSize: 11, color: '#86909C' }}>
+            仅本设备（浏览器本地）· 共 {watchList.length} / {WATCH_LIMIT}
+          </span>
+        }
+      >
+        {watchList.length === 0 ? (
+          <div style={{ background: '#F7F9FC', border: `1px dashed ${COLOR_BORDER}`, borderRadius: 10, padding: '16px', fontSize: 12, color: '#4E5969', lineHeight: 1.9 }}>
+            还没有观察中的板块。在下方「轮动观察卡」或「板块行为统计表」点 <b style={{ color: '#FAAD14' }}>☆</b> 即可加入，
+            之后回到本页会用<b>当前规则与最新数据</b>重新计算它们的表现，便于在后续交易日继续验证。
+            <div style={{ color: '#86909C', marginTop: 4 }}>清单只保存在本设备浏览器，不联网、不跨设备，清缓存会丢失。</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 900 }}>
+                <thead>
+                  <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
+                    {['板块', '加入于', '观察区间', '强势', '弱势', '区间累计收益', '相对基准超额', '最近事件', '操作'].map((h, i) => (
+                      <th key={h} style={{ padding: '9px 10px', textAlign: i === 0 || i === 8 ? 'left' : 'center', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {watchRows.map((row) => (
+                    <tr key={row.w.id} style={{ borderBottom: `1px solid ${COLOR_BORDER}` }}>
+                      <td style={{ padding: '9px 10px', whiteSpace: 'nowrap' }}>
+                        <span
+                          onClick={() => navigate(`/rotation/sector/${row.w.id}`)}
+                          style={{ color: COLOR_TEXT, cursor: 'pointer', borderBottom: '1px dashed #D5DAE2' }}
+                        >
+                          {row.w.name}
+                        </span>
+                        {!row.missing && (
+                          <span style={{ fontSize: 10, color: '#86909C', background: '#F5F6F8', borderRadius: 4, padding: '1px 5px', marginLeft: 6 }}>
+                            {TYPE_LABEL[row.type]}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '9px 10px', textAlign: 'center', color: '#86909C' }}>{row.w.addedAt || '—'}</td>
+                      {row.missing ? (
+                        <td colSpan={6} style={{ padding: '9px 10px', color: '#FA8C16' }}>
+                          该板块不在当前规则的「板块范围」内，暂无法计算表现（可在上方规则栏把范围调回"全部板块"）。
+                        </td>
+                      ) : (
+                        <>
+                          <td style={{ padding: '9px 10px', textAlign: 'center', color: '#4E5969' }}>
+                            {row.since.fromDate} 起 · {row.since.days} 个交易日
+                            {row.since.truncated && <span style={{ color: '#FA8C16' }}>（已超窗口，按最早可用日）</span>}
+                          </td>
+                          <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_UP, fontWeight: 600 }}>{row.since.strongCount}</td>
+                          <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_DOWN, fontWeight: 600 }}>{row.since.weakCount}</td>
+                          <td
+                            style={{
+                              padding: '9px 10px',
+                              textAlign: 'center',
+                              fontWeight: 600,
+                              color: row.since.cumReturn == null ? COLOR_FLAT : row.since.cumReturn > 0 ? COLOR_UP : row.since.cumReturn < 0 ? COLOR_DOWN : COLOR_FLAT,
+                            }}
+                          >
+                            {row.since.cumReturn == null ? '—' : `${(row.since.cumReturn * 100).toFixed(2)}%`}
+                          </td>
+                          <td
+                            style={{
+                              padding: '9px 10px',
+                              textAlign: 'center',
+                              fontWeight: 600,
+                              color: row.since.rel == null ? COLOR_FLAT : row.since.rel > 0 ? COLOR_UP : row.since.rel < 0 ? COLOR_DOWN : COLOR_FLAT,
+                            }}
+                          >
+                            {row.since.rel == null ? '—' : `${row.since.rel > 0 ? '+' : ''}${(row.since.rel * 100).toFixed(2)}%`}
+                          </td>
+                          <td style={{ padding: '9px 10px', textAlign: 'center', color: '#86909C' }}>{row.since.lastEventDate || '区间内无'}</td>
+                        </>
+                      )}
+                      <td style={{ padding: '9px 10px' }}>
+                        <button
+                          onClick={() => toggleWatch({ id: row.w.id, name: row.w.name }, basisDate)}
+                          style={{ border: `1px solid ${COLOR_BORDER}`, background: '#fff', color: '#4E5969', borderRadius: 8, padding: '3px 10px', fontSize: 11, cursor: 'pointer' }}
+                        >
+                          移除
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ fontSize: 11, color: '#86909C', marginTop: 10, lineHeight: 1.8 }}>
+              区间口径：「加入于」只是本机日期；计算用的是<b>加入时数据的最新交易日</b>到当前窗口末。
+              强势/弱势次数为该区间内按<b>当前规则</b>判定的事件数；尚未结算的交易日（本周最新一根）也在区间内。
             </div>
           </>
         )}

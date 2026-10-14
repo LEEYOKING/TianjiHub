@@ -303,12 +303,15 @@ export function relativeToBench(
   data: RotationData,
   comp: WindowComputation,
   series: SectorEventSeries,
+  /** 从窗口第几列开始算（默认 0 = 整个窗口）；观察清单的"自加入以来"会传一个更晚的起点 */
+  fromWi = 0,
 ): { simple: number | null; netValue: number | null; commonDays: number } {
   let s = 1;
   let b = 1;
   let common = 0;
   const view = toWindowView(comp, series);
-  for (let i = 0; i < view.windowLen; i++) {
+  const start = Math.max(0, Math.min(Math.floor(fromWi), view.windowLen));
+  for (let i = start; i < view.windowLen; i++) {
     const p = view.pctAt[i];
     const bm = data.bench[comp.indices[i]];
     if (!isNum(p) || !isNum(bm)) continue;
@@ -318,6 +321,71 @@ export function relativeToBench(
   }
   if (common === 0) return { simple: null, netValue: null, commonDays: 0 };
   return { simple: (s - 1) - (b - 1), netValue: b > 0 ? s / b - 1 : null, commonDays: common };
+}
+
+// ===================== 观察清单的「自加入以来」区间统计（V2.0 阶段 6） =====================
+
+/**
+ * 观察清单里单个板块从「加入时的数据基准日」到窗口末的表现。
+ * 口径：与全窗口统计**完全同源** —— 位置对齐走 toWindowView，相对基准复用 relativeToBench，
+ *       缺失日既不计入分母、也不当作 0 涨跌幅。
+ * 边界：若基准日早于当前窗口起点（或根本不在日期表里），**截断到窗口起点** 并把 truncated 置 true
+ *       （界面据此提示"已超出当前窗口，按最早可用日计算"）。
+ */
+export interface SinceStats {
+  fromWi: number;              // 窗口内起始列（含）
+  fromDate: string;            // 实际使用的起始交易日
+  truncated: boolean;          // 是否被截断到窗口起点
+  days: number;                // 区间内该板块的有效交易日数
+  cumReturn: number | null;    // 区间复合收益（无有效日 → null）
+  strongCount: number;
+  weakCount: number;
+  rel: number | null;          // 区间简单超额（无共同有效日 → null）
+  lastEventDate: string | null;
+}
+
+export function sinceStatsOf(
+  data: RotationData,
+  comp: WindowComputation,
+  series: SectorEventSeries,
+  basisDate: string,
+): SinceStats {
+  const view = toWindowView(comp, series);
+  const n = view.windowLen;
+  const windowStart = comp.indices.length > 0 ? comp.indices[0] : 0;
+  const gi = basisDate ? data.dates.indexOf(basisDate) : -1;
+  const truncated = !(gi >= windowStart && gi <= (comp.indices.length > 0 ? comp.indices[comp.indices.length - 1] : -1));
+  const fromWi = truncated ? 0 : Math.max(0, Math.min(gi - windowStart, Math.max(0, n - 1)));
+
+  let cum = 1;
+  let days = 0;
+  let strongCount = 0;
+  let weakCount = 0;
+  let lastEventDate: string | null = null;
+  for (let i = fromWi; i < n; i++) {
+    const p = view.pctAt[i];
+    if (isNum(p)) {
+      cum *= 1 + p / 100;
+      days++;
+    }
+    const ev = view.eventAt[i];
+    if (ev?.strong) strongCount++;
+    if (ev?.weak) weakCount++;
+    if (ev && (ev.strong || ev.weak)) lastEventDate = comp.dates[i];
+  }
+
+  const rel = relativeToBench(data, comp, series, fromWi);
+  return {
+    fromWi,
+    fromDate: comp.dates[fromWi] ?? '',
+    truncated,
+    days,
+    cumReturn: days > 0 ? cum - 1 : null,
+    strongCount,
+    weakCount,
+    rel: rel.commonDays > 0 ? rel.simple : null,
+    lastEventDate,
+  };
 }
 
 // ===================== 窗口净值序列（单一实现，v2.0.9 新增） =====================

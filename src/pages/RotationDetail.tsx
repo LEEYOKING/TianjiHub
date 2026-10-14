@@ -16,6 +16,7 @@ import { Card, PageHeader } from './Overview';
 import { InfoTip, TitleWithTip, tipItems } from '../components/InfoTip';
 import { RotationRuleBar, pctColor } from '../components/RotationRulePanel';
 import { useRotationData, useRotationRule } from '../data/rotationData';
+import { inWatchlist, toggleWatch, useWatchlist } from '../data/watchlist';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 import { useEchartsResize } from '../hooks/useEchartsResize';
 import {
@@ -128,6 +129,8 @@ export default function RotationDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, error, loading } = useRotationData();
   const [rule, setRule] = useRotationRule();
+  // 观察清单(§10):仅本设备
+  const [watchList] = useWatchlist();
   useEchartsResize();
 
   const [showMoreStats, setShowMoreStats] = useState(false);
@@ -308,6 +311,22 @@ export default function RotationDetail() {
         <Link to="/rotation" style={{ fontSize: 12, color: '#1890FF' }}>
           ← 返回轮动档案
         </Link>
+        {/* 观察清单入口(§10,仅本设备) */}
+        <button
+          onClick={() => toggleWatch({ id: series.sector.id, name: series.sector.name }, meta.lastTradeDate || '')}
+          title={inWatchlist(watchList, series.sector.id) ? '从观察清单移除' : '加入观察清单（仅本设备）'}
+          style={{
+            border: `1px solid ${COLOR_BORDER}`,
+            background: '#fff',
+            color: inWatchlist(watchList, series.sector.id) ? '#FAAD14' : '#4E5969',
+            borderRadius: 8,
+            padding: '3px 12px',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          {inWatchlist(watchList, series.sector.id) ? '★ 已在观察清单' : '☆ 加入观察'}
+        </button>
         <span style={{ fontSize: 12, color: '#86909C' }}>
           板块代码 {series.sector.id} · 分类 {TYPE_LABEL[series.sector.type]}
         </span>
