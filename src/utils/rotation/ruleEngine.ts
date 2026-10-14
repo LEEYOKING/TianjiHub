@@ -166,3 +166,45 @@ export function computeWindow(data: RotationData, rule: RotationRuleSet): Window
     series,
   };
 }
+
+// ===================== 窗口对齐视图（v2.0.9 新增） =====================
+
+/**
+ * 窗口对齐视图：把「按该板块**有数据的交易日**压缩对齐」的序列，还原成
+ * 「与窗口交易日**一一对齐**」的等长数组（缺失日 = null）。
+ *
+ * 为什么必须有它（修复索引错位缺陷）：
+ *   `SectorEventSeries.days/pctInWindow/events/rankUpOn` 的长度 = 该板块有效日数，
+ *   并不等于窗口交易日数。覆盖率 = 100% 时两者巧合相等，此前所有位置型可视化
+ *   （主页热力网格、详情页事件时间轴、详情页净值曲线）都直接按下标取用，
+ *   于是对覆盖率 < 100% 的板块（实测 26/663）整体错位。
+ *   → 任何"按窗口第几列/第几天"取值的代码，必须经由本函数。
+ *
+ * 复杂度 O(有效日数)；`comp.indices` 为窗口内全局日期下标（升序）。
+ */
+export interface SectorWindowView {
+  windowLen: number;                       // 窗口交易日数（= comp.indices.length）
+  eventAt: (DayEvent | null)[];            // 长度 = windowLen；null = 当日无数据
+  pctAt: (number | null)[];                // 同上
+  rankUpAt: (number | null)[];             // 同上；未进榜或无数据 = null
+  rankDownAt: (number | null)[];           // 同上
+}
+
+export function toWindowView(comp: WindowComputation, series: SectorEventSeries): SectorWindowView {
+  const len = comp.indices.length;
+  const start = len > 0 ? comp.indices[0] : 0;
+  const eventAt = new Array<DayEvent | null>(len).fill(null);
+  const pctAt = new Array<number | null>(len).fill(null);
+  const rankUpAt = new Array<number | null>(len).fill(null);
+  const rankDownAt = new Array<number | null>(len).fill(null);
+
+  for (let k = 0; k < series.days.length; k++) {
+    const wi = series.days[k] - start;
+    if (wi < 0 || wi >= len) continue;     // 防御：不在窗口内的数据不参与
+    eventAt[wi] = series.events[k];
+    pctAt[wi] = series.pctInWindow[k];
+    rankUpAt[wi] = series.rankUpOn[k];
+    rankDownAt[wi] = series.rankDownOn[k];
+  }
+  return { windowLen: len, eventAt, pctAt, rankUpAt, rankDownAt };
+}

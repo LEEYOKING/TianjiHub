@@ -9,8 +9,8 @@ import { RotationRuleBar, pctColor } from '../components/RotationRulePanel';
 import { useRotationData, useRotationRule } from '../data/rotationData';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 import { useEchartsResize } from '../hooks/useEchartsResize';
-import { analyzeSector, describeSector } from '../utils/rotation/analytics';
-import { computeWindow } from '../utils/rotation/ruleEngine';
+import { analyzeSector, buildNavSeries, describeSector } from '../utils/rotation/analytics';
+import { computeWindow, toWindowView } from '../utils/rotation/ruleEngine';
 
 const COLOR_STRONG = COLOR_UP;
 const COLOR_WEAK = COLOR_DOWN;
@@ -56,7 +56,7 @@ export default function RotationDetail() {
     const comp = computeWindow(data, rule);
     const series = comp.series.find((s) => s.sector.id === id);
     if (!series) return null;
-    const stats = analyzeSector(series, data, rule);
+    const stats = analyzeSector(series, data, rule, comp);
     return { comp, series, stats, desc: describeSector(stats, rule) };
   }, [data, id, rule]);
 
@@ -91,19 +91,14 @@ export default function RotationDetail() {
   const { comp, series, stats, desc } = payload;
   const dates = comp.dates;
 
-  // 净值序列(板块 vs 基准)—— 复合累计
-  let sv = 1;
-  let bv = 1;
-  const navS: number[] = [];
-  const navB: number[] = [];
-  for (let i = 0; i < dates.length; i++) {
-    const p = series.pctInWindow[i];
-    sv *= p == null ? 1 : 1 + p / 100;
-    const b = data.bench[comp.indices[i]];
-    bv *= b == null ? 1 : 1 + b / 100;
-    navS.push(Math.round((sv - 1) * 10000) / 100);
-    navB.push(Math.round((bv - 1) * 10000) / 100);
-  }
+  // v2.0.9:窗口对齐视图 —— series.events/pctInWindow/rankUpOn 是按"该板块有数据的日"压缩对齐的，
+  // 长度并不等于窗口交易日数(覆盖率<100% 时两者不等)。任何按窗口下标取值都必须走 view。
+  const view = toWindowView(comp, series);
+
+  // v2.0.9:净值序列改由 analytics 单一实现（与统计摘要的累计收益/最大回撤同源，不再当 0 收益累乘）
+  const nav = buildNavSeries(data, comp, series);
+  const navS = nav.navSector.map((x) => Math.round((x - 1) * 10000) / 100);
+  const navB = nav.navBench.map((x) => Math.round((x - 1) * 10000) / 100);
 
   const freqWord = (n: number) => `${(n * 100).toFixed(0)}%`;
   const gapText = (g: typeof stats.gapStrong) =>
@@ -142,14 +137,17 @@ export default function RotationDetail() {
         lineStyle: { color: COLOR_UP, width: 2.5 },
         areaStyle: { color: 'rgba(255,77,79,0.08)' },
       },
-      {
-        name: `基准 ${data.meta.benchmark || '沪深300'}`,
-        type: 'line',
-        data: navB,
-        smooth: true,
-        symbol: 'none',
-        lineStyle: { color: '#86909C', width: 2, type: 'dashed' },
-      },
+      // v2.0.9:基准在窗口内完全没有行情时不画基准线(不伪造基准曲线，任务书 §6.4)
+      ...(nav.benchAvailable
+        ? [{
+            name: `基准 ${data.meta.benchmark || '沪深300'}`,
+            type: 'line' as const,
+            data: navB,
+            smooth: true,
+            symbol: 'none',
+            lineStyle: { color: '#86909C', width: 2, type: 'dashed' as const },
+          }]
+        : []),
     ],
   };
 
@@ -221,8 +219,8 @@ export default function RotationDetail() {
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
           {dates.map((d, i) => {
-            const ev = series.events[i];
-            const p = series.pctInWindow[i];
+            const ev = view.eventAt[i];
+            const p = view.pctAt[i];
             let bg = COLOR_NONE;
             if (!ev) bg = '#FAFAFA';
             else if (ev.largeUp) bg = COLOR_LARGE_UP;
@@ -232,7 +230,7 @@ export default function RotationDetail() {
             const title = !ev
               ? `${d} 无数据`
               : `${d} ${p != null ? `${p > 0 ? '+' : ''}${p.toFixed(2)}%` : ''}${ev.strong ? ' · 强势' : ''}${ev.weak ? ' · 弱势' : ''}${
-                  series.rankUpOn[i] ? ` · 涨幅榜第 ${series.rankUpOn[i]}` : ''
+                  view.rankUpAt[i] ? ` · 涨幅榜第 ${view.rankUpAt[i]}` : ''
                 }`;
             return (
               <div

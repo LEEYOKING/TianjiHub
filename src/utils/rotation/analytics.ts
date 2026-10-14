@@ -4,13 +4,18 @@
 // 纯逻辑，自包含。所有统计均跳过 null（无数据），绝不把 null 当 0。
 
 import type { RotationData, RotationRuleSet, RotationSector } from './types';
+import { toWindowView } from './ruleEngine';
 import type { SectorEventSeries, WindowComputation } from './ruleEngine';
 
 /** 间隔统计（单位为“交易日步长”） */
 export interface GapStats {
   count: number;                 // 有效间隔数
-  gaps: number[];                // 原始间隔序列
+  gaps: number[];                // 原始间隔序列 gap_i = d_(i+1) − d_i
+  /** v2.0.9:空档交易日数 empty_i = gap_i − 1（两事件之间“没有事件”的交易日数）。
+   *  与 gaps 是两个不同指标，必须分别命名与展示，不能混用（任务书 §8.3）。 */
+  empties: number[];
   avg: number | null;
+  avgEmpty: number | null;
   median: number | null;
   min: number | null;
   max: number | null;
@@ -54,7 +59,8 @@ export interface SectorStats {
 /** 空间隔统计 */
 export function emptyGapStats(): GapStats {
   return {
-    count: 0, gaps: [], avg: null, median: null, min: null, max: null, std: null,
+    count: 0, gaps: [], empties: [], avg: null, avgEmpty: null,
+    median: null, min: null, max: null, std: null,
     inRange: 0, concentration: null, sampleInsufficient: true,
   };
 }
@@ -63,6 +69,7 @@ export function emptyGapStats(): GapStats {
  * 间隔统计。
  * 口径：count<4 时不计算集中度（不允许用两三个样本包装成“规律”）。
  * 标准差用总体标准差（除以 n），n=1 时为 0。
+ * v2.0.9:同时给出 empty_i = gap_i − 1（空档交易日数），与 gap_i 严格区分。
  */
 export function gapStatsOf(gaps: number[], gapMin: number, gapMax: number): GapStats {
   const count = gaps.length;
@@ -72,6 +79,9 @@ export function gapStatsOf(gaps: number[], gapMin: number, gapMax: number): GapS
   let sum = 0;
   for (const g of gaps) sum += g;
   const avg = sum / count;
+
+  const empties = gaps.map((g) => g - 1);
+  const avgEmpty = avg - 1;
 
   const median = count % 2 === 1
     ? sorted[(count - 1) / 2]
@@ -91,14 +101,35 @@ export function gapStatsOf(gaps: number[], gapMin: number, gapMax: number): GapS
   const sampleInsufficient = count < 4;
   const concentration = sampleInsufficient ? null : inRange / count;
 
-  return { count, gaps: [...gaps], avg, median, min, max, std, inRange, concentration, sampleInsufficient };
+  return { count, gaps: [...gaps], empties, avg, avgEmpty, median, min, max, std, inRange, concentration, sampleInsufficient };
+}
+
+/**
+ * 最大回撤（单一实现，v2.0.9 抽出）。
+ * 口径：DD_d = V_d / max(V_1..V_d) − 1；MDD = min(DD_d)。返回负数或 0。
+ * 净值序列必须与"收益曲线"同源（任务书 §8.7），故详情页曲线与统计摘要都走这里。
+ */
+export function maxDrawdownOf(nav: number[]): number {
+  let peak = nav.length > 0 ? nav[0] : 1;
+  let mdd = 0;
+  for (const v of nav) {
+    if (v > peak) peak = v;
+    const dd = peak > 0 ? v / peak - 1 : 0;
+    if (dd < mdd) mdd = dd;
+  }
+  return mdd;
 }
 
 /**
  * 分析单个板块。
  * 注意：窗口由 data.dates 长度与 rule.windowDays 共同决定（与 computeWindow 保持一致）。
  */
-export function analyzeSector(series: SectorEventSeries, data: RotationData, rule: RotationRuleSet): SectorStats {
+export function analyzeSector(
+  series: SectorEventSeries,
+  data: RotationData,
+  rule: RotationRuleSet,
+  comp: WindowComputation,
+): SectorStats {
   const total = data.dates.length;
   const win = Math.max(0, Math.min(Math.floor(rule.windowDays), total));
   const start = total - win;
@@ -174,31 +205,18 @@ export function analyzeSector(series: SectorEventSeries, data: RotationData, rul
   variance = validDays > 0 ? variance / validDays : 0;
   const volatility = Math.sqrt(variance);
 
-  // 最大回撤：基于窗口内净值序列 V，取 min(V_d / max_{j<=d} V_j - 1)
+  // 最大回撤：基于窗口内净值序列（跳过缺失日）；与详情页曲线同源，单一实现见 maxDrawdownOf
   let v = 1;
-  let peak = 1;
-  let maxDrawdown = 0;
+  const navValid: number[] = [];
   for (const p of valid) {
     v *= 1 + p / 100;
-    if (v > peak) peak = v;
-    const dd = peak > 0 ? v / peak - 1 : 0;
-    if (dd < maxDrawdown) maxDrawdown = dd;
+    navValid.push(v);
   }
+  const maxDrawdown = maxDrawdownOf(navValid);
 
-  // ---- 相对强度：板块与基准在同一批“共同有效日”上分别复合，再取差 ----
-  let relStrength: number | null = null;
-  let sCum = 1;
-  let bCum = 1;
-  let common = 0;
-  for (let k = 0; k < days.length; k++) {
-    const p = pct[k];
-    const b = data.bench[days[k]];
-    if (!isNum(p) || !isNum(b)) continue;
-    sCum *= 1 + p / 100;
-    bCum *= 1 + b / 100;
-    common++;
-  }
-  if (common > 0) relStrength = (sCum - 1) - (bCum - 1);
+  // ---- 相对基准：只取「两者都有数据的共同有效日」分别复合，单一实现见 relativeToBench ----
+  const rel = relativeToBench(data, comp, series);
+  const relStrength: number | null = rel.commonDays > 0 ? rel.simple : null;
 
   // ---- 活跃度评分 0~100 ----
   // 权重：强势频率 35% + 近期活跃度 25% + 独立簇频率 20% + 相对市场趋势 20%，各分项先归一化到 0~1。
@@ -236,7 +254,104 @@ export function analyzeSector(series: SectorEventSeries, data: RotationData, rul
 
 /** 批量分析：comp.series 已经过 scope 过滤，这里直接逐个分析 */
 export function analyzeAll(data: RotationData, rule: RotationRuleSet, comp: WindowComputation): SectorStats[] {
-  return comp.series.map((s) => analyzeSector(s, data, rule));
+  return comp.series.map((s) => analyzeSector(s, data, rule, comp));
+}
+
+// ===================== 相对基准（两种口径，单一实现） =====================
+
+/**
+ * 相对基准的两种口径（任务书 §8.8 要求明确区分并在指标名/说明中标注）：
+ *  · simple   = 板块累计收益 − 基准累计收益      （"简单超额收益"，绝对差）
+ *  · netValue = 板块净值 / 基准净值 − 1          （"相对净值收益"，比率口径）
+ * 一律只在「两者都有行情」的**共同有效日**上分别复合；缺失日不计入分母，
+ * 也不当作 0 涨跌幅（否则基准缺失会把板块收益稀释、反之亦然）。
+ */
+export function relativeToBench(
+  data: RotationData,
+  comp: WindowComputation,
+  series: SectorEventSeries,
+): { simple: number | null; netValue: number | null; commonDays: number } {
+  let s = 1;
+  let b = 1;
+  let common = 0;
+  const view = toWindowView(comp, series);
+  for (let i = 0; i < view.windowLen; i++) {
+    const p = view.pctAt[i];
+    const bm = data.bench[comp.indices[i]];
+    if (!isNum(p) || !isNum(bm)) continue;
+    s *= 1 + p / 100;
+    b *= 1 + bm / 100;
+    common++;
+  }
+  if (common === 0) return { simple: null, netValue: null, commonDays: 0 };
+  return { simple: (s - 1) - (b - 1), netValue: b > 0 ? s / b - 1 : null, commonDays: common };
+}
+
+// ===================== 窗口净值序列（单一实现，v2.0.9 新增） =====================
+
+/**
+ * 窗口净值序列：详情页收益曲线与「最大回撤 / 累计收益」共用同一套序列（任务书 §6.4、§8.7）。
+ * 口径：
+ *  · 与窗口交易日**一一对齐**（长度 = comp.dates.length），由 toWindowView 保证不错位；
+ *  · 缺失日**沿用前值**（等价于"跳过缺失日"），绝不当作 0 收益；
+ *  · navSector[末] − 1 === analyzeSector().cumReturn；
+ *  · maxDrawdown === analyzeSector().maxDrawdown（同一个 maxDrawdownOf）。
+ */
+export interface NavSeries {
+  dates: string[];
+  navSector: number[];
+  navBench: number[];
+  sectorValid: boolean[];
+  benchValid: boolean[];
+  cumReturn: number;
+  maxDrawdown: number;
+  validSectorDays: number;
+  validBenchDays: number;
+  /** 基准在窗口内完全没有行情时为 false → UI 必须隐藏基准线，不得伪造 */
+  benchAvailable: boolean;
+}
+
+export function buildNavSeries(data: RotationData, comp: WindowComputation, series: SectorEventSeries): NavSeries {
+  const view = toWindowView(comp, series);
+  const n = view.windowLen;
+  const navSector: number[] = new Array(n);
+  const navBench: number[] = new Array(n);
+  const sectorValid: boolean[] = new Array(n);
+  const benchValid: boolean[] = new Array(n);
+
+  let sv = 1;
+  let bv = 1;
+  let validSectorDays = 0;
+  let validBenchDays = 0;
+  for (let i = 0; i < n; i++) {
+    const p = view.pctAt[i];
+    sectorValid[i] = isNum(p);
+    if (isNum(p)) {
+      sv *= 1 + p / 100;
+      validSectorDays++;
+    }
+    const b = data.bench[comp.indices[i]];
+    benchValid[i] = isNum(b);
+    if (isNum(b)) {
+      bv *= 1 + b / 100;
+      validBenchDays++;
+    }
+    navSector[i] = sv;
+    navBench[i] = bv;
+  }
+
+  return {
+    dates: [...comp.dates],
+    navSector,
+    navBench,
+    sectorValid,
+    benchValid,
+    cumReturn: sv - 1,
+    maxDrawdown: maxDrawdownOf(navSector),
+    validSectorDays,
+    validBenchDays,
+    benchAvailable: validBenchDays > 0,
+  };
 }
 
 /**

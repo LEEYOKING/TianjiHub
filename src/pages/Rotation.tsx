@@ -18,7 +18,7 @@ import { useRotationData, useRotationRule } from '../data/rotationData';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 import { analyzeAll } from '../utils/rotation/analytics';
 import type { SectorStats } from '../utils/rotation/analytics';
-import { computeWindow } from '../utils/rotation/ruleEngine';
+import { computeWindow, toWindowView } from '../utils/rotation/ruleEngine';
 import type { SectorType } from '../utils/rotation/types';
 
 const TYPE_LABEL: Record<SectorType, string> = { industry: '行业', concept: '概念', region: '地域' };
@@ -377,6 +377,13 @@ export default function Rotation() {
     return tlRows.map((r) => mp.get(r.sector.id)!);
   }, [computed, tlRows]);
 
+  // v2.0.9:窗口对齐视图 —— 热力网格按"窗口第几列"取值，必须走 view(而非 series.events[c])，
+  // 否则覆盖率<100% 的板块整行色块会错位。见 ruleEngine.toWindowView 注释。
+  const viewByRow = useMemo(
+    () => (computed ? seriesByRow.map((s) => (s ? toWindowView(computed.comp, s) : null)) : []),
+    [computed, seriesByRow],
+  );
+
   // Canvas 绘制
   useEffect(() => {
     const cv = canvasRef.current;
@@ -393,9 +400,9 @@ export default function Rotation() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     for (let r = 0; r < tlRows.length; r++) {
-      const s = seriesByRow[r];
+      const s = viewByRow[r];
       for (let c = 0; c < cols; c++) {
-        const ev = s?.events[c] ?? null;
+        const ev = s?.eventAt[c] ?? null;
         let fill = TL_NONE;
         if (!ev) fill = TL_NA;
         else if (ev.largeUp) fill = TL_LARGE_UP;
@@ -423,7 +430,7 @@ export default function Rotation() {
       ctx.lineWidth = 2;
       ctx.strokeRect(picked.c * cellW + 1, picked.r * cellH + 1, cellW - 2, cellH - 2);
     }
-  }, [tlRows, seriesByRow, cols, cellW, cellH, hover, picked]);
+  }, [tlRows, viewByRow, cols, cellW, cellH, hover, picked]);
 
   const pickSector = (id: string) => {
     setFocusId(id);
@@ -444,11 +451,14 @@ export default function Rotation() {
   }
 
   const m = data.meta;
+  // v2.0.9:hover/picked 一律按"窗口列"取值 → 走 viewByRow，避免覆盖率<100% 时错位
   const hoverSeries = hover ? seriesByRow[hover.r] : null;
-  const hoverEv = hoverSeries && hover ? hoverSeries.events[hover.c] : null;
-  const hoverPct = hoverSeries && hover ? hoverSeries.pctInWindow[hover.c] : null;
+  const hoverView = hover ? viewByRow[hover.r] : null;
+  const hoverEv = hoverView && hover ? hoverView.eventAt[hover.c] : null;
+  const hoverPct = hoverView && hover ? hoverView.pctAt[hover.c] : null;
   const pickedSeries = picked ? seriesByRow[picked.r] : null;
-  const pickedEv = pickedSeries && picked ? pickedSeries.events[picked.c] : null;
+  const pickedView = picked ? viewByRow[picked.r] : null;
+  const pickedEv = pickedView && picked ? pickedView.eventAt[picked.c] : null;
 
   const toCell = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const cv = canvasRef.current;
@@ -855,7 +865,7 @@ export default function Rotation() {
                   );
                 })}
               </div>
-              {hover && hoverEv && hoverSeries && (
+              {hover && hoverSeries && hoverView && hoverEv && (
                 <div
                   style={{
                     position: 'absolute',
@@ -887,7 +897,7 @@ export default function Rotation() {
                   </div>
                   <div style={{ color: '#86909C' }}>
                     {hoverEv.strong ? '强势事件' : hoverEv.weak ? '弱势事件' : '未触发事件'}
-                    {hoverSeries.rankUpOn[hover.c] ? ` · 涨幅榜第 ${hoverSeries.rankUpOn[hover.c]}` : ''}
+                    {hoverView.rankUpAt[hover.c] ? ` · 涨幅榜第 ${hoverView.rankUpAt[hover.c]}` : ''}
                   </div>
                 </div>
               )}
@@ -895,7 +905,7 @@ export default function Rotation() {
           </div>
 
           {/* 格子点击解释 */}
-          {picked && pickedSeries && (
+          {picked && pickedSeries && pickedView && (
             <div style={{ marginTop: 16, borderTop: `1px solid ${COLOR_BORDER}`, paddingTop: 16 }}>
               {!pickedEv ? (
                 <div style={{ fontSize: 12, color: '#86909C' }}>
@@ -913,17 +923,17 @@ export default function Rotation() {
                         style={{
                           fontSize: 20,
                           fontWeight: 700,
-                          color: (pickedSeries.pctInWindow[picked.c] ?? 0) > 0 ? COLOR_UP : COLOR_DOWN,
+                          color: (pickedView.pctAt[picked.c] ?? 0) > 0 ? COLOR_UP : COLOR_DOWN,
                         }}
                       >
-                        {(pickedSeries.pctInWindow[picked.c] ?? 0) > 0 ? '+' : ''}
-                        {(pickedSeries.pctInWindow[picked.c] ?? 0).toFixed(2)}%
+                        {(pickedView.pctAt[picked.c] ?? 0) > 0 ? '+' : ''}
+                        {(pickedView.pctAt[picked.c] ?? 0).toFixed(2)}%
                       </div>
                     </div>
                     <div style={{ background: '#F7F9FC', border: `1px solid ${COLOR_BORDER}`, borderRadius: 10, padding: '12px 14px' }}>
                       <div style={{ fontSize: 12, color: '#86909C', marginBottom: 6 }}>当日排名</div>
                       <div style={{ fontSize: 20, fontWeight: 700, color: COLOR_TEXT }}>
-                        涨幅榜第 {pickedSeries.rankUpOn[picked.c] ?? '—'} / 共 {computed.comp.ranking[picked.c].total}
+                        涨幅榜第 {pickedView.rankUpAt[picked.c] ?? '—'} / 共 {computed.comp.ranking[picked.c].total}
                       </div>
                     </div>
                     <div style={{ background: '#F7F9FC', border: `1px solid ${COLOR_BORDER}`, borderRadius: 10, padding: '12px 14px' }}>

@@ -10,29 +10,40 @@ import {
   serializeRule,
   type RotationData,
   type RotationRuleSet,
+  type RotationSector,
   type SectorType,
 } from '../utils/rotation/types';
 
 let cached: RotationData | null = null;
 let inflight: Promise<RotationData> | null = null;
 
-function normalize(j: any): RotationData {
+/**
+ * 归一化 rotation.json：过滤非法行、**按 id 去重**（v2.0.9：数据源若返回重复记录，
+ * 同一板块会被统计两次 —— 任务书 §14 第 13 项）。导出为纯函数以便测试。
+ */
+export function normalize(j: any): RotationData {
+  const raw = Array.isArray(j?.sectors) ? (j.sectors as any[]) : [];
+  const seen = new Set<string>();
+  const sectors: RotationSector[] = [];
+  for (const s of raw) {
+    if (!s || !s.id || !s.name) continue;
+    const id = String(s.id);
+    if (seen.has(id)) continue; // 重复 id：只保留第一条
+    seen.add(id);
+    sectors.push({
+      id,
+      name: String(s.name),
+      type: (s.type || 'industry') as SectorType,
+      pct: Array.isArray(s.pct) ? s.pct : [],
+      amt: Array.isArray(s.amt) ? s.amt : [],
+      coverage: typeof s.coverage === 'number' ? s.coverage : 0,
+    });
+  }
   return {
     meta: j?.meta || {},
     dates: Array.isArray(j?.dates) ? j.dates : [],
     bench: Array.isArray(j?.bench) ? j.bench : [],
-    sectors: Array.isArray(j?.sectors)
-      ? j.sectors
-          .filter((s: any) => s && s.id && s.name)
-          .map((s: any) => ({
-            id: String(s.id),
-            name: String(s.name),
-            type: (s.type || 'industry') as SectorType,
-            pct: Array.isArray(s.pct) ? s.pct : [],
-            amt: Array.isArray(s.amt) ? s.amt : [],
-            coverage: typeof s.coverage === 'number' ? s.coverage : 0,
-          }))
-      : [],
+    sectors,
   };
 }
 
@@ -90,13 +101,18 @@ export function useRotationData() {
 // ---------- 规则:全局单例 + 订阅 ----------
 const RULE_KEY = 'tjhub-rotation-rule';
 
+/**
+ * 从存档串解析出可用规则（纯函数，v2.0.9 抽出以便测试 — 任务书 §14 第 18 项）。
+ * 规则：解析失败 / 版本与当前 DEFAULT_RULE 不匹配 → 一律回落默认（旧存档作废）。
+ */
+export function pickStoredRule(stored: string | null, fallback: RotationRuleSet = DEFAULT_RULE): RotationRuleSet {
+  const r = stored ? deserializeRule(stored) : null;
+  return r && r.version === fallback.version ? r : fallback;
+}
+
 function readRule(): RotationRuleSet {
   try {
-    const s = localStorage.getItem(RULE_KEY);
-    const r = s ? deserializeRule(s) : null;
-    // v2.0.8l0:规则版本不匹配时旧存档作废 → 回落到新默认值
-    // (否则调整 DEFAULT_RULE 对已有 localStorage 存档的老用户完全不可见)
-    return r && r.version === DEFAULT_RULE.version ? r : DEFAULT_RULE;
+    return pickStoredRule(localStorage.getItem(RULE_KEY));
   } catch {
     return DEFAULT_RULE;
   }
