@@ -432,6 +432,16 @@ export default function Rotation() {
     return { r, c };
   };
 
+  // v2.0.8kx:本页数据自身的生成时点(rotation.json 的 meta.generatedAt,固定东八区)
+  // —— 用途:一眼发现"云端归档失败、文件停在旧版本"。归档正常时应当晚于当日 15:05(收盘后)
+  const dataTime = (() => {
+    const g = m.generatedAt || '';            // 'YYYY-MM-DD HH:MM:SS'(东八区)
+    if (g.length < 16) return { text: '未知', stale: true };
+    const time = g.slice(11, 16);
+    const sameDay = g.slice(0, 10) === m.lastTradeDate;
+    return { text: `${g.slice(5, 10).replace('-', '/')} ${time}`, stale: !sameDay || time < '15:05' };
+  })();
+
   return (
     <div>
       <PageHeader
@@ -439,6 +449,12 @@ export default function Rotation() {
         tradeDateSlash={dashToSlash(m.lastTradeDate)}
         subtitle="榜单档案 · 行为画像 · 事件时间轴 · 轮动关系（可配置规则，全窗口可复算）"
       />
+      <div style={{ fontSize: 11, color: dataTime.stale ? '#FA8C16' : '#86909C', margin: '-4px 0 8px', lineHeight: 1.7 }}>
+        数据生成于 {dataTime.text}
+        {dataTime.stale && (
+          <span>（非收盘快照：这份归档未在当日收盘后成功重建，数值可能为盘中值；每个交易日 15:35 与 18:35 各重建一次）</span>
+        )}
+      </div>
       <RotationRuleBar
         rule={rule}
         onChange={setRule}
