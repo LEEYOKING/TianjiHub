@@ -109,6 +109,20 @@ def norm_name(s: str) -> str:
     return s
 
 
+def load_prev_boards(path: str) -> list[dict]:
+    """从上一份 rotation.json 读取板块清单 —— clist 被风控时的兜底。
+    板块全集极少变动(东财偶尔增补概念板块),用上一份清单重拉日线不影响正确性。"""
+    try:
+        with open(path, encoding='utf-8') as f:
+            d = json.load(f)
+        out = [{'id': str(s['id']), 'name': str(s['name']), 'type': str(s['type'])}
+               for s in d.get('sectors', []) if s.get('id')]
+        return out
+    except Exception as e:  # noqa: BLE001
+        print(f'    ⚠ 读取上一份 rotation.json 失败: {type(e).__name__} {e}')
+        return []
+
+
 # ---------- 1. 板块清单 ----------
 def fetch_board_list(btype: str, pagesize: int = 100) -> list[dict]:
     """拉某类板块全量清单 → [{id, name, type}]"""
@@ -253,6 +267,18 @@ def main() -> int:
             boards.extend(lst)
         except Exception as e:  # noqa: BLE001
             print(f'  [{bt}] 清单拉取失败: {type(e).__name__} {e}')
+
+    # v2.0.8kz:clist 全域名被风控时的兜底(实测本地/云端均出现过 push2 整域被拒、
+    # 而 push2his 日线正常)→ 用上一份 rotation.json 的板块清单继续重拉日线,
+    # 避免"清单拿不到就整份归档失败"。板块全集极少变动,兜底不影响数据正确性。
+    if not boards:
+        prev = load_prev_boards(args.out)
+        prev = [b for b in prev if args.only == 'all' or b['type'] == args.only]
+        if prev:
+            print(f'  ⚠ 清单接口全部失败 → 回退上一份 rotation.json 的板块清单: {len(prev)} 个')
+            boards = prev
+        else:
+            print('  ✗ 清单全部失败,且无上一份 rotation.json 可兜底 → 放弃本次归档')
             return 1
 
     # 行业口径过滤:只保留申万二级(与前端【板块涨跌】页一致)

@@ -105,7 +105,17 @@ function Seg<T extends string>({
   );
 }
 
-function MiniTable({
+// v2.0.8kz:每日最强/最弱榜的小卡片网格 —— 一行最多 5 张,窄屏自动降列
+// 颜色深浅按名次递变(第 1 名最重,往后越浅),hover 轻微上浮
+const MINI_CARD_CSS = `
+  .tj-mini-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .tj-mini-card { transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+  .tj-mini-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); filter: brightness(1.04); }
+  @media (max-width: 1280px) { .tj-mini-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .tj-mini-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+`;
+
+function MiniBoardCards({
   rows,
   mode,
 }: {
@@ -114,32 +124,50 @@ function MiniTable({
 }) {
   const nav = useNavigate();
   if (!rows.length) return <div style={{ fontSize: 12, color: '#86909C', padding: '12px 0' }}>当日无数据</div>;
+  const rgb = mode === 'up' ? '255, 77, 79' : '14, 205, 112';      // 红=最强 / 绿=最弱
+  const main = mode === 'up' ? COLOR_UP : COLOR_DOWN;
+  const n = rows.length;
   return (
-    <div>
-      {rows.map((r) => (
-        <div
-          key={r.id}
-          onClick={() => nav(`/rotation/sector/${r.id}`)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '8px 6px',
-            borderBottom: `1px solid ${COLOR_BORDER}`,
-            cursor: 'pointer',
-          }}
-        >
-          <span style={{ width: 26, fontSize: 12, color: '#86909C' }}>{r.rank}</span>
-          <span style={{ flex: 1, fontSize: 13, color: COLOR_TEXT, fontWeight: 500 }}>{r.name}</span>
-          <span style={{ fontSize: 11, color: '#86909C', background: '#F5F7FA', borderRadius: 4, padding: '1px 6px' }}>
-            {TYPE_LABEL[r.type]}
-          </span>
-          <span style={{ width: 72, textAlign: 'right', fontSize: 13, fontWeight: 600, color: mode === 'up' ? COLOR_UP : COLOR_DOWN }}>
-            {r.pct > 0 ? '+' : ''}
-            {r.pct.toFixed(2)}%
-          </span>
-        </div>
-      ))}
+    <div className="tj-mini-cards">
+      {rows.map((r, i) => {
+        // 名次越靠前颜色越重:第 1 名 0.16,最后一名 0
+        const a = 0.16 * (1 - i / Math.max(1, n - 1));
+        return (
+          <div
+            key={r.id}
+            className="tj-mini-card"
+            onClick={() => nav(`/rotation/sector/${r.id}`)}
+            title={`${r.name} — 点击查看行为详情`}
+            style={{
+              background: `rgba(${rgb}, ${a.toFixed(3)})`,
+              border: `1px solid rgba(${rgb}, ${Math.min(a + 0.1, 0.34).toFixed(3)})`,
+              borderRadius: 10,
+              padding: '8px 10px',
+              cursor: 'pointer',
+              minWidth: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: main }}>No.{r.rank}</span>
+              <span style={{ fontSize: 10, color: '#86909C', background: '#fff', borderRadius: 4, padding: '1px 5px' }}>
+                {TYPE_LABEL[r.type]}
+              </span>
+            </div>
+            <div
+              style={{
+                fontSize: 12, fontWeight: 500, color: COLOR_TEXT, margin: '6px 0 3px',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}
+            >
+              {r.name}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: main, lineHeight: 1.15 }}>
+              {r.pct > 0 ? '+' : ''}
+              {r.pct.toFixed(2)}%
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -443,6 +471,8 @@ export default function Rotation() {
 
   return (
     <div>
+      {/* v2.0.8kz:小卡片网格的响应式列数与 hover 效果(类名限定,不影响其它页面) */}
+      <style>{MINI_CARD_CSS}</style>
       <PageHeader
         title="板块轮动档案"
         tradeDateSlash={dashToSlash(m.lastTradeDate)}
@@ -467,29 +497,36 @@ export default function Rotation() {
         }}
       />
 
-      {/* ① 每日强弱榜单 */}
-      <Card
-        title={<TitleWithTip text="每日强弱榜单" items={tipItems(MINI_TABLE_HEADERS)} title="列含义" />}
-        right={
-          <span style={{ fontSize: 11, color: '#86909C' }}>
-            {latest?.date || '-'} · 当日有效板块 {latest?.total ?? 0} 个
-          </span>
-        }
-      >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_UP, marginBottom: 6 }}>每日最强板块 TOP {rule.topN}</div>
-            <MiniTable rows={strongTop} mode="up" />
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_DOWN, marginBottom: 6 }}>每日最弱板块 TOP {rule.topN}</div>
-            <MiniTable rows={weakTop} mode="down" />
-          </div>
-        </div>
-        <div style={{ fontSize: 11, color: '#86909C', marginTop: 12, lineHeight: 1.7 }}>
-          按当日涨跌幅降序排名，并列时按板块代码升序（稳定排序，同样数据每次结果一致）。点击任一板块进入行为详情。
-        </div>
-      </Card>
+      {/* ① 每日强弱榜单 —— v2.0.8kz:拆成 1 行 2 列两张小卡片 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'stretch' }}>
+        <Card
+          title={
+            <TitleWithTip
+              text={`每日最强板块 TOP ${rule.topN}`}
+              items={tipItems([...MINI_TABLE_HEADERS, '排名规则'])}
+              title="字段含义 / 排名规则"
+            />
+          }
+          right={
+            <span style={{ fontSize: 11, color: '#86909C' }}>
+              {latest?.date || '-'} · 当日有效板块 {latest?.total ?? 0} 个
+            </span>
+          }
+        >
+          <MiniBoardCards rows={strongTop} mode="up" />
+        </Card>
+        <Card
+          title={
+            <TitleWithTip
+              text={`每日最弱板块 TOP ${rule.topN}`}
+              items={tipItems([...MINI_TABLE_HEADERS, '排名规则'])}
+              title="字段含义 / 排名规则"
+            />
+          }
+        >
+          <MiniBoardCards rows={weakTop} mode="down" />
+        </Card>
+      </div>
 
       {/* ② 板块行为画像 */}
       <div style={{ height: 16 }} />
