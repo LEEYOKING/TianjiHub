@@ -614,10 +614,14 @@ export function getMarketSession(): { label: string; color: string; bg: string }
 
 // ====== 共享组件 ======
 // v2.0.7df-fix:盘后用当前时间显示(不用 generatedAt)— 父组件不再传 generatedAt prop
-export function PageHeader({ title, tradeDateSlash, subtitle, liveTag, liveColor, liveBg, lastUpdatedAt, _originalTradeDate }: {
+export function PageHeader({ title, tradeDateSlash, subtitle, liveTag, liveColor, liveBg, lastUpdatedAt, _originalTradeDate, dateSuffix, hideGeneratedAt }: {
   title: string; tradeDateSlash: string; subtitle?: string; liveTag?: string; liveColor?: string; liveBg?: string; lastUpdatedAt?: number;
   // v2.0.7ar:可选的原始 tradeDate(YYYYMMDD)— 如果传,08:00 之后用 today 覆盖
   _originalTradeDate?: string;
+  // v2.0.8ky:选填 — 追加在「报告日期」值后面的补充文字(如" 14:09（盘后数据）")
+  dateSuffix?: React.ReactNode;
+  // v2.0.8ky:选填 — 隐藏「· 生成时间 X」这一段(批处理数据页面用:文件的真实生成时点已并入报告日期)
+  hideGeneratedAt?: boolean;
 }) {
   // v2.0.7fl:user 反馈 移动端顶部标题栏文字挤在一起 — 用 isMobile 改 column 布局(标题+tag 上,date+time 下)
   // — PC 端保持 flex row space-between(零变化)
@@ -733,8 +737,13 @@ export function PageHeader({ title, tradeDateSlash, subtitle, liveTag, liveColor
           <span>·</span>
           <span>
             报告日期 <span style={{ color: '#111827', fontWeight: 500 }}>{displayDate}</span>
-            <span style={{ margin: '0 8px' }}>·</span>
-            生成时间 <span style={{ color: '#111827', fontWeight: 500 }}>{displayTime}</span>
+            {dateSuffix ? <span>{dateSuffix}</span> : null}
+            {hideGeneratedAt ? null : (
+              <>
+                <span style={{ margin: '0 8px' }}>·</span>
+                生成时间 <span style={{ color: '#111827', fontWeight: 500 }}>{displayTime}</span>
+              </>
+            )}
           </span>
         </div>
       </div>
