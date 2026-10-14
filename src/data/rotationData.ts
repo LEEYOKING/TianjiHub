@@ -94,7 +94,9 @@ function readRule(): RotationRuleSet {
   try {
     const s = localStorage.getItem(RULE_KEY);
     const r = s ? deserializeRule(s) : null;
-    return r || DEFAULT_RULE;
+    // v2.0.8l0:规则版本不匹配时旧存档作废 → 回落到新默认值
+    // (否则调整 DEFAULT_RULE 对已有 localStorage 存档的老用户完全不可见)
+    return r && r.version === DEFAULT_RULE.version ? r : DEFAULT_RULE;
   } catch {
     return DEFAULT_RULE;
   }

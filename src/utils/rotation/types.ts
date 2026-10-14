@@ -56,15 +56,17 @@ export interface RotationRuleSet {
   version: string;           // 规则版本号
 }
 
-/** 默认规则 — 严格对齐产品文档 §2.1「当前规则摘要」：
- *  近 30 个交易日 / TOP 5 / 大涨 +3.0% / 大跌 −3.0% / 进榜条件启用 / 组合方式=任一满足 /
+/** 默认规则 — 严格对齐产品文档 §2.1「当前规则摘要」的"开箱即用"初始值：
+ *  近 60 个交易日 / TOP 10 / 大涨 +2.5% / 大跌 −2.5% / 进榜条件启用 / 组合方式=任一满足 /
  *  板块范围=全部 / 关注间隔 1~5 个交易日 / 独立事件冷却期=0（不合并）
- *  这些只是"开箱即用"的初始值，不代表经回测验证的最优参数 */
+ *  这些只是初始值，不代表经回测验证的最优参数。
+ *  注：version 变化会让 localStorage 里的旧规则存档作废（见 rotationData.readRule），
+ *      这样调整默认值才能对老用户生效。 */
 export const DEFAULT_RULE: RotationRuleSet = {
-  windowDays: 30,
-  topN: 5,
-  riseThreshold: 3,
-  fallThreshold: 3,
+  windowDays: 60,
+  topN: 10,
+  riseThreshold: 2.5,
+  fallThreshold: 2.5,
   riseRankEnabled: true,
   fallRankEnabled: true,
   eventLogic: 'OR',
@@ -72,7 +74,7 @@ export const DEFAULT_RULE: RotationRuleSet = {
   cooldownDays: 0,
   gapMin: 1,
   gapMax: 5,
-  version: '1.0.0',
+  version: '1.1.0',
 };
 
 // 序列化前缀（含版本，便于将来格式升级时兼容判断）

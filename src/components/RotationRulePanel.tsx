@@ -14,6 +14,34 @@ import { DEFAULT_RULE, serializeRule, type RotationRuleSet, type SectorType } fr
 
 const CARD_SHADOW = '0 1px 3px rgba(0, 0, 0, 0.04), 0 0 30px 5px rgba(0, 0, 0, 0.02)';
 
+// v2.0.8l0:滑块自定义样式 —— 未选中段浅灰 / 已选中段与「完成」按钮同色(主题蓝) / 圆点带白描边
+const RANGE_CSS = `
+  .tj-range {
+    -webkit-appearance: none; appearance: none;
+    width: 110px; height: 14px; background: transparent; outline: none; cursor: pointer;
+  }
+  .tj-range::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, ${COLOR_PRIMARY} 0 var(--pct), #E5E7EB var(--pct) 100%);
+  }
+  .tj-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box;
+    background: ${COLOR_PRIMARY}; border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(24, 144, 255, 0.35);
+    margin-top: -5px;
+  }
+  .tj-range::-moz-range-track { height: 4px; border-radius: 2px; background: #E5E7EB; }
+  .tj-range::-moz-range-progress { height: 4px; border-radius: 2px; background: ${COLOR_PRIMARY}; }
+  .tj-range::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box;
+    background: ${COLOR_PRIMARY}; border: 2px solid #fff;
+  }
+`;
+
+// 「统计窗口 / 板块范围 / 每日榜单数量」三个 Seg 统一总宽度(以选项最多的"统计窗口"为基准)
+const SEG_WIDTH = 196;
+
 const SCOPE_LABEL: Record<'all' | SectorType, string> = {
   all: '全部板块',
   industry: '仅行业',
@@ -48,13 +76,26 @@ function Seg<T extends string | number>({
   value,
   options,
   onChange,
+  blockWidth,
 }: {
   value: T;
   options: { label: string; value: T }[];
   onChange: (v: T) => void;
+  /** v2.0.8l0:指定后按钮等分该总宽度 —— 让"选项个数不同"的 Seg 也能保持总宽一致 */
+  blockWidth?: number;
 }) {
   return (
-    <div style={{ display: 'inline-flex', background: '#F5F6F8', borderRadius: 6, padding: 2, gap: 2 }}>
+    <div
+      style={{
+        display: 'inline-flex',
+        background: '#F5F6F8',
+        borderRadius: 6,
+        padding: 2,
+        gap: 2,
+        flexShrink: 0,
+        ...(blockWidth ? { width: blockWidth } : null),
+      }}
+    >
       {options.map((o) => (
         <button
           key={String(o.value)}
@@ -70,6 +111,7 @@ function Seg<T extends string | number>({
             cursor: 'pointer',
             boxShadow: value === o.value ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
             transition: 'all .15s',
+            ...(blockWidth ? { flex: 1, padding: '4px 4px', whiteSpace: 'nowrap' as const } : null),
           }}
         >
           {o.label}
@@ -81,17 +123,17 @@ function Seg<T extends string | number>({
 
 function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 22 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginBottom: 2 }}>{title}</div>
-      {desc && <div style={{ fontSize: 11, color: '#86909C', marginBottom: 10, lineHeight: 1.6 }}>{desc}</div>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{children}</div>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginBottom: 4 }}>{title}</div>
+      {desc && <div style={{ fontSize: 11, color: '#86909C', marginBottom: 12, lineHeight: 1.6 }}>{desc}</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
     </div>
   );
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, minHeight: 28 }}>
       <span style={{ fontSize: 12, color: '#4E5969' }}>{label}</span>
       {children}
     </div>
@@ -113,16 +155,19 @@ function Slider({
   onChange: (v: number) => void;
   suffix?: string;
 }) {
+  // 已选中比例 → 轨道渐变的断点(未选中段浅灰)
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 170 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 176 }}>
       <input
         type="range"
+        className="tj-range"
         min={min}
         max={max}
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: 110, accentColor: COLOR_PRIMARY }}
+        style={{ '--pct': `${pct}%` } as React.CSSProperties}
       />
       <b style={{ fontSize: 12, color: COLOR_TEXT, minWidth: 42, textAlign: 'right' }}>
         {value}
@@ -214,6 +259,8 @@ export function RotationRuleBar({
 
       {open && (
         <>
+          {/* v2.0.8l0:自定义滑块样式(仅本组件使用,类名限定,不影响其它页面) */}
+          <style>{RANGE_CSS}</style>
           <div
             onClick={() => setOpen(false)}
             style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.28)', zIndex: 1200 }}
@@ -235,7 +282,7 @@ export function RotationRuleBar({
           >
             <div
               style={{
-                padding: '16px 20px',
+                padding: '18px 20px',
                 borderBottom: `1px solid ${COLOR_BORDER}`,
                 display: 'flex',
                 alignItems: 'center',
@@ -251,12 +298,13 @@ export function RotationRuleBar({
               </button>
             </div>
 
-            <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
               <Section title="基础设置" desc="决定统计范围,先从这里开始">
                 <Row label="统计窗口">
                   <Seg
                     value={rule.windowDays}
                     onChange={(v) => patch({ windowDays: v })}
+                    blockWidth={SEG_WIDTH}
                     options={[
                       { label: '15日', value: 15 },
                       { label: '30日', value: 30 },
@@ -269,6 +317,7 @@ export function RotationRuleBar({
                   <Seg
                     value={rule.scope}
                     onChange={(v) => patch({ scope: v })}
+                    blockWidth={SEG_WIDTH}
                     options={[
                       { label: '全部', value: 'all' as const },
                       { label: '行业', value: 'industry' as const },
@@ -281,6 +330,7 @@ export function RotationRuleBar({
                   <Seg
                     value={rule.topN}
                     onChange={(v) => patch({ topN: v })}
+                    blockWidth={SEG_WIDTH}
                     options={[
                       { label: 'TOP 5', value: 5 },
                       { label: 'TOP 10', value: 10 },
@@ -314,7 +364,7 @@ export function RotationRuleBar({
                     type="checkbox"
                     checked={rule.riseRankEnabled}
                     onChange={(e) => patch({ riseRankEnabled: e.target.checked })}
-                    style={{ accentColor: COLOR_PRIMARY, width: 16, height: 16 }}
+                    style={{ accentColor: COLOR_PRIMARY, width: 18, height: 18, cursor: 'pointer' }}
                   />
                 </Row>
                 <Row label="大跌要求进入跌幅榜">
@@ -322,7 +372,7 @@ export function RotationRuleBar({
                     type="checkbox"
                     checked={rule.fallRankEnabled}
                     onChange={(e) => patch({ fallRankEnabled: e.target.checked })}
-                    style={{ accentColor: COLOR_PRIMARY, width: 16, height: 16 }}
+                    style={{ accentColor: COLOR_PRIMARY, width: 18, height: 18, cursor: 'pointer' }}
                   />
                 </Row>
                 <Row label="排名与幅度的组合">
@@ -335,7 +385,7 @@ export function RotationRuleBar({
                     ]}
                   />
                 </Row>
-                <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
                   未勾选的条件不会参与判断。AND 表示必须同时进榜且达到阈值；OR 表示满足任一已启用条件即可。
                 </div>
               </Section>
@@ -359,7 +409,7 @@ export function RotationRuleBar({
                 <Row label="关注间隔上限">
                   <Slider value={rule.gapMax} min={1} max={30} step={1} onChange={(v) => patch({ gapMax: v })} suffix="日" />
                 </Row>
-                <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
                   冷却期只影响“独立事件”的合并口径，不删除任何原始每日涨跌记录。间隔按交易日序号差计算。
                 </div>
               </Section>
@@ -370,7 +420,7 @@ export function RotationRuleBar({
                     background: '#F7F9FC',
                     border: `1px solid ${COLOR_BORDER}`,
                     borderRadius: 8,
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     fontSize: 12,
                     color: '#4E5969',
                     lineHeight: 1.9,
@@ -389,10 +439,10 @@ export function RotationRuleBar({
 
             <div
               style={{
-                padding: '12px 20px',
+                padding: '14px 20px',
                 borderTop: `1px solid ${COLOR_BORDER}`,
                 display: 'flex',
-                gap: 10,
+                gap: 12,
                 justifyContent: 'flex-end',
               }}
             >
