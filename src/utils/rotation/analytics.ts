@@ -46,6 +46,10 @@ export interface SectorStats {
   currentStrongStreak: number; longestStrongStreak: number;
   currentWeakStreak: number; longestWeakStreak: number;
   lastStrongAgo: number | null; lastWeakAgo: number | null; // 距窗口最后一个交易日的交易日数
+  /** 距最近一次强势「或」弱势事件的交易日步长(取较近者);无任何事件为 null */
+  lastActiveAgo: number | null;
+  /** 最近一次活跃事件(强势或弱势)对应的交易日期;无事件为 null */
+  lastActiveDate: string | null;
   /** 最近一次强势事件「之前」的那个间隔(交易日步长);不足两个事件时为 null */
   lastGapBefore: number | null;
   cumReturn: number;      // 复合收益(小数)
@@ -53,8 +57,21 @@ export interface SectorStats {
   maxDrawdown: number;    // 负数或 0
   relStrength: number | null;  // 相对基准累计超额(小数)，基准缺失时 null
   score: number;          // 0~100 活跃度评分
+  /** 活跃度评分的 4 个归一化分项(0~1)，用于界面展示"分项构成与权重"(任务书 §7) */
+  scoreParts: ScoreParts;
   strongDates: string[]; weakDates: string[];
 }
+
+/** 活跃度评分的四个分项（均已归一化到 0~1） */
+export interface ScoreParts {
+  f1: number; // 强势频率
+  f2: number; // 近期活跃（半衰期 5 日的指数衰减）
+  f3: number; // 独立事件簇频率
+  f4: number; // 相对市场趋势
+}
+
+/** 活跃度评分权重（**实验参数**，不是经回测验证的最优权重；界面须如此标注） */
+export const SCORE_WEIGHTS = { f1: 0.35, f2: 0.25, f3: 0.2, f4: 0.2 } as const;
 
 /** 空间隔统计 */
 export function emptyGapStats(): GapStats {
@@ -218,14 +235,27 @@ export function analyzeSector(
   const rel = relativeToBench(data, comp, series);
   const relStrength: number | null = rel.commonDays > 0 ? rel.simple : null;
 
+  // ---- 最近一次活跃事件（强势或弱势中较近者） ----
+  const agos: number[] = [];
+  if (strongStreak.ago !== null) agos.push(strongStreak.ago);
+  if (weakStreak.ago !== null) agos.push(weakStreak.ago);
+  const lastActiveAgo = agos.length > 0 ? Math.min(...agos) : null;
+  const lastActiveDate = lastActiveAgo === null ? null : data.dates[total - 1 - lastActiveAgo];
+
   // ---- 活跃度评分 0~100 ----
   // 权重：强势频率 35% + 近期活跃度 25% + 独立簇频率 20% + 相对市场趋势 20%，各分项先归一化到 0~1。
+  // （权重由 SCORE_WEIGHTS 统一维护，界面按"实验参数"标注）
   // 近期活跃度用指数衰减 R=exp(-λΔ)，λ=ln2/5(半衰期 5 个交易日)，Δ=距最近一次强势事件的交易日数。
   const f1 = clamp01(strongFreq / 0.2);                     // 20% 交易日强势即满分
   const f2 = strongStreak.ago === null ? 0 : Math.exp(-(Math.LN2 / 5) * strongStreak.ago);
   const f3 = clamp01((clustersStrong.length / Math.max(1, validDays)) / 0.1); // 每 10 个交易日 1 簇即满分
   const f4 = relStrength === null ? 0.5 : clamp01(0.5 + relStrength / 0.2);    // 超额 ±10% 映射到 0~1
-  const score = Math.round(clamp01(0.35 * f1 + 0.25 * f2 + 0.2 * f3 + 0.2 * f4) * 100);
+  const scoreParts: ScoreParts = { f1, f2, f3, f4 };
+  const score = Math.round(
+    clamp01(
+      SCORE_WEIGHTS.f1 * f1 + SCORE_WEIGHTS.f2 * f2 + SCORE_WEIGHTS.f3 * f3 + SCORE_WEIGHTS.f4 * f4,
+    ) * 100,
+  );
 
   return {
     sector: series.sector,
@@ -242,12 +272,15 @@ export function analyzeSector(
     longestWeakStreak: weakStreak.longest,
     lastStrongAgo: strongStreak.ago,
     lastWeakAgo: weakStreak.ago,
+    lastActiveAgo,
+    lastActiveDate,
     lastGapBefore,
     cumReturn,
     upDayRatio, avgPct, volatility,
     maxDrawdown,
     relStrength,
     score,
+    scoreParts,
     strongDates, weakDates,
   };
 }

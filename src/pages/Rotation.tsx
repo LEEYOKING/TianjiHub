@@ -1,13 +1,15 @@
 // 【板块轮动档案】单页视图 —— 已合并原「轮动档案」+「轮动时间轴」两页
-// 页面结构(自上而下,含跨模块联动):
+// V2.0 阶段 3：主页信息架构重构（任务书 §4 第一层「快速复盘」+ §5）
+// 页面结构(自上而下):
 //   ① 规则栏(全局唯一口径)
-//   ② 每日强弱榜单       —— 最新交易日最强/最弱
-//   ③ 板块行为画像       —— 4 张概览卡 + 榜单切换(反复活跃/最近重新活跃/趋势持续性) + 行为统计表
-//      行为统计表 = 全页的「选择器」:点某一行 → 时间轴聚焦该板块并滚动过去
-//   ④ 事件热力时间轴     —— Canvas 网格(可点格子看判定依据),复用统计表的筛选条件
-//   ⑤ 板块轮动关系       —— 同步活跃 / 先后关系 / 市场环境分层
-// 注:卡片标题不使用"第一/二/三层"这类实现内部分层用语,避免终端用户困惑
-// 设计原则:所有模块共用同一份 rule 与同一份 filteredStats,避免"改一个阈值后各模块口径不一致"
+//   ② 本页筛选(类型/关键词) —— 【全局】作用于本页全部模块,保证同一屏只有一套口径(修 P0-3)
+//   ③ 近期轮动观察       —— 【新】按可解释的观察标签列出 3 条(可展开全部),这是本层最重要的结论入口
+//   ④ 每日强弱榜单       —— 最新交易日最强/最弱(标注交易日 + 数据状态)
+//   ⑤ 板块行为统计表     —— 默认 7 列 + 「展开更多列」;= 全页的「选择器」:点行 → 时间轴聚焦
+//   ⑥ 板块热力网格       —— Canvas 网格(可点格子看判定依据),档位 Top5/10/20/40/80/全部
+//   ⑦ 高级研究(折叠)    —— 板块轮动关系 / 行为画像与分类榜单 / 活跃度评分构成
+// 设计原则:所有模块共用同一份 rule 与同一份 filteredStats(规则 scope × 页面筛选),
+//          位置型取值一律经 toWindowView，避免覆盖率<100% 时错位。
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, PageHeader } from './Overview';
@@ -16,10 +18,12 @@ import { RotationRuleBar } from '../components/RotationRulePanel';
 import { RotationRelations } from '../components/RotationRelations';
 import { useRotationData, useRotationRule } from '../data/rotationData';
 import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
-import { analyzeAll } from '../utils/rotation/analytics';
+import { analyzeAll, SCORE_WEIGHTS } from '../utils/rotation/analytics';
 import type { SectorStats } from '../utils/rotation/analytics';
 import { computeWindow, toWindowView } from '../utils/rotation/ruleEngine';
 import type { SectorType } from '../utils/rotation/types';
+import { OBSERVATION_COLOR, buildObservations, pickHighlightObservations } from '../utils/rotation/observations';
+import type { Observation } from '../utils/rotation/observations';
 
 const TYPE_LABEL: Record<SectorType, string> = { industry: '行业', concept: '概念', region: '地域' };
 
@@ -37,13 +41,26 @@ const TIP_H = 76;
 const REACTIVATE_AGO = 5;    // 距最近一次强势事件 ≤ 5 个交易日
 const REACTIVATE_GAP = 10;   // 且此前空档 ≥ 10 个交易日
 
-// v2.0.8ku:表头字段提为常量 —— 渲染表头与"感叹号"气泡说明共用同一份,避免两处措辞漂移
-const STATS_HEADERS = [
-  '板块', '类型', '强势次数', '弱势次数', '强势频率', '平均间隔',
-  '独立周期', '独立间隔', '累计收益', '最大回撤', '活跃度', '覆盖率',
-];
+// 近期轮动观察默认展示条数(§5.3:默认最多 3~5 条;超出可展开全部)
+const OBS_DEFAULT = 3;
+
+// 统计表列定义 —— 默认 7 列(§5.6),其余进「展开更多列」
+const STATS_HEADERS_DEFAULT = ['板块', '强势次数', '弱势次数', '最近活跃日期', '事件间隔摘要', '累计收益', '相对基准超额'];
+const STATS_HEADERS_MORE = ['类型', '强势频率', '平均间隔', '独立周期', '独立间隔', '最大回撤', '活跃度', '覆盖率'];
+const STATS_HEADERS = [...STATS_HEADERS_DEFAULT, ...STATS_HEADERS_MORE]; // InfoTip 词条
 const BOARD_HEADERS_BASE = ['板块', '类型'];
 const MINI_TABLE_HEADERS = ['序号', '板块', '类型', '涨跌幅'];
+
+// 热力网格档位(v2.0.9 补 Top5 / Top10 / 全部)
+const HEATMAP_LEVELS: { label: string; value: string }[] = [
+  { label: 'Top5', value: '5' },
+  { label: 'Top10', value: '10' },
+  { label: 'Top20', value: '20' },
+  { label: 'Top40', value: '40' },
+  { label: 'Top80', value: '80' },
+  { label: '全部', value: 'all' },
+];
+
 // v2.0.8kv:热力网格图例(色块 + 名称) —— 标题行最右侧展示,同一份数据复用给感叹号气泡(色块在名称左侧)
 const HEATMAP_LEGEND: { c: string; t: string }[] = [
   { c: TL_LARGE_UP, t: '大涨(达阈值)' },
@@ -107,10 +124,13 @@ function Seg<T extends string>({
 
 // v2.0.8kz:每日最强/最弱榜的小卡片网格 —— 一行最多 5 张,窄屏自动降列
 // 颜色深浅按名次递变(第 1 名最重,往后越浅),hover 轻微上浮
-const MINI_CARD_CSS = `
+// v2.0.9:新增 .tj-obs-card(近期轮动观察卡片)的 hover 效果
+const AUX_CSS = `
   .tj-mini-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
   .tj-mini-card { transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
   .tj-mini-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); filter: brightness(1.04); }
+  .tj-obs-card { transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+  .tj-obs-card:hover { border-color: #1890FF !important; box-shadow: 0 4px 14px rgba(24,144,255,0.10); background: #FCFDFF; }
   @media (max-width: 1280px) { .tj-mini-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 760px) { .tj-mini-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 `;
@@ -118,12 +138,14 @@ const MINI_CARD_CSS = `
 function MiniBoardCards({
   rows,
   mode,
+  empty = '当日无数据',
 }: {
   rows: { id: string; name: string; pct: number; rank: number; type: SectorType }[];
   mode: 'up' | 'down';
+  empty?: string;
 }) {
   const nav = useNavigate();
-  if (!rows.length) return <div style={{ fontSize: 12, color: '#86909C', padding: '12px 0' }}>当日无数据</div>;
+  if (!rows.length) return <div style={{ fontSize: 12, color: '#86909C', padding: '12px 0' }}>{empty}</div>;
   const rgb = mode === 'up' ? '255, 77, 79' : '14, 205, 112';      // 红=最强 / 绿=最弱
   const main = mode === 'up' ? COLOR_UP : COLOR_DOWN;
   const n = rows.length;
@@ -226,19 +248,72 @@ function BoardList({
   );
 }
 
+/** 近期轮动观察卡片(§5.2:板块名/标签/触发依据/关键数据/最近事件日期/覆盖率/点击进详情) */
+function ObservationCard({ o, onOpen }: { o: Observation; onOpen: (id: string) => void }) {
+  const color = OBSERVATION_COLOR[o.label];
+  return (
+    <div
+      className="tj-obs-card"
+      onClick={() => onOpen(o.sector.id)}
+      title={`${o.sector.name} — 点击查看行为详情`}
+      style={{
+        border: `1px solid ${COLOR_BORDER}`,
+        borderLeft: `3px solid ${color}`,
+        borderRadius: 10,
+        padding: '12px 14px',
+        cursor: 'pointer',
+        background: '#fff',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', background: color, borderRadius: 4, padding: '2px 8px' }}>
+          {o.labelText}
+        </span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: COLOR_TEXT }}>{o.sector.name}</span>
+        <span style={{ fontSize: 10, color: '#86909C', background: '#F5F6F8', borderRadius: 4, padding: '1px 5px' }}>
+          {TYPE_LABEL[o.sector.type]}
+        </span>
+        <span
+          style={{
+            marginLeft: 'auto',
+            fontSize: 11,
+            color: o.coverage < 1 ? '#FA8C16' : '#86909C',
+          }}
+        >
+          最近事件 {o.lastEventDate ? dashToSlash(o.lastEventDate) : '—'} · 数据覆盖 {(o.coverage * 100).toFixed(0)}%
+        </span>
+      </div>
+      <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.8, marginTop: 8 }}>
+        <span style={{ color: '#86909C' }}>触发依据：</span>
+        {o.reason}
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8, fontSize: 11, color: '#86909C' }}>
+        {o.metrics.map((m) => (
+          <span key={m.k}>
+            {m.k} <b style={{ color: COLOR_TEXT, fontWeight: 600 }}>{m.v}</b>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Rotation() {
   const { data, error, loading } = useRotationData();
   const [rule, setRule] = useRotationRule();
   const navigate = useNavigate();
 
-  // 全页共用筛选(统计表与时间轴联动,保证两处看到的是同一批板块)
+  // 全页共用筛选(【全局】作用于本页全部模块,保证同一屏只有一套口径)
   const [typeFilter, setTypeFilter] = useState<'all' | SectorType>('all');
   const [kw, setKw] = useState('');
   const [sortKey, setSortKey] = useState<'score' | 'strong' | 'gap' | 'ret'>('score');
+  const [showMoreCols, setShowMoreCols] = useState(false);
+  const [obsOpen, setObsOpen] = useState(false);
+  const [advOpen, setAdvOpen] = useState(false);
   const [boardMode, setBoardMode] = useState<'active' | 'reactivate' | 'trend'>('active');
 
   // 时间轴状态
-  const [rowLimit, setRowLimit] = useState(40);
+  const [rowLimit, setRowLimit] = useState<'5' | '10' | '20' | '40' | '80' | 'all'>('40');
   const [focusId, setFocusId] = useState<string | null>(null);
   const [hover, setHover] = useState<{ r: number; c: number } | null>(null);
   // Y 轴板块名自身的悬停高亮(与画布 hover 分开 — 便于用户识别"这一行可以点进详情")
@@ -255,14 +330,17 @@ export default function Rotation() {
     return { comp, stats };
   }, [data, rule]);
 
-  // 过滤后的板块(统计表 + 时间轴共用)
+  const kwTrim = kw.trim();
+  const filterActive = typeFilter !== 'all' || kwTrim !== '';
+
+  // 过滤后的板块(本页全部模块共用 —— 规则 scope × 页面筛选)
   const filteredStats = useMemo<SectorStats[]>(() => {
     if (!computed) return [];
     let rows = computed.stats;
     if (typeFilter !== 'all') rows = rows.filter((r) => r.sector.type === typeFilter);
-    if (kw.trim()) rows = rows.filter((r) => r.sector.name.includes(kw.trim()));
+    if (kwTrim) rows = rows.filter((r) => r.sector.name.includes(kwTrim));
     return rows;
-  }, [computed, typeFilter, kw]);
+  }, [computed, typeFilter, kwTrim]);
 
   const tableRows = useMemo(() => {
     const cmp = {
@@ -274,41 +352,57 @@ export default function Rotation() {
     return [...filteredStats].sort(cmp).slice(0, 60);
   }, [filteredStats, sortKey]);
 
+  // 实际统计窗口(交易日数)
+  const windowDaysActual = computed?.comp.dates.length ?? 0;
+
+  // 【新】近期轮动观察 —— 全部由真实统计量生成,不含硬编码
+  const observations = useMemo<Observation[]>(
+    () => (computed && windowDaysActual > 0 ? buildObservations(filteredStats, windowDaysActual) : []),
+    [computed, filteredStats, windowDaysActual],
+  );
+  const shownObservations = obsOpen ? observations : pickHighlightObservations(observations, OBS_DEFAULT);
+
   // 「最近重新活跃」:距最近强势 ≤5 个交易日 且 此前空档 ≥10 个交易日(固定阈值,界面已标注)
   const reactivated = useMemo(() => {
-    if (!computed) return [];
     return filteredStats
       .filter((s) => s.lastStrongAgo != null && s.lastStrongAgo <= REACTIVATE_AGO && (s.lastGapBefore ?? 0) >= REACTIVATE_GAP)
       .sort((a, b) => (a.lastStrongAgo ?? 99) - (b.lastStrongAgo ?? 99) || (b.lastGapBefore ?? 0) - (a.lastGapBefore ?? 0));
   }, [filteredStats]);
 
-  const latest = computed ? computed.comp.ranking[computed.comp.ranking.length - 1] : null;
+  const latestAll = computed ? computed.comp.ranking[computed.comp.ranking.length - 1] : null;
   const typeById = useMemo(() => {
     const mp = new Map<string, SectorType>();
     (data?.sectors || []).forEach((s) => mp.set(s.id, s.type));
     return mp;
   }, [data]);
-  const strongTop = latest
-    ? latest.ranked.slice(0, rule.topN).map((r) => ({ ...r, type: typeById.get(r.id) || ('industry' as SectorType) }))
-    : [];
-  const weakTop = latest
-    ? [...latest.ranked]
-        .reverse()
-        .slice(0, rule.topN)
-        .map((r) => ({ ...r, type: typeById.get(r.id) || ('industry' as SectorType) }))
-    : [];
 
-  // 概览卡:4 个画像入口的高亮
+  // 每日榜单同样应用本页筛选(统一口径)
+  const latestRanked = useMemo(() => {
+    if (!latestAll) return [];
+    return latestAll.ranked.filter(
+      (r) => (typeFilter === 'all' || typeById.get(r.id) === typeFilter) && (!kwTrim || r.name.includes(kwTrim)),
+    );
+  }, [latestAll, typeFilter, kwTrim, typeById]);
+
+  const strongTop = latestRanked
+    .slice(0, rule.topN)
+    .map((r) => ({ ...r, type: typeById.get(r.id) || ('industry' as SectorType) }));
+  const weakTop = [...latestRanked]
+    .reverse()
+    .slice(0, rule.topN)
+    .map((r) => ({ ...r, type: typeById.get(r.id) || ('industry' as SectorType) }));
+
+  // 概览卡:4 个画像入口的高亮(基于筛选后的板块)
   const profile = useMemo(() => {
-    if (!computed || !computed.stats.length) return null;
-    const ss = computed.stats;
+    if (!filteredStats.length) return null;
+    const ss = filteredStats;
     const mostActive = [...ss].sort((a, b) => b.strongCount - a.strongCount)[0];
     const gapReady = ss.filter((s) => !s.gapStrong.sampleInsufficient && s.gapStrong.avg !== null);
     const tightest = [...gapReady].sort((a, b) => (a.gapStrong.avg ?? 999) - (b.gapStrong.avg ?? 999))[0];
     const bothSides = ss.filter((s) => s.strongCount > 0 && s.weakCount > 0).length;
     const bestRet = [...ss].sort((a, b) => b.cumReturn - a.cumReturn)[0];
     return { mostActive, tightest, bothSides, bestRet, total: ss.length };
-  }, [computed]);
+  }, [filteredStats]);
 
   // 榜单数据(三种模式)
   const boardRows = useMemo(() => {
@@ -356,6 +450,9 @@ export default function Rotation() {
         ? ['距上次强势', '此前空档', '窗口内次数 · 累计收益']
         : ['累计收益', '最大回撤', '相对基准超额'];
 
+  // 活跃度评分构成(取活跃度前 10 展示分项)
+  const scoreRows = useMemo(() => [...filteredStats].sort((a, b) => b.score - a.score).slice(0, 10), [filteredStats]);
+
   // 时间轴行:聚焦某板块时只画它一行(放大便于看),否则画活跃度前 N 行
   const tlRows = useMemo<SectorStats[]>(() => {
     if (focusId) {
@@ -364,12 +461,14 @@ export default function Rotation() {
     }
     const byScore = [...filteredStats].sort((a, b) => b.score - a.score);
     const active = byScore.filter((s) => s.strongCount + s.weakCount > 0);
-    return (active.length ? active : byScore).slice(0, rowLimit);
+    const pool = active.length ? active : byScore;
+    return pool.slice(0, rowLimit === 'all' ? pool.length : Number(rowLimit));
   }, [filteredStats, focusId, rowLimit]);
 
   const cols = computed?.comp.dates.length ?? 0;
   const cellW = cols > 0 ? Math.max(10, Math.min(20, Math.floor(1000 / cols))) : 14;
-  const cellH = focusId ? 26 : 18;
+  // 行高自适应:行数很多(如"全部")时压缩行高,避免 Canvas 尺寸过大
+  const cellH = focusId ? 26 : Math.max(10, Math.min(18, Math.floor(6000 / Math.max(1, tlRows.length))));
 
   const seriesByRow = useMemo(() => {
     if (!computed) return [];
@@ -479,14 +578,125 @@ export default function Rotation() {
     return { time, postClose: g.slice(0, 10) === m.lastTradeDate && time >= '15:05' };
   })();
 
+  // 数据状态标记:非当日盘后快照 → 明确提示,避免"用旧数据伪装成当日榜单"
+  const staleTag = !gen.postClose ? (
+    <span style={{ color: '#FA8C16' }}> · ⚠ 非当日盘后快照</span>
+  ) : null;
+
+  /** 统计表单元格:最近活跃日期 */
+  const cellLastActive = (r: SectorStats) =>
+    r.lastActiveDate ? dashToSlash(r.lastActiveDate) : <span style={{ color: '#B0B7C3' }}>—</span>;
+
+  /** 统计表单元格:事件间隔摘要(强势平均间隔 · 独立周期平均间隔) */
+  const cellGapSummary = (r: SectorStats) => {
+    const g = r.gapStrong;
+    const cg = r.clusterGapStrong;
+    const p1 = g.sampleInsufficient || g.avg === null ? '强势间隔样本少' : `强势 ${g.avg.toFixed(1)} 日`;
+    const p2 = cg.sampleInsufficient || cg.avg === null ? '' : ` · 独立 ${cg.avg.toFixed(1)} 日`;
+    return <span style={{ color: '#4E5969' }}>{p1}{p2}</span>;
+  };
+
+  // 统计表列(默认 7 列 + 展开更多列)
+  const columns: { key: string; label: string; more?: boolean; align: 'left' | 'center'; cell: (r: SectorStats) => React.ReactNode }[] = [
+    {
+      key: 'sector',
+      label: '板块',
+      align: 'left',
+      cell: (r) => (
+        <>
+          <span style={{ color: COLOR_TEXT }}>{r.sector.name}</span>
+          <span style={{ fontSize: 10, color: '#86909C', background: '#F5F6F8', borderRadius: 4, padding: '1px 5px', marginLeft: 6 }}>
+            {TYPE_LABEL[r.sector.type]}
+          </span>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/rotation/sector/${r.sector.id}`);
+            }}
+            style={{ color: '#1890FF', fontSize: 11, marginLeft: 8 }}
+          >
+            详情 ›
+          </span>
+        </>
+      ),
+    },
+    { key: 'strong', label: '强势次数', align: 'center', cell: (r) => <span style={{ color: COLOR_UP, fontWeight: 600 }}>{r.strongCount}</span> },
+    { key: 'weak', label: '弱势次数', align: 'center', cell: (r) => <span style={{ color: COLOR_DOWN, fontWeight: 600 }}>{r.weakCount}</span> },
+    { key: 'lastActive', label: '最近活跃日期', align: 'center', cell: cellLastActive },
+    { key: 'gapSummary', label: '事件间隔摘要', align: 'center', cell: cellGapSummary },
+    {
+      key: 'cum',
+      label: '累计收益',
+      align: 'center',
+      cell: (r) => (
+        <span style={{ fontWeight: 600, color: r.cumReturn > 0 ? COLOR_UP : r.cumReturn < 0 ? COLOR_DOWN : COLOR_FLAT }}>
+          {(r.cumReturn * 100).toFixed(2)}%
+        </span>
+      ),
+    },
+    {
+      key: 'rel',
+      label: '相对基准超额',
+      align: 'center',
+      cell: (r) =>
+        r.relStrength == null ? (
+          <span style={{ color: '#B0B7C3' }}>—</span>
+        ) : (
+          <span style={{ fontWeight: 600, color: r.relStrength > 0 ? COLOR_UP : r.relStrength < 0 ? COLOR_DOWN : COLOR_FLAT }}>
+            {r.relStrength > 0 ? '+' : ''}
+            {(r.relStrength * 100).toFixed(2)}%
+          </span>
+        ),
+    },
+    // —— 以下为「展开更多列」 ——
+    { key: 'type', label: '类型', align: 'center', more: true, cell: (r) => <span style={{ color: '#86909C' }}>{TYPE_LABEL[r.sector.type]}</span> },
+    { key: 'freq', label: '强势频率', align: 'center', more: true, cell: (r) => `${(r.strongFreq * 100).toFixed(0)}%` },
+    {
+      key: 'gapAvg',
+      label: '平均间隔',
+      align: 'center',
+      more: true,
+      cell: (r) => (
+        <span>
+          {r.gapStrong.avg != null ? `${r.gapStrong.avg.toFixed(1)} 日` : '—'}
+          {r.gapStrong.sampleInsufficient && <span style={{ color: COLOR_FLAT, fontSize: 10 }}> 样本少</span>}
+        </span>
+      ),
+    },
+    { key: 'clusters', label: '独立周期', align: 'center', more: true, cell: (r) => r.clustersStrong.length },
+    {
+      key: 'clusterGap',
+      label: '独立间隔',
+      align: 'center',
+      more: true,
+      cell: (r) => (r.clusterGapStrong.avg != null ? `${r.clusterGapStrong.avg.toFixed(1)} 日` : '—'),
+    },
+    {
+      key: 'mdd',
+      label: '最大回撤',
+      align: 'center',
+      more: true,
+      cell: (r) => <span style={{ color: COLOR_DOWN }}>{(r.maxDrawdown * 100).toFixed(2)}%</span>,
+    },
+    { key: 'score', label: '活跃度', align: 'center', more: true, cell: (r) => <span style={{ fontWeight: 600 }}>{r.score.toFixed(1)}</span> },
+    {
+      key: 'coverage',
+      label: '覆盖率',
+      align: 'center',
+      more: true,
+      cell: (r) => <span style={{ color: r.coverage < 1 ? '#FA8C16' : '#86909C' }}>{(r.coverage * 100).toFixed(0)}%</span>,
+    },
+  ];
+
+  const shownColumns = columns.filter((c) => showMoreCols || !c.more);
+
   return (
     <div>
-      {/* v2.0.8kz:小卡片网格的响应式列数与 hover 效果(类名限定,不影响其它页面) */}
-      <style>{MINI_CARD_CSS}</style>
+      <style>{AUX_CSS}</style>
       <PageHeader
         title="板块轮动档案"
         tradeDateSlash={dashToSlash(m.lastTradeDate)}
-        subtitle="榜单档案 · 行为画像 · 事件时间轴 · 轮动关系（可配置规则，全窗口可复算）"
+        subtitle="轮动观察 · 每日榜单 · 行为统计 · 事件热力网格 · 高级研究（可配置规则，全窗口可复算）"
         dateSuffix={
           <>
             <span style={{ color: '#111827', fontWeight: 500 }}> {gen.time}</span>
@@ -507,7 +717,92 @@ export default function Rotation() {
         }}
       />
 
-      {/* ① 每日强弱榜单 —— v2.0.8kz:拆成 1 行 2 列两张小卡片 */}
+      {/* ② 本页筛选 —— 【全局】作用于本页全部模块(修 P0-3:同一屏只允许一套口径) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>本页筛选</span>
+        <Seg
+          value={typeFilter}
+          onChange={(v) => {
+            setTypeFilter(v);
+            setPicked(null);
+          }}
+          options={[
+            { label: '全部', value: 'all' as const },
+            { label: '行业', value: 'industry' as const },
+            { label: '概念', value: 'concept' as const },
+            { label: '地域', value: 'region' as const },
+          ]}
+        />
+        <input
+          value={kw}
+          onChange={(e) => setKw(e.target.value)}
+          placeholder="搜索板块名…"
+          style={{ border: `1px solid ${COLOR_BORDER}`, borderRadius: 8, padding: '5px 10px', fontSize: 12, outline: 'none', width: 200 }}
+        />
+        <span style={{ fontSize: 11, color: '#86909C' }}>筛选后 {filteredStats.length} 个板块</span>
+        {filterActive && (
+          <button
+            onClick={() => {
+              setTypeFilter('all');
+              setKw('');
+              setPicked(null);
+            }}
+            style={{ border: `1px solid ${COLOR_BORDER}`, background: '#fff', color: '#4E5969', borderRadius: 8, padding: '4px 12px', fontSize: 12, cursor: 'pointer' }}
+          >
+            清除筛选
+          </button>
+        )}
+      </div>
+      <div style={{ fontSize: 11, color: '#86909C', marginTop: 6, lineHeight: 1.8 }}>
+        类型 / 关键词筛选<b>同时作用于本页全部模块</b>（每日榜单、近期轮动观察、行为统计表、热力网格、高级研究）——
+        同一屏只有一套口径，避免各模块筛选范围不一致。板块总数范围另由上方规则栏的「板块范围」控制，两者取交集。
+      </div>
+
+      {/* ③ 近期轮动观察 —— 本层最重要的结论入口(§5.1) */}
+      <div style={{ height: 16 }} />
+      <Card
+        title={<TitleWithTip text="近期轮动观察" items={tipItems(['近期轮动观察', '持续活跃', '反复脉冲', '沉寂后重新活跃', '强弱交替', '相对走强', '触发依据'])} title="观察标签含义" />}
+        right={
+          <span style={{ fontSize: 11, color: '#86909C' }}>
+            统计窗口 近 {windowDaysActual} 个交易日 · 阈值口径：<b style={{ color: '#FA8C16' }}>实验参数</b>
+          </span>
+        }
+      >
+        {observations.length === 0 ? (
+          <div style={{ background: '#F7F9FC', border: `1px dashed ${COLOR_BORDER}`, borderRadius: 10, padding: '18px 16px', fontSize: 12, color: '#4E5969', lineHeight: 1.9 }}>
+            <div style={{ fontWeight: 600, color: COLOR_TEXT }}>当前规则下暂无符合条件的明显轮动观察。</div>
+            <div style={{ color: '#86909C', marginTop: 4 }}>
+              这是<b>当前统计窗口与观察阈值</b>下的结果，不代表市场没有机会；可调整上方规则或放宽窗口后重新计算。
+              {filterActive && '（当前已应用本页筛选，也可能因此排除了符合条件的板块。）'}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {shownObservations.map((o) => (
+                <ObservationCard key={o.sector.id} o={o} onOpen={(id) => navigate(`/rotation/sector/${id}`)} />
+              ))}
+            </div>
+            {observations.length > OBS_DEFAULT && (
+              <div style={{ marginTop: 12, textAlign: 'center' }}>
+                <button
+                  onClick={() => setObsOpen((v) => !v)}
+                  style={{ border: `1px solid ${COLOR_BORDER}`, background: '#fff', color: '#1890FF', borderRadius: 8, padding: '5px 16px', fontSize: 12, cursor: 'pointer' }}
+                >
+                  {obsOpen ? '收起' : `展开全部（共 ${observations.length} 条）`}
+                </button>
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: '#86909C', marginTop: 12, lineHeight: 1.8 }}>
+              以上分类仅为<b>观察线索</b>（由真实统计量按可解释规则生成），不代表买卖建议；每个板块只保留最有辨识度的一个标签，避免重复。
+              阈值为尚未回测验证的<b>实验参数</b>，用于可解释性展示。
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* ④ 每日强弱榜单 —— 1 行 2 列小卡片(标注交易日 + 数据状态) */}
+      <div style={{ height: 16 }} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'stretch' }}>
         <Card
           title={
@@ -519,11 +814,12 @@ export default function Rotation() {
           }
           right={
             <span style={{ fontSize: 11, color: '#86909C' }}>
-              {latest?.date || '-'} · 当日有效板块 {latest?.total ?? 0} 个
+              {latestAll?.date || '-'} · {filterActive ? '筛选后' : '当日'}有效板块 {latestRanked.length} 个
+              {staleTag}
             </span>
           }
         >
-          <MiniBoardCards rows={strongTop} mode="up" />
+          <MiniBoardCards rows={strongTop} mode="up" empty={filterActive ? '当前筛选下当日无匹配板块' : '当日无数据'} />
         </Card>
         <Card
           title={
@@ -533,105 +829,29 @@ export default function Rotation() {
               title="字段含义 / 排名规则"
             />
           }
+          right={
+            <span style={{ fontSize: 11, color: '#86909C' }}>
+              {latestAll?.date || '-'} · {filterActive ? '筛选后' : '当日'}有效板块 {latestRanked.length} 个
+              {staleTag}
+            </span>
+          }
         >
-          <MiniBoardCards rows={weakTop} mode="down" />
+          <MiniBoardCards rows={weakTop} mode="down" empty={filterActive ? '当前筛选下当日无匹配板块' : '当日无数据'} />
         </Card>
       </div>
 
-      {/* ② 板块行为画像 */}
+      {/* ⑤ 板块行为统计表(= 全页选择器) */}
       <div style={{ height: 16 }} />
       <Card
-        title={<TitleWithTip text="板块行为画像" items={tipItems(PROFILE_CARD_LABELS)} title="概览指标含义" />}
-        right={<span style={{ fontSize: 11, color: '#86909C' }}>近 {rule.windowDays} 个交易日</span>}
-      >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16 }}>
-          {[
-            {
-              t: '反复活跃次数',
-              v: profile ? `${profile.mostActive.strongCount} 次` : '-',
-              c: COLOR_UP,
-              s: profile ? `${profile.mostActive.sector.name}（弱势 ${profile.mostActive.weakCount} 次）` : '',
-            },
-            {
-              t: '活跃间隔',
-              v: profile?.tightest?.gapStrong.avg != null ? `${profile.tightest.gapStrong.avg.toFixed(1)} 日` : '样本不足',
-              c: COLOR_TEXT,
-              s: profile?.tightest ? `${profile.tightest.sector.name} · 中位 ${profile.tightest.gapStrong.median ?? '-'} 日` : '暂无足够间隔样本',
-            },
-            {
-              t: '最近重新活跃',
-              v: `${reactivated.length} 个`,
-              c: COLOR_UP,
-              s: `距上次强势 ≤${REACTIVATE_AGO} 日且此前空档 ≥${REACTIVATE_GAP} 日`,
-            },
-            {
-              t: '趋势与持续性',
-              v: profile ? `${(profile.bestRet.cumReturn * 100).toFixed(1)}%` : '-',
-              c: profile && profile.bestRet.cumReturn >= 0 ? COLOR_UP : COLOR_DOWN,
-              s: profile ? `${profile.bestRet.sector.name} · 窗口复合收益居首` : '',
-            },
-          ].map((x) => (
-            <div key={x.t} style={{ background: '#F7F9FC', border: `1px solid ${COLOR_BORDER}`, borderRadius: 10, padding: '14px 16px' }}>
-              <Stat label={x.t} value={x.v} color={x.c} sub={x.s} />
-            </div>
-          ))}
-        </div>
-
-        {/* 榜单切换 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-          <Seg
-            value={boardMode}
-            onChange={setBoardMode}
-            options={[
-              { label: '反复活跃榜', value: 'active' as const },
-              { label: '最近重新活跃榜', value: 'reactivate' as const },
-              { label: '趋势持续性榜', value: 'trend' as const },
-            ]}
-          />
+        title={<TitleWithTip text="板块行为统计表" items={tipItems(STATS_HEADERS)} title="列含义 / 计算公式" />}
+        right={
           <span style={{ fontSize: 11, color: '#86909C' }}>
-            {boardMode === 'active'
-              ? '按窗口内进入强势榜的次数排序'
-              : boardMode === 'reactivate'
-                ? `判定口径（固定值）：距最近一次强势事件 ≤ ${REACTIVATE_AGO} 个交易日，且此前空档 ≥ ${REACTIVATE_GAP} 个交易日 —— 即"沉寂一段时间后重新活跃"`
-                : '按窗口内板块复合收益排序'}
+            筛选后 {filteredStats.length} 个，展示前 {tableRows.length} 个 · 点击行 → 下方热力网格聚焦该板块
           </span>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <BoardList
-            title={
-              boardMode === 'active' ? '反复进入强势榜 TOP 10' : boardMode === 'reactivate' ? '最近重新活跃 TOP 10' : '趋势持续性 TOP 10'
-            }
-            headers={boardHeaders}
-            rows={boardRows}
-            onPick={pickSector}
-          />
-        </div>
-        {boardMode === 'reactivate' && (
-          <div style={{ fontSize: 11, color: '#86909C', marginTop: 10, lineHeight: 1.7 }}>
-            "此前空档"= 最近一次强势事件与上一次强势事件之间的交易日步长；空档越大说明是"沉寂后重启"而非持续活跃。
-            该判定阈值为 V1 固定启发值，不随规则面板变化。
-          </div>
-        )}
-
-        {/* 全量统计表(= 全页选择器) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            板块行为统计表
-            <InfoTip items={tipItems(STATS_HEADERS)} title="列含义 / 计算公式" />
-          </span>
-          <Seg
-            value={typeFilter}
-            onChange={(v) => {
-              setTypeFilter(v);
-              setPicked(null);
-            }}
-            options={[
-              { label: '全部', value: 'all' as const },
-              { label: '行业', value: 'industry' as const },
-              { label: '概念', value: 'concept' as const },
-              { label: '地域', value: 'region' as const },
-            ]}
-          />
+        }
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: '#4E5969' }}>排序</span>
           <Seg
             value={sortKey}
             onChange={setSortKey}
@@ -642,27 +862,21 @@ export default function Rotation() {
               { label: '按累计收益', value: 'ret' as const },
             ]}
           />
-          <input
-            value={kw}
-            onChange={(e) => setKw(e.target.value)}
-            placeholder="搜索板块名（同时过滤时间轴）…"
-            style={{ border: `1px solid ${COLOR_BORDER}`, borderRadius: 8, padding: '5px 10px', fontSize: 12, outline: 'none', width: 200 }}
-          />
-          <span style={{ fontSize: 11, color: '#86909C' }}>
-            筛选后 {filteredStats.length} 个，展示前 {tableRows.length} 个 · 点击行 → 下方时间轴聚焦该板块
-          </span>
+          <button
+            onClick={() => setShowMoreCols((v) => !v)}
+            style={{ border: `1px solid ${COLOR_BORDER}`, background: '#fff', color: '#1890FF', borderRadius: 8, padding: '5px 14px', fontSize: 12, cursor: 'pointer' }}
+          >
+            {showMoreCols ? '收起更多列' : `展开更多列（+${STATS_HEADERS_MORE.length}）`}
+          </button>
         </div>
-        <div style={{ overflowX: 'auto', marginTop: 10 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 980 }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: showMoreCols ? 1240 : 880 }}>
             <thead>
               <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
-                {STATS_HEADERS.map((h) => (
-                  <th
-                    key={h}
-                    // v2.0.8kw:除首列外,表头与单元格一律水平居中
-                    style={{ padding: '9px 10px', textAlign: h === '板块' ? 'left' : 'center', fontWeight: 500, whiteSpace: 'nowrap' }}
-                  >
-                    {h}
+                {shownColumns.map((c) => (
+                  // v2.0.8kw:除首列外,表头与单元格一律水平居中
+                  <th key={c.key} style={{ padding: '9px 10px', textAlign: c.align, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    {c.label}
                   </th>
                 ))}
               </tr>
@@ -671,56 +885,27 @@ export default function Rotation() {
               {tableRows.map((r) => (
                 <tr
                   key={r.sector.id}
+                  onClick={() => pickSector(r.sector.id)}
                   style={{
                     borderBottom: `1px solid ${COLOR_BORDER}`,
                     cursor: 'pointer',
                     background: focusId === r.sector.id ? '#F0F7FF' : undefined,
                   }}
                 >
-                  <td
-                    style={{ padding: '9px 10px', fontWeight: 500, whiteSpace: 'nowrap' }}
-                    onClick={() => pickSector(r.sector.id)}
-                  >
-                    <span style={{ color: COLOR_TEXT }}>{r.sector.name}</span>
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/rotation/sector/${r.sector.id}`);
-                      }}
-                      style={{ color: '#1890FF', fontSize: 11, marginLeft: 8 }}
-                    >
-                      详情 ›
-                    </span>
-                  </td>
-                  <td style={{ padding: '9px 10px', color: '#86909C', textAlign: 'center' }}>{TYPE_LABEL[r.sector.type]}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_UP, fontWeight: 600 }}>{r.strongCount}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_DOWN, fontWeight: 600 }}>{r.weakCount}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>{(r.strongFreq * 100).toFixed(0)}%</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>
-                    {r.gapStrong.avg != null ? `${r.gapStrong.avg.toFixed(1)} 日` : '—'}
-                    {r.gapStrong.sampleInsufficient && <span style={{ color: COLOR_FLAT, fontSize: 10 }}> 样本少</span>}
-                  </td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>{r.clustersStrong.length}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>
-                    {r.clusterGapStrong.avg != null ? `${r.clusterGapStrong.avg.toFixed(1)} 日` : '—'}
-                  </td>
-                  <td
-                    style={{
-                      padding: '9px 10px',
-                      textAlign: 'center',
-                      fontWeight: 600,
-                      color: r.cumReturn > 0 ? COLOR_UP : r.cumReturn < 0 ? COLOR_DOWN : COLOR_FLAT,
-                    }}
-                  >
-                    {(r.cumReturn * 100).toFixed(2)}%
-                  </td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center', color: COLOR_DOWN }}>{(r.maxDrawdown * 100).toFixed(2)}%</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center', fontWeight: 600 }}>{r.score.toFixed(1)}</td>
-                  <td style={{ padding: '9px 10px', textAlign: 'center', color: r.coverage < 1 ? '#FA8C16' : '#86909C' }}>
-                    {(r.coverage * 100).toFixed(0)}%
-                  </td>
+                  {shownColumns.map((c) => (
+                    <td key={c.key} style={{ padding: '9px 10px', textAlign: c.align, whiteSpace: c.key === 'sector' ? 'nowrap' : undefined }}>
+                      {c.cell(r)}
+                    </td>
+                  ))}
                 </tr>
               ))}
+              {!tableRows.length && (
+                <tr>
+                  <td colSpan={shownColumns.length} style={{ padding: '14px 10px', color: '#86909C' }}>
+                    {filterActive ? '当前筛选下没有符合条件的板块（可清除筛选或调整规则范围）。' : '当前规则下没有符合条件的板块。'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -731,15 +916,11 @@ export default function Rotation() {
         </div>
       </Card>
 
-      {/* ③ 事件热力时间轴(与上方筛选/选中联动) */}
+      {/* ⑥ 事件热力网格(与上方筛选/选中联动) */}
       <div style={{ height: 16 }} />
       <div ref={timelineRef}>
-        {/* v2.0.8kt:标题改为'事件热力网格（近N交易日）',并删除右上角'列×行'副文本 */}
-        {/* v2.0.8ku:标题右侧加感叹号说明(图例各色含义) */}
-        {/* v2.0.8kv:标题改'板块热力网格';图例整体移到标题行最右侧;气泡内色块置于名称左侧 */}
         <Card
           title={
-            // v2.0.8kw:Top20/40/80 的分段切换移到标题提示 icon 的右侧(与标题同一行)
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <TitleWithTip
                 text={`板块热力网格（近${rule.windowDays}交易日）`}
@@ -748,16 +929,12 @@ export default function Rotation() {
               />
               {!focusId && (
                 <Seg
-                  value={String(rowLimit)}
+                  value={rowLimit}
                   onChange={(v) => {
-                    setRowLimit(Number(v));
+                    setRowLimit(v);
                     setPicked(null);
                   }}
-                  options={[
-                    { label: 'Top20', value: '20' },
-                    { label: 'Top40', value: '40' },
-                    { label: 'Top80', value: '80' },
-                  ]}
+                  options={HEATMAP_LEVELS.map((l) => ({ label: l.label, value: l.value as typeof rowLimit }))}
                 />
               )}
             </span>
@@ -970,19 +1147,174 @@ export default function Rotation() {
         </Card>
       </div>
 
-      {/* ④ 板块轮动关系 */}
+      {/* ⑦ 高级研究(折叠) —— 关联分析 / 行为画像与榜单 / 活跃度评分构成 */}
       <div style={{ height: 16 }} />
       <Card
         title={
-          <TitleWithTip
-            text="板块轮动关系"
-            title="核心指标含义"
-            items={tipItems(['共同活跃天数', '重合率(Jaccard)', 'Lift', '基准频率', '最佳滞后', '命中样本', '上涨日频率', '差值'])}
-          />
+          <span onClick={() => setAdvOpen((v) => !v)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, color: '#86909C' }}>{advOpen ? '▾' : '▸'}</span>
+            <span>高级研究</span>
+          </span>
         }
-        right={<span style={{ fontSize: 11, color: '#86909C' }}>历史统计关联 · 非因果</span>}
+        right={
+          <span style={{ fontSize: 11, color: '#86909C' }}>
+            {advOpen ? '点击标题收起' : '点击标题展开 · 轮动关系 / 行为画像与分类榜单 / 活跃度评分构成'}
+          </span>
+        }
       >
-        <RotationRelations data={data} rule={rule} comp={computed.comp} stats={computed.stats} />
+        {advOpen ? (
+          <div>
+            {/* (a) 板块轮动关系 */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>板块轮动关系</span>
+                <InfoTip
+                  items={tipItems(['共同活跃天数', '重合率(Jaccard)', 'Lift', '基准频率', '最佳滞后', '命中样本', '上涨日频率', '差值'])}
+                  title="核心指标含义"
+                />
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: '#86909C' }}>历史统计关联 · 非因果</span>
+              </div>
+              <RotationRelations data={data} rule={rule} comp={computed.comp} stats={filteredStats} />
+            </div>
+
+            <div style={{ height: 1, background: COLOR_BORDER, margin: '20px 0' }} />
+
+            {/* (b) 板块行为画像 + 分类榜单 */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>板块行为画像与分类榜单</span>
+                <InfoTip items={tipItems(PROFILE_CARD_LABELS)} title="概览指标含义" />
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: '#86909C' }}>近 {rule.windowDays} 个交易日 · 受本页筛选影响</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16 }}>
+                {[
+                  {
+                    t: '反复活跃次数',
+                    v: profile ? `${profile.mostActive.strongCount} 次` : '-',
+                    c: COLOR_UP,
+                    s: profile ? `${profile.mostActive.sector.name}（弱势 ${profile.mostActive.weakCount} 次）` : '',
+                  },
+                  {
+                    t: '活跃间隔',
+                    v: profile?.tightest?.gapStrong.avg != null ? `${profile.tightest.gapStrong.avg.toFixed(1)} 日` : '样本不足',
+                    c: COLOR_TEXT,
+                    s: profile?.tightest ? `${profile.tightest.sector.name} · 中位 ${profile.tightest.gapStrong.median ?? '-'} 日` : '暂无足够间隔样本',
+                  },
+                  {
+                    t: '最近重新活跃',
+                    v: `${reactivated.length} 个`,
+                    c: COLOR_UP,
+                    s: `距上次强势 ≤${REACTIVATE_AGO} 日且此前空档 ≥${REACTIVATE_GAP} 日`,
+                  },
+                  {
+                    t: '趋势与持续性',
+                    v: profile ? `${(profile.bestRet.cumReturn * 100).toFixed(1)}%` : '-',
+                    c: profile && profile.bestRet.cumReturn >= 0 ? COLOR_UP : COLOR_DOWN,
+                    s: profile ? `${profile.bestRet.sector.name} · 窗口复合收益居首` : '',
+                  },
+                ].map((x) => (
+                  <div key={x.t} style={{ background: '#F7F9FC', border: `1px solid ${COLOR_BORDER}`, borderRadius: 10, padding: '14px 16px' }}>
+                    <Stat label={x.t} value={x.v} color={x.c} sub={x.s} />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+                <Seg
+                  value={boardMode}
+                  onChange={setBoardMode}
+                  options={[
+                    { label: '反复活跃榜', value: 'active' as const },
+                    { label: '最近重新活跃榜', value: 'reactivate' as const },
+                    { label: '趋势持续性榜', value: 'trend' as const },
+                  ]}
+                />
+                <span style={{ fontSize: 11, color: '#86909C' }}>
+                  {boardMode === 'active'
+                    ? '按窗口内进入强势榜的次数排序'
+                    : boardMode === 'reactivate'
+                      ? `判定口径（固定值）：距最近一次强势事件 ≤ ${REACTIVATE_AGO} 个交易日，且此前空档 ≥ ${REACTIVATE_GAP} 个交易日 —— 即"沉寂一段时间后重新活跃"`
+                      : '按窗口内板块复合收益排序'}
+                </span>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <BoardList
+                  title={
+                    boardMode === 'active' ? '反复进入强势榜 TOP 10' : boardMode === 'reactivate' ? '最近重新活跃 TOP 10' : '趋势持续性 TOP 10'
+                  }
+                  headers={boardHeaders}
+                  rows={boardRows}
+                  onPick={pickSector}
+                />
+              </div>
+              {boardMode === 'reactivate' && (
+                <div style={{ fontSize: 11, color: '#86909C', marginTop: 10, lineHeight: 1.7 }}>
+                  "此前空档"= 最近一次强势事件与上一次强势事件之间的交易日步长；空档越大说明是"沉寂后重启"而非持续活跃。
+                  该判定阈值为 V1 固定启发值，不随规则面板变化。
+                </div>
+              )}
+            </div>
+
+            <div style={{ height: 1, background: COLOR_BORDER, margin: '20px 0' }} />
+
+            {/* (c) 活跃度评分构成 */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>活跃度评分构成</span>
+                <InfoTip
+                  items={tipItems(['活跃度', '强势频率分', '近期活跃度', '独立周期频率', '相对市场趋势', '总分', '实验参数'])}
+                  title="评分分项与权重含义"
+                />
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: '#86909C' }}>权重为<b style={{ color: '#FA8C16' }}>实验参数</b> · 各分项已归一化到 0~1</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.9, marginBottom: 10 }}>
+                活跃度 = 强势频率 × {(SCORE_WEIGHTS.f1 * 100).toFixed(0)}% + 近期活跃 × {(SCORE_WEIGHTS.f2 * 100).toFixed(0)}% +
+                独立周期频率 × {(SCORE_WEIGHTS.f3 * 100).toFixed(0)}% + 相对市场趋势 × {(SCORE_WEIGHTS.f4 * 100).toFixed(0)}%，
+                加总后 × 100 四舍五入。
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 560 }}>
+                  <thead>
+                    <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
+                      {['板块', '强势频率', '近期活跃', '独立周期', '相对趋势', '总分'].map((h) => (
+                        <th key={h} style={{ padding: '8px 10px', textAlign: h === '板块' ? 'left' : 'center', fontWeight: 500 }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scoreRows.map((r) => (
+                      <tr key={r.sector.id} style={{ borderBottom: `1px solid ${COLOR_BORDER}` }}>
+                        <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                          <span
+                            onClick={() => navigate(`/rotation/sector/${r.sector.id}`)}
+                            style={{ color: COLOR_TEXT, cursor: 'pointer' }}
+                          >
+                            {r.sector.name}
+                          </span>
+                        </td>
+                        {[r.scoreParts.f1, r.scoreParts.f2, r.scoreParts.f3, r.scoreParts.f4].map((f, i) => (
+                          <td key={i} style={{ padding: '8px 10px', textAlign: 'center', color: '#4E5969' }}>
+                            {f.toFixed(2)}
+                          </td>
+                        ))}
+                        <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 700 }}>{r.score}</td>
+                      </tr>
+                    ))}
+                    {!scoreRows.length && (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '14px 10px', color: '#86909C' }}>
+                          当前筛选下没有可展示的板块。
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </Card>
     </div>
   );
