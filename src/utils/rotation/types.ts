@@ -158,3 +158,54 @@ export function ruleFingerprint(r: RotationRuleSet): string {
   }
   return `${RULE_PREFIX}-${h.toString(16).padStart(8, '0')}`;
 }
+
+// ===================== 规则参数校验（V2.0 阶段 5，任务书 §7.6） =====================
+
+/** 一条可读的参数问题（field 便于界面定位到具体行） */
+export interface RuleIssue {
+  field: keyof RotationRuleSet;
+  message: string;
+}
+
+/**
+ * 校验规则参数，返回**可直接展示给用户的中文提示**；空数组 = 合法。
+ *
+ * 重点说明「阈值必须 > 0」这条：规则引擎里"该条件是否启用"的判定是 `阈值 > 0`
+ * （见 ruleEngine 的 largeUpOn / largeDownOn），而事件标志位又按 `pct >= 阈值` 计算。
+ * 因此阈值为 0 会出现自相矛盾的结果（条件被当作未启用，但标志位仍会命中所有非负涨幅），
+ * 必须在配置器入口拦下来。
+ */
+export function validateRule(rule: RotationRuleSet): RuleIssue[] {
+  const issues: RuleIssue[] = [];
+  if (!(rule.windowDays > 0)) {
+    issues.push({ field: 'windowDays', message: '统计窗口必须是大于 0 的交易日数。' });
+  }
+  if (!(rule.topN >= 1)) {
+    issues.push({ field: 'topN', message: '每日榜单数量至少为 1。' });
+  }
+  if (!(rule.riseThreshold > 0)) {
+    issues.push({
+      field: 'riseThreshold',
+      message: '大涨阈值必须大于 0：为 0 时该条件会被判为"未启用"，但涨幅判定仍会按 ≥0 命中，结果自相矛盾。',
+    });
+  }
+  if (!(rule.fallThreshold > 0)) {
+    issues.push({
+      field: 'fallThreshold',
+      message: '大跌阈值必须大于 0：为 0 时该条件会被判为"未启用"，但跌幅判定仍会按 ≤0 命中，结果自相矛盾。',
+    });
+  }
+  if (!(rule.gapMin >= 1)) {
+    issues.push({ field: 'gapMin', message: '关注间隔下限至少为 1 个交易日。' });
+  }
+  if (rule.gapMax < rule.gapMin) {
+    issues.push({
+      field: 'gapMax',
+      message: `关注间隔上限（${rule.gapMax} 个交易日）不能小于下限（${rule.gapMin} 个交易日）。`,
+    });
+  }
+  if (rule.cooldownDays < 0) {
+    issues.push({ field: 'cooldownDays', message: '独立事件冷却期不能为负数。' });
+  }
+  return issues;
+}

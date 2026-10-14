@@ -152,3 +152,86 @@ export function useRotationRule(): [RotationRuleSet, (r: RotationRuleSet) => voi
   }, []);
   return [ruleState, setRotationRule];
 }
+
+// ---------- 规则方案（V2.0 阶段 5，任务书 §7.5；仅本设备浏览器内，不跨设备、不联网） ----------
+const PRESET_KEY = 'tjhub-rotation-rule-presets';
+/** 方案数量上限（超出时丢弃最早的，避免 localStorage 无限膨胀） */
+export const PRESET_LIMIT = 20;
+
+export interface RulePreset {
+  name: string;
+  /** serializeRule 的紧凑串（复用既有序列化/反序列化，天然带校验） */
+  encoded: string;
+  /** 保存时的规则版本；与当前 DEFAULT_RULE.version 不一致时界面给出"旧版本"提示，但**不丢弃** */
+  version: string;
+}
+
+/**
+ * 解析方案存档（纯函数，便于测试）。
+ * - 非法输入（非 JSON / 非数组 / 空串）→ []
+ * - 缺 name 或 encoded 的条目 → 丢弃
+ * - encoded 无法反序列化的条目 → 丢弃（复用 deserializeRule 的校验）
+ * - 同名方案：保留**最后一条**（相当于"覆盖"）
+ * - 超过 PRESET_LIMIT 条：只保留最新的一批
+ */
+export function parsePresets(raw: string | null | undefined): RulePreset[] {
+  if (!raw) return [];
+  let arr: unknown;
+  try {
+    arr = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(arr)) return [];
+
+  const byName = new Map<string, RulePreset>();
+  for (const it of arr) {
+    const rec = it as { name?: unknown; encoded?: unknown } | null;
+    const name = typeof rec?.name === 'string' ? rec.name.trim() : '';
+    const encoded = typeof rec?.encoded === 'string' ? rec.encoded : '';
+    if (!name || !encoded) continue;
+    const rule = deserializeRule(encoded);
+    if (!rule) continue;
+    byName.set(name, { name, encoded, version: rule.version });
+  }
+  const list = [...byName.values()];
+  return list.slice(Math.max(0, list.length - PRESET_LIMIT));
+}
+
+export function serializePresets(list: RulePreset[]): string {
+  return JSON.stringify(list);
+}
+
+/** 新增/覆盖方案（同名覆盖），并保持最多 PRESET_LIMIT 条 */
+export function upsertPreset(list: RulePreset[], name: string, rule: RotationRuleSet): RulePreset[] {
+  const nm = name.trim();
+  if (!nm) return list;
+  const next = list.filter((p) => p.name !== nm);
+  next.push({ name: nm, encoded: serializeRule(rule), version: rule.version });
+  return next.slice(Math.max(0, next.length - PRESET_LIMIT));
+}
+
+export function removePreset(list: RulePreset[], name: string): RulePreset[] {
+  return list.filter((p) => p.name !== name);
+}
+
+/** 把方案串还原成规则（版本原样保留，由调用方决定是否重新盖章） */
+export function decodePreset(p: RulePreset): RotationRuleSet | null {
+  return deserializeRule(p.encoded);
+}
+
+export function loadPresets(): RulePreset[] {
+  try {
+    return parsePresets(localStorage.getItem(PRESET_KEY));
+  } catch {
+    return [];
+  }
+}
+
+export function savePresets(list: RulePreset[]): void {
+  try {
+    localStorage.setItem(PRESET_KEY, serializePresets(list));
+  } catch {
+    // 隐私模式 / 配额已满 — 静默，内存态仍可用
+  }
+}

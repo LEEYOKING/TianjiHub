@@ -10,7 +10,23 @@ import {
   COLOR_TEXT,
   COLOR_UP,
 } from '../utils/format';
-import { DEFAULT_RULE, serializeRule, type RotationRuleSet, type SectorType } from '../utils/rotation/types';
+import { SCORE_WEIGHTS } from '../utils/rotation/analytics';
+import {
+  DEFAULT_RULE,
+  serializeRule,
+  validateRule,
+  type RotationRuleSet,
+  type SectorType,
+} from '../utils/rotation/types';
+import {
+  decodePreset,
+  loadPresets,
+  removePreset,
+  savePresets,
+  upsertPreset,
+  PRESET_LIMIT,
+  type RulePreset,
+} from '../data/rotationData';
 
 const CARD_SHADOW = '0 1px 3px rgba(0, 0, 0, 0.04), 0 0 30px 5px rgba(0, 0, 0, 0.02)';
 
@@ -140,6 +156,39 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+/** V2.0 阶段 5:配置器内的小按钮(方案保存/应用/重命名/删除用) */
+function SmallBtn({
+  children,
+  onClick,
+  disabled,
+  title,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{
+        border: `1px solid ${disabled ? COLOR_BORDER : COLOR_PRIMARY}`,
+        background: '#fff',
+        color: disabled ? '#C9CDD4' : COLOR_PRIMARY,
+        borderRadius: 8,
+        padding: '5px 12px',
+        fontSize: 12,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Slider({
   value,
   min,
@@ -189,7 +238,75 @@ export function RotationRuleBar({
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // V2.0 阶段 5：简单 / 高级模式（只影响"显示哪些控件"，不改变任何已存参数值）
+  const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
+  // 规则方案（§7.5）：仅本设备浏览器内
+  const [presets, setPresets] = useState<RulePreset[]>(() => loadPresets());
+  const [presetSel, setPresetSel] = useState('');
+  const [presetName, setPresetName] = useState('');
+  const [presetMsg, setPresetMsg] = useState('');
   const patch = (p: Partial<RotationRuleSet>) => onChange({ ...rule, ...p, version: DEFAULT_RULE.version });
+
+  // §7.6 参数校验：返回可直接展示的中文提示（空数组 = 合法）
+  const issues = validateRule(rule);
+  const invalid = issues.length > 0;
+  const flash = (m: string) => {
+    setPresetMsg(m);
+    setTimeout(() => setPresetMsg(''), 2000);
+  };
+  const applyPreset = () => {
+    const p = presets.find((x) => x.name === presetSel);
+    if (!p) return;
+    const r = decodePreset(p);
+    if (!r) {
+      flash('该方案已损坏，无法应用');
+      return;
+    }
+    // 版本不一致也允许应用，但按当前版本重新盖章 —— 保证"方案升级不丢用户配置"（审计 R5）
+    onChange({ ...r, version: DEFAULT_RULE.version });
+    flash(p.version === DEFAULT_RULE.version ? '已应用方案' : '已应用（旧版本方案，参数已保留）');
+  };
+  const saveAsPreset = () => {
+    const nm = presetName.trim();
+    if (!nm) {
+      flash('请先填写方案名称');
+      return;
+    }
+    if (invalid) {
+      flash('当前参数有问题，修正后再保存');
+      return;
+    }
+    const next = upsertPreset(presets, nm, rule);
+    setPresets(next);
+    savePresets(next);
+    setPresetSel(nm);
+    setPresetName('');
+    flash(`已保存为「${nm}」（同名会覆盖）`);
+  };
+  const renamePreset = () => {
+    const nm = presetName.trim();
+    const old = presets.find((p) => p.name === presetSel);
+    if (!old || !nm) {
+      flash('请选择方案并填写新名称');
+      return;
+    }
+    const r = decodePreset(old);
+    if (!r) return;
+    const next = upsertPreset(removePreset(presets, old.name), nm, r);
+    setPresets(next);
+    savePresets(next);
+    setPresetSel(nm);
+    setPresetName('');
+    flash(`已重命名为「${nm}」`);
+  };
+  const deletePreset = () => {
+    if (!presetSel) return;
+    const next = removePreset(presets, presetSel);
+    setPresets(next);
+    savePresets(next);
+    setPresetSel('');
+    flash('已删除该方案');
+  };
 
   const riseCond = rule.riseRankEnabled
     ? `进涨幅榜${rule.eventLogic === 'AND' ? ' 且 ' : ' 或 '}≥${rule.riseThreshold}%`
@@ -290,15 +407,96 @@ export function RotationRuleBar({
               }}
             >
               <span style={{ fontSize: 15, fontWeight: 700, color: COLOR_TEXT }}>轮动规则配置器</span>
-              <button
-                onClick={() => setOpen(false)}
-                style={{ border: 'none', background: 'transparent', fontSize: 18, color: '#86909C', cursor: 'pointer' }}
-              >
-                ×
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* V2.0 阶段 5:简单 / 高级分层 —— 只影响显示哪些控件,不改动任何已存参数 */}
+                <Seg
+                  value={mode}
+                  onChange={setMode}
+                  options={[
+                    { label: '简单', value: 'simple' as const },
+                    { label: '高级', value: 'advanced' as const },
+                  ]}
+                />
+                <button
+                  onClick={() => setOpen(false)}
+                  style={{ border: 'none', background: 'transparent', fontSize: 18, color: '#86909C', cursor: 'pointer' }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+              {/* §7.6 参数校验提示(可读文案;正常情况下应为空) */}
+              {invalid && (
+                <div style={{ background: '#FFF2F0', border: '1px solid #FFCCC7', borderRadius: 8, padding: '10px 12px', marginBottom: 18 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#CF1322', marginBottom: 4 }}>当前参数有问题，请先修正：</div>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {issues.map((it) => (
+                      <li key={it.field} style={{ fontSize: 12, color: '#CF1322', lineHeight: 1.8 }}>
+                        {it.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* §7.5 规则方案(仅本设备) */}
+              <Section title="规则方案" desc="保存在本机浏览器内（不跨设备、不联网）；同名保存会覆盖已有方案">
+                <Row label="已保存方案">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <select
+                      value={presetSel}
+                      onChange={(e) => setPresetSel(e.target.value)}
+                      disabled={!presets.length}
+                      style={{
+                        border: `1px solid ${COLOR_BORDER}`,
+                        borderRadius: 8,
+                        padding: '5px 10px',
+                        fontSize: 12,
+                        color: COLOR_TEXT,
+                        background: '#fff',
+                        outline: 'none',
+                        minWidth: 168,
+                      }}
+                    >
+                      <option value="">{presets.length ? '请选择方案…' : '暂无保存的方案'}</option>
+                      {presets.map((p) => (
+                        <option key={p.name} value={p.name}>
+                          {p.name}
+                          {p.version !== DEFAULT_RULE.version ? '（旧版本）' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <SmallBtn onClick={applyPreset} disabled={!presetSel}>
+                      应用
+                    </SmallBtn>
+                    <SmallBtn onClick={deletePreset} disabled={!presetSel}>
+                      删除
+                    </SmallBtn>
+                  </div>
+                </Row>
+                <Row label="方案名称">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <input
+                      value={presetName}
+                      onChange={(e) => setPresetName(e.target.value)}
+                      placeholder="输入名称后保存 / 重命名"
+                      style={{ border: `1px solid ${COLOR_BORDER}`, borderRadius: 8, padding: '5px 10px', fontSize: 12, outline: 'none', width: 150 }}
+                    />
+                    <SmallBtn onClick={saveAsPreset} disabled={invalid} title={invalid ? '当前参数有问题，修正后再保存' : '把当前参数保存为新方案（同名覆盖）'}>
+                      保存当前
+                    </SmallBtn>
+                    <SmallBtn onClick={renamePreset} disabled={!presetSel || !presetName.trim()} title="把所选方案改名（先在左侧输入新名称）">
+                      重命名所选
+                    </SmallBtn>
+                  </div>
+                </Row>
+                <div style={{ fontSize: 11, color: presetMsg ? COLOR_PRIMARY : '#86909C', lineHeight: 1.7, minHeight: 18 }}>
+                  {presetMsg || `共 ${presets.length} / ${PRESET_LIMIT} 个方案；「复制」= 用新名称「保存当前」，再删除旧方案。`}
+                </div>
+              </Section>
+
               <Section title="基础设置" desc="决定统计范围,先从这里开始">
                 <Row label="统计窗口">
                   <Seg
@@ -375,44 +573,90 @@ export function RotationRuleBar({
                     style={{ accentColor: COLOR_PRIMARY, width: 18, height: 18, cursor: 'pointer' }}
                   />
                 </Row>
-                <Row label="排名与幅度的组合">
-                  <Seg
-                    value={rule.eventLogic}
-                    onChange={(v) => patch({ eventLogic: v })}
-                    options={[
-                      { label: '任一满足', value: 'OR' as const },
-                      { label: '同时满足', value: 'AND' as const },
-                    ]}
-                  />
-                </Row>
+                {mode === 'advanced' ? (
+                  <Row label="排名与幅度的组合">
+                    <Seg
+                      value={rule.eventLogic}
+                      onChange={(v) => patch({ eventLogic: v })}
+                      options={[
+                        { label: '任一满足', value: 'OR' as const },
+                        { label: '同时满足', value: 'AND' as const },
+                      ]}
+                    />
+                  </Row>
+                ) : (
+                  <Row label="排名与幅度的组合（高级）">
+                    <span style={{ fontSize: 12, color: '#86909C' }}>
+                      当前：{rule.eventLogic === 'AND' ? '同时满足' : '任一满足'}（高级模式中可修改）
+                    </span>
+                  </Row>
+                )}
                 <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
                   未勾选的条件不会参与判断。AND 表示必须同时进榜且达到阈值；OR 表示满足任一已启用条件即可。
                 </div>
               </Section>
 
-              <Section title="高级统计" desc="用于识别“独立活跃周期”,不影响原始行情记录">
-                <Row label="独立事件冷却期">
-                  <Seg
-                    value={rule.cooldownDays}
-                    onChange={(v) => patch({ cooldownDays: v })}
-                    options={[
-                      { label: '不合并', value: 0 },
-                      { label: '1日', value: 1 },
-                      { label: '2日', value: 2 },
-                      { label: '3日', value: 3 },
-                    ]}
-                  />
-                </Row>
-                <Row label="关注间隔下限">
-                  <Slider value={rule.gapMin} min={1} max={20} step={1} onChange={(v) => patch({ gapMin: v })} suffix="日" />
-                </Row>
-                <Row label="关注间隔上限">
-                  <Slider value={rule.gapMax} min={1} max={30} step={1} onChange={(v) => patch({ gapMax: v })} suffix="日" />
-                </Row>
-                <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
-                  冷却期只影响“独立事件”的合并口径，不删除任何原始每日涨跌记录。间隔按交易日序号差计算。
-                </div>
-              </Section>
+              {mode === 'advanced' ? (
+                <>
+                  <Section title="高级统计" desc="用于识别“独立活跃周期”,不影响原始行情记录">
+                    <Row label="独立事件冷却期">
+                      <Seg
+                        value={rule.cooldownDays}
+                        onChange={(v) => patch({ cooldownDays: v })}
+                        options={[
+                          { label: '不合并', value: 0 },
+                          { label: '1日', value: 1 },
+                          { label: '2日', value: 2 },
+                          { label: '3日', value: 3 },
+                        ]}
+                      />
+                    </Row>
+                    <Row label="关注间隔下限">
+                      <Slider
+                        value={rule.gapMin}
+                        min={1}
+                        max={20}
+                        step={1}
+                        onChange={(v) => patch({ gapMin: v, gapMax: Math.max(v, rule.gapMax) })}
+                        suffix="日"
+                      />
+                    </Row>
+                    <Row label="关注间隔上限">
+                      <Slider
+                        value={rule.gapMax}
+                        min={1}
+                        max={30}
+                        step={1}
+                        onChange={(v) => patch({ gapMax: v, gapMin: Math.min(v, rule.gapMin) })}
+                        suffix="日"
+                      />
+                    </Row>
+                    <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
+                      冷却期只影响“独立事件”的合并口径，不删除任何原始每日涨跌记录。间隔按交易日序号差计算。
+                      上下限会自动保持「下限 ≤ 上限」（拖动其一时另一个会跟随调整）。
+                    </div>
+                  </Section>
+
+                  <Section title="活跃度评分权重（只读）" desc="当前为实验参数，尚未经回测验证；此处只展示，暂不开放修改">
+                    <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.9 }}>
+                      强势频率 × {(SCORE_WEIGHTS.f1 * 100).toFixed(0)}% ＋ 近期活跃 × {(SCORE_WEIGHTS.f2 * 100).toFixed(0)}% ＋ 独立周期频率 ×{' '}
+                      {(SCORE_WEIGHTS.f3 * 100).toFixed(0)}% ＋ 相对市场趋势 × {(SCORE_WEIGHTS.f4 * 100).toFixed(0)}%
+                      <div style={{ fontSize: 11, color: '#86909C', marginTop: 4 }}>
+                        各分项先归一化到 0~1，按上述权重加总后 × 100 四舍五入，即为「活跃度评分」。
+                      </div>
+                    </div>
+                  </Section>
+                </>
+              ) : (
+                <Section title="高级统计（在高级模式中可调）" desc="普通复盘通常无需修改">
+                  <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.9 }}>
+                    当前：独立事件冷却期 {rule.cooldownDays === 0 ? '不合并' : `${rule.cooldownDays} 个交易日`}；关注间隔 {rule.gapMin}~{rule.gapMax} 个交易日。
+                    <div style={{ fontSize: 11, color: '#86909C', marginTop: 4 }}>
+                      这些参数影响“独立活跃周期”与事件间隔统计；切到高级模式即可修改，简单模式不会改动它们的值。
+                    </div>
+                  </div>
+                </Section>
+              )}
 
               <Section title="当前配置摘要">
                 <div
