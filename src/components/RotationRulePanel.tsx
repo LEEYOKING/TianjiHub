@@ -1,7 +1,7 @@
 // 板块轮动:规则摘要栏 + 规则配置抽屉
 // 口径一致性:所有轮动页共用 rotationData 里的规则单例;此处只负责"展示 + 修改"
 // 视觉:沿用站点既有卡片体系(圆角 14 / CARD_SHADOW / #E5E7EB 边框 / 红涨绿跌)
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   COLOR_BORDER,
   COLOR_DOWN,
@@ -156,6 +156,16 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+/** 全宽竖排字段：标签独占一行、控件区整行铺满 —— 避免"标签右对齐 + 控件换行"造成的错位 */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span style={{ fontSize: 12, color: '#4E5969' }}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
 /** V2.0 阶段 5:配置器内的小按钮(方案保存/应用/重命名/删除用) */
 function SmallBtn({
   children,
@@ -246,6 +256,16 @@ export function RotationRuleBar({
   const [presetName, setPresetName] = useState('');
   const [presetMsg, setPresetMsg] = useState('');
   const patch = (p: Partial<RotationRuleSet>) => onChange({ ...rule, ...p, version: DEFAULT_RULE.version });
+
+  // 抽屉打开时锁住底层页面滚动（防止滚轮"穿透"到底下的页面）；抽屉内部滚动条不受影响
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   // §7.6 参数校验：返回可直接展示的中文提示（空数组 = 合法）
   const issues = validateRule(rule);
@@ -426,7 +446,7 @@ export function RotationRuleBar({
               </div>
             </div>
 
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, overscrollBehavior: 'contain' }}>
               {/* §7.6 参数校验提示(可读文案;正常情况下应为空) */}
               {invalid && (
                 <div style={{ background: '#FFF2F0', border: '1px solid #FFCCC7', borderRadius: 8, padding: '10px 12px', marginBottom: 18 }}>
@@ -443,13 +463,15 @@ export function RotationRuleBar({
 
               {/* §7.5 规则方案(仅本设备) */}
               <Section title="规则方案" desc="保存在本机浏览器内（不跨设备、不联网）；同名保存会覆盖已有方案">
-                <Row label="已保存方案">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <Field label="已保存方案">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <select
                       value={presetSel}
                       onChange={(e) => setPresetSel(e.target.value)}
                       disabled={!presets.length}
                       style={{
+                        flex: 1,
+                        minWidth: 0,
                         border: `1px solid ${COLOR_BORDER}`,
                         borderRadius: 8,
                         padding: '5px 10px',
@@ -457,7 +479,6 @@ export function RotationRuleBar({
                         color: COLOR_TEXT,
                         background: '#fff',
                         outline: 'none',
-                        minWidth: 168,
                       }}
                     >
                       <option value="">{presets.length ? '请选择方案…' : '暂无保存的方案'}</option>
@@ -475,23 +496,33 @@ export function RotationRuleBar({
                       删除
                     </SmallBtn>
                   </div>
-                </Row>
-                <Row label="方案名称">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                </Field>
+                <Field label="方案名称">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       value={presetName}
                       onChange={(e) => setPresetName(e.target.value)}
                       placeholder="输入名称后保存 / 重命名"
-                      style={{ border: `1px solid ${COLOR_BORDER}`, borderRadius: 8, padding: '5px 10px', fontSize: 12, outline: 'none', width: 150 }}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        border: `1px solid ${COLOR_BORDER}`,
+                        borderRadius: 8,
+                        padding: '5px 10px',
+                        fontSize: 12,
+                        outline: 'none',
+                      }}
                     />
                     <SmallBtn onClick={saveAsPreset} disabled={invalid} title={invalid ? '当前参数有问题，修正后再保存' : '把当前参数保存为新方案（同名覆盖）'}>
                       保存当前
                     </SmallBtn>
-                    <SmallBtn onClick={renamePreset} disabled={!presetSel || !presetName.trim()} title="把所选方案改名（先在左侧输入新名称）">
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <SmallBtn onClick={renamePreset} disabled={!presetSel || !presetName.trim()} title="把所选方案改名（先在上方输入新名称）">
                       重命名所选
                     </SmallBtn>
                   </div>
-                </Row>
+                </Field>
                 <div style={{ fontSize: 11, color: presetMsg ? COLOR_PRIMARY : '#86909C', lineHeight: 1.7, minHeight: 18 }}>
                   {presetMsg || `共 ${presets.length} / ${PRESET_LIMIT} 个方案；「复制」= 用新名称「保存当前」，再删除旧方案。`}
                 </div>
@@ -573,30 +604,26 @@ export function RotationRuleBar({
                     style={{ accentColor: COLOR_PRIMARY, width: 18, height: 18, cursor: 'pointer' }}
                   />
                 </Row>
-                {mode === 'advanced' ? (
-                  <Row label="排名与幅度的组合">
-                    <Seg
-                      value={rule.eventLogic}
-                      onChange={(v) => patch({ eventLogic: v })}
-                      options={[
-                        { label: '任一满足', value: 'OR' as const },
-                        { label: '同时满足', value: 'AND' as const },
-                      ]}
-                    />
-                  </Row>
-                ) : (
-                  <Row label="排名与幅度的组合（高级）">
-                    <span style={{ fontSize: 12, color: '#86909C' }}>
-                      当前：{rule.eventLogic === 'AND' ? '同时满足' : '任一满足'}（高级模式中可修改）
-                    </span>
-                  </Row>
+                {mode === 'advanced' && (
+                  <>
+                    <Row label="排名与幅度的组合">
+                      <Seg
+                        value={rule.eventLogic}
+                        onChange={(v) => patch({ eventLogic: v })}
+                        options={[
+                          { label: '任一满足', value: 'OR' as const },
+                          { label: '同时满足', value: 'AND' as const },
+                        ]}
+                      />
+                    </Row>
+                    <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
+                      未勾选的条件不会参与判断。AND 表示必须同时进榜且达到阈值；OR 表示满足任一已启用条件即可。
+                    </div>
+                  </>
                 )}
-                <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
-                  未勾选的条件不会参与判断。AND 表示必须同时进榜且达到阈值；OR 表示满足任一已启用条件即可。
-                </div>
               </Section>
 
-              {mode === 'advanced' ? (
+              {mode === 'advanced' && (
                 <>
                   <Section title="高级统计" desc="用于识别“独立活跃周期”,不影响原始行情记录">
                     <Row label="独立事件冷却期">
@@ -647,15 +674,6 @@ export function RotationRuleBar({
                     </div>
                   </Section>
                 </>
-              ) : (
-                <Section title="高级统计（在高级模式中可调）" desc="普通复盘通常无需修改">
-                  <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.9 }}>
-                    当前：独立事件冷却期 {rule.cooldownDays === 0 ? '不合并' : `${rule.cooldownDays} 个交易日`}；关注间隔 {rule.gapMin}~{rule.gapMax} 个交易日。
-                    <div style={{ fontSize: 11, color: '#86909C', marginTop: 4 }}>
-                      这些参数影响“独立活跃周期”与事件间隔统计；切到高级模式即可修改，简单模式不会改动它们的值。
-                    </div>
-                  </div>
-                </Section>
               )}
 
               <Section title="当前配置摘要">
