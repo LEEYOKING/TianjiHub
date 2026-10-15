@@ -1,23 +1,35 @@
 name: Daily Data Refresh
 
 # 交易日盘后云端自动刷新：不依赖本机开机。
-# cron 为 UTC 时间：
-#   35 7  * * 1-5  → 北京时间 15:35（收盘快照）
-#   35 10 * * 1-5  → 北京时间 18:35（龙虎榜 18:00 披露后补跑）
-#   30 0  * * 1-5  → 北京时间 08:30（次日早晨：补抓交易所延迟发布的融资融券终值）
-#                    — 只跑 backfill_margin.py(仅改 marginHistory),盘前/假期运行也安全
-#                    — 不加交易日门槛：假期工作日也要跑,专门覆盖"T 日后连续假期"的补齐场景
+# cron 为 UTC 时间（注释里是北京时间）：
+#   35 7  * * 1-5  → 15:35 收盘快照
+#   35 10 * * 1-5  → 18:35 龙虎榜 18:00 披露后补跑
+#   30 0  * * 1-5  → 08:30 次日早晨：只补抓融资融券终值（不加交易日门槛，假期工作日也要跑）
+#    0 14 * * 1-5  → 22:00 ★补跑档：只有关键数据仍是"过期"时才真正跑全流程
+#    0 22 * * 1-5  → 次日 06:00 ★补跑档：同上（用来发现/补救前一交易日整档漏跑）
+# 也支持手动触发 workflow_dispatch（Actions 页 → Run workflow）。
+#   注意：交易日 09:30~15:00（盘中）会被脚本拒绝执行，避免把盘中快照当收盘数据写进 data.json。
+#
+# 为什么加"补跑档 + 新鲜度校验"（2026-10-14 实测事故）：
+#   · 免费 cron 延迟极严重：应 15:35 跑的实测拖到 23:13，应 18:35 的拖到次日 01:45；
+#   · 海外 IP 抓国内财经接口会被风控，盘后档整档失败时，失败原本是**静默**的
+#     （轮动归档步骤带 continue-on-error，job 仍显示绿色，线上只表现为"报告日期不动"）；
+#   · 现在由 scripts/check_freshness.py 统一定夺：提前决定要不要跑，收尾校验是否真的是盘后快照，
+#     不满足就 exit 1 让 job 变红 —— 断供不再是无声的。
 on:
   schedule:
     - cron: '35 7 * * 1-5'
     - cron: '35 10 * * 1-5'
     - cron: '30 0 * * 1-5'
+    - cron: '0 14 * * 1-5'
+    - cron: '0 22 * * 1-5'
   workflow_dispatch: {}
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 45 分钟：补跑档可能要在同一次里跑完「行情 + 手术台 + 轮动」（轮动单步上限 20 分钟）
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -34,47 +46,40 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: 判断是否 A 股交易日
-        id: trading_day
-        run: |
-          python3 <<'PY'
-          import datetime, os
-          today = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).date()
-          try:
-              import akshare as ak
-              df = ak.tool_trade_date_hist_sina()
-              dates = set(str(x) for x in df['trade_date'].tolist())
-              is_td = today.strftime('%Y-%m-%d') in dates
-          except Exception:
-              is_td = today.weekday() < 5
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"trading_day={'1' if is_td else '0'}\n")
-          print('A股交易日' if is_td else '非交易日(周末/法定节假日),跳过')
-          PY
+      # 任务规划：判断交易日 / 盘中保护 / 是否需要补跑，输出 mode
+      #   margin    = 只跑 08:30 融资补抓（与既有行为完全一致）
+      #   postclose = 跑完整盘后流程（行情 + 手术台 + 轮动归档）
+      #   skip      = 什么都不跑（盘中 / 非交易日且数据不旧 / 补跑档但数据已新鲜）
+      - name: 任务规划（交易日 / 盘中保护 / 补跑判定）
+        id: plan
+        env:
+          SCHEDULE_CRON: ${{ github.event.schedule }}
+        run: NO_PROXY="*" no_proxy="*" python3 scripts/check_freshness.py --plan
 
       - name: 次日早晨补抓融资融券(仅 08:30 那档)
-        if: github.event.schedule == '30 0 * * 1-5'
+        if: steps.plan.outputs.mode == 'margin'
         run: NO_PROXY="*" no_proxy="*" python3 scripts/backfill_margin.py
 
       - name: 拉取盘后数据
-        if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
+        if: steps.plan.outputs.mode == 'postclose'
         run: NO_PROXY="*" no_proxy="*" python3 scripts/fetch_real_data.py
 
       - name: 拉取手术台数据(封成比评分/亏钱传导/北向)
-        if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
+        if: steps.plan.outputs.mode == 'postclose'
         run: |
           NO_PROXY="*" no_proxy="*" python3 scripts/fetch_surgery_data.py || \
             echo "! 手术台数据拉取失败(海外 IP 风控),本次跳过"
 
       # v2.0.8kr:板块轮动历史归档(独立文件 public/rotation.json)
-      # — 与既有数据链路解耦:本步失败/超时都不应影响 data.json / sectorKlines.json 等
+      # — 与既有数据链路解耦,本步失败/超时都不应影响 data.json 等
       # v2.0.8kz:踩坑修复 —— 2026-10-13 两次盘后任务都是本步跑满 12 分钟被 timeout 杀掉,
-      #   而"被超时杀掉"会让步骤判为 failure,导致后面的「提交并推送」整步被跳过,
-      #   结果连 data.json 的盘后数据都没提交。故:
-      #   ① 加 continue-on-error,本步无论怎么失败都不阻断后续提交
-      #   ② 超时从 12 分钟放宽到 20 分钟(海外 IP 拉 663 板块日线实测 >12 分钟)
+      #   而"被超时杀掉"会让步骤判为 failure,导致后面的「提交并推送」整步被跳过。
+      #   故：① 加 continue-on-error（本步无论怎么失败都不阻断后续提交）
+      #       ② 超时放宽到 20 分钟（海外 IP 拉 663 板块日线实测 >12 分钟）
+      # ⚠️ continue-on-error 会让本步失败被"吞掉"，所以**其失败由最后一步的新鲜度校验兜底**
+      #   （rotation.json 生成时点过期 → job 变红），不再是静默断供。
       - name: 拉取板块轮动历史归档
-        if: github.event.schedule != '30 0 * * 1-5' && steps.trading_day.outputs.trading_day == '1'
+        if: steps.plan.outputs.mode == 'postclose'
         continue-on-error: true
         timeout-minutes: 20
         run: |
@@ -82,13 +87,13 @@ jobs:
             echo "! 板块轮动归档失败,本次跳过(线上保持上一份 rotation.json)"
 
       - name: 提交并推送
-        # 早晨补抓档不设交易日门槛(假期工作日也要提交);其余档仍是交易日才提交
-        if: github.event.schedule == '30 0 * * 1-5' || steps.trading_day.outputs.trading_day == '1'
+        # 早晨补抓档不设交易日门槛(假期工作日也要提交);其余档由 plan 的 mode 决定
+        if: steps.plan.outputs.mode != 'skip'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/data.json public/sectorKlines.json public/surgery.json public/prescan.json
-          # v2.0.8kr:板块轮动归档(存在才 add,避免脚本失败时报错)
+          # 板块轮动归档(存在才 add,避免脚本失败时报错)
           [ -f public/rotation.json ] && git add public/rotation.json || true
           if git diff --cached --quiet; then
             echo "无数据变化,跳过提交"
@@ -106,3 +111,11 @@ jobs:
           done
           echo "推送失败"
           exit 1
+
+      # ★数据新鲜度校验（失败可见化）
+      # 必须放在最后一步、并用 always()：即使前面有步骤失败或被 continue-on-error 吞掉，也要做判定。
+      # 校验三点：关键数据的日期是否=最近该完成的交易日；生成时点是否落在盘中（不是盘后快照）。
+      # 不满足即 exit 1，让这次 run 标红 —— 这样"断供"会立刻显形，而不是等你发现报告日期不动。
+      - name: 数据新鲜度校验（过期即失败，避免静默断供）
+        if: always() && steps.plan.outputs.mode != 'skip'
+        run: python3 scripts/check_freshness.py --gate
