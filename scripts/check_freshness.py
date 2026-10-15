@@ -12,7 +12,9 @@
 
 两种模式：
   --plan  决定本次运行要做什么，输出 mode=… 到 stdout（供 GITHUB_OUTPUT 使用），**永远 exit 0**
-  --gate  校验关键数据是否真的是"最近一个交易日的盘后快照"，有问题则 exit 1（让 job 变红）
+  --gate  校验关键数据是否真的是"最近一个交易日的盘后快照"：
+            行情主体 data.json 有问题 → exit 1（让 job 变红）
+            轮动归档 rotation.json 有问题 → 只出 ::warning::，**不阻断流程**
 
 mode 取值：
   margin     只跑 08:30 的融资补抓档（与既有行为一致，不加交易日门槛）
@@ -128,12 +130,18 @@ def check_file(label: str, path: str, target: str, date_key: str, fmt: str) -> l
     return problems
 
 
-def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], str, bool]:
+def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], str, bool]:
+    """返回 (硬问题, 软问题, 目标交易日, 交易日历是否可信)。
+
+    为什么要把问题分软硬：
+      · 硬 = data.json（行情主体）。它断供就意味着整个站点数据停摆，必须让 job 变红。
+      · 软 = rotation.json（轮动归档）。它依赖东财 push2his，海外 IP 极易被风控，
+        属"高发但可容忍"的失败 —— 用户确认降级为**警告**，不阻断流程。
+    """
     target, strict = resolve_target(now, dates)
-    problems: list[str] = []
-    problems += check_file("data.json（行情主体）", "public/data.json", target, "tradeDate", "compact")
-    problems += check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
-    return problems, target, strict
+    hard = check_file("data.json（行情主体）", "public/data.json", target, "tradeDate", "compact")
+    soft = check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
+    return hard, soft, target, strict
 
 
 # ---------------- 模式：--plan ----------------
@@ -148,8 +156,8 @@ def emit(mode: str, reason: str, now: datetime.datetime, target: str) -> None:
 
 def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) -> tuple[str, str]:
     """决定本次运行做什么。返回 (mode, 说明)。"""
-    problems, target, _strict = inspect(now, dates)
-    stale = len(problems) > 0
+    hard, soft, target, _strict = inspect(now, dates)
+    stale = bool(hard or soft)   # 轮动数据过期同样值得补跑一次（judge 用，与"是否让 job 变红"无关）
     trading = is_trading_today(now, dates)
     hhmm = now.strftime("%H:%M")
 
@@ -180,18 +188,24 @@ def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) 
 
 # ---------------- 模式：--gate ----------------
 def gate(now: datetime.datetime, dates: list[str]) -> int:
-    problems, target, strict = inspect(now, dates)
-    if not problems:
+    hard, soft, target, strict = inspect(now, dates)
+    if not hard and not soft:
         print(f"✅ 数据新鲜度校验通过（目标交易日 {target}）")
         return 0
     if not strict:
         # 交易日历不可靠时只告警，不误判成失败（例如节假日遇 akshare 风控）
         print("::warning::无法获取可靠交易日历，以下仅为提示，不判定失败：")
-        for p in problems:
+        for p in soft + hard:
             print(f"  - {p}")
         return 0
-    print("::error::数据新鲜度校验未通过（关键数据不是最近交易日的盘后快照）：")
-    for p in problems:
+    # 软问题（轮动归档）只告警，不阻断流程
+    for p in soft:
+        print(f"::warning::轮动归档未更新（不阻断流程）：{p}")
+    if not hard:
+        print(f"⚠️ 行情主体已是最新（目标交易日 {target}），仅轮动归档滞后")
+        return 0
+    print("::error::数据新鲜度校验未通过（行情主体不是最近交易日的盘后快照）：")
+    for p in hard:
         print(f"::error::{p}")
     return 1
 

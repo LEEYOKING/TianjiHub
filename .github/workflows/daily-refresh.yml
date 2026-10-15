@@ -76,8 +76,9 @@ jobs:
       #   而"被超时杀掉"会让步骤判为 failure,导致后面的「提交并推送」整步被跳过。
       #   故：① 加 continue-on-error（本步无论怎么失败都不阻断后续提交）
       #       ② 超时放宽到 20 分钟（海外 IP 拉 663 板块日线实测 >12 分钟）
-      # ⚠️ continue-on-error 会让本步失败被"吞掉"，所以**其失败由最后一步的新鲜度校验兜底**
-      #   （rotation.json 生成时点过期 → job 变红），不再是静默断供。
+      # ⚠️ continue-on-error 会让本步失败被"吞掉"，所以**其失败由最后一步的新鲜度校验兜底**：
+      #   rotation.json 生成时点过期 → 出 ::warning::（按用户要求降级为警告，不阻断流程）；
+      #   行情主体 data.json 过期则仍是硬失败 —— job 变红。
       - name: 拉取板块轮动历史归档
         if: steps.plan.outputs.mode == 'postclose'
         continue-on-error: true
