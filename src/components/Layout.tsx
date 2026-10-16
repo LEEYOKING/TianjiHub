@@ -45,7 +45,7 @@ function FooterNote() {
   return (
     <>
       <style>{FOOTER_LINK_CSS}</style>
-      数据来源:东方财富、腾讯行情等公开数据。报告由
+      数据来源：东方财富、腾讯行情等公开数据。报告由
       <a
         className="tj-footer-link"
         href="https://www.xhoper.com"
@@ -53,9 +53,9 @@ function FooterNote() {
         rel="noopener noreferrer"
         title="访问 Xhoper 官网"
       >
-        【Xhoper】
+         Xhoper 
       </a>
-      旗下【天机枢】生成，数据仅供复盘参考，不构成投资建议。
+      旗下【天机枢】整理汇总，数据仅供复盘参考，不构成投资建议。
     </>
   );
 }
