@@ -18,7 +18,7 @@ import { RotationRuleBar } from '../components/RotationRulePanel';
 import { RotationRelations } from '../components/RotationRelations';
 import { useRotationData, useRotationRule } from '../data/rotationData';
 import { WATCH_LIMIT, inWatchlist, toggleWatch, useWatchlist } from '../data/watchlist';
-import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
+import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP, describeGenTime } from '../utils/format';
 import { analyzeAll, SCORE_WEIGHTS, sinceStatsOf } from '../utils/rotation/analytics';
 import type { SectorStats } from '../utils/rotation/analytics';
 import { computeWindow, toWindowView } from '../utils/rotation/ruleEngine';
@@ -619,14 +619,10 @@ export default function Rotation() {
     return { r, c };
   };
 
-  // v2.0.8ky:本页数据自身的生成时点(rotation.json 的 meta.generatedAt,固定东八区)
-  // —— 并入页头「报告日期」显示,并标注是否为当日盘后生成(归档正常时应晚于当日 15:05)
-  const gen = (() => {
-    const g = m.generatedAt || '';            // 'YYYY-MM-DD HH:MM:SS'(东八区)
-    if (g.length < 16) return { time: '--:--', postClose: false };
-    const time = g.slice(11, 16);
-    return { time, postClose: g.slice(0, 10) === m.lastTradeDate && time >= '15:05' };
-  })();
+  // 本页数据自身的生成时点判定(rotation.json 的 meta,固定东八区) —— 并入页头「报告日期」状态词
+  // 口径见 format.describeGenTime:当日 15:05 ~ 次日 09:30 之间生成都算盘后数据
+  // (云端 cron 常被 GH 延迟到深夜/次日凌晨,那种情况拿到的仍是该交易日的完整收盘数据)
+  const gen = describeGenTime(m.generatedAt, m.lastTradeDate);
 
   // 数据状态标记:非当日盘后快照 → 明确提示,避免"用旧数据伪装成当日榜单"
   const staleTag = !gen.postClose ? (

@@ -64,3 +64,41 @@ export function timeToMinutes(s: string): number {
     return -1;
   }
 }
+
+/** 'YYYY-MM-DD' → 次日 'YYYY-MM-DD'(纯日期运算,用 UTC 以免受本地时区/夏令时干扰) */
+export function nextDateStr(d: string): string {
+  if (!d || d.length < 10) return '';
+  const y = Number(d.slice(0, 4));
+  const m = Number(d.slice(5, 7));
+  const day = Number(d.slice(8, 10));
+  if (!y || !m || !day) return '';
+  const t = new Date(Date.UTC(y, m - 1, day) + 86400000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+}
+
+/**
+ * 由数据文件自身的 meta 判定"是否为盘后快照",用于页头「报告日期」的状态词。
+ * 返回 { time: 'HH:MM', postClose: boolean }。
+ *
+ * 口径(V2.0 修订):归档在 **lastTradeDate 当日 15:05 之后 ~ 次日 09:30 之前** 生成都算盘后数据。
+ * 因为云端 cron 常被 GitHub 延迟到深夜甚至次日凌晨(实测 22:00 档直到次日 08:07 才跑完),
+ * 那种情况下拿到的**确实是该交易日的完整收盘数据**;早先"必须同一日期且 ≥15:05"的判定
+ * 会把它误判成"非当日盘后数据",反而误导人。
+ * 反之:生成时点落在该交易日的盘中(09:30~15:00)属于盘中快照,不算盘后;
+ * 生成时点晚于次日 09:30 也说明它落后了一个交易日。
+ *
+ * 主页(Rotation)与详情页(RotationDetail)共用此单一实现,避免两处口径漂移。
+ */
+export function describeGenTime(
+  generatedAt?: string,
+  lastTradeDate?: string,
+): { time: string; postClose: boolean } {
+  const g = generatedAt || '';
+  if (g.length < 16) return { time: '--:--', postClose: false };
+  const date = g.slice(0, 10);
+  const time = g.slice(11, 16);
+  const sameDayPostClose = date === lastTradeDate && time >= '15:05';
+  const nextDayPreOpen = date === nextDateStr(lastTradeDate || '') && time < '09:30';
+  return { time, postClose: sameDayPostClose || nextDayPreOpen };
+}

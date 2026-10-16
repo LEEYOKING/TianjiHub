@@ -17,7 +17,7 @@ import { InfoTip, TitleWithTip, tipItems } from '../components/InfoTip';
 import { RotationRuleBar, pctColor } from '../components/RotationRulePanel';
 import { useRotationData, useRotationRule } from '../data/rotationData';
 import { inWatchlist, toggleWatch, useWatchlist } from '../data/watchlist';
-import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
+import { COLOR_BORDER, COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP, describeGenTime } from '../utils/format';
 import { useEchartsResize } from '../hooks/useEchartsResize';
 import {
   SCORE_WEIGHTS,
@@ -196,11 +196,8 @@ export default function RotationDetail() {
   const benchName = meta.benchmark || '沪深300';
 
   // —— 数据状态(§6.1 第 1 项) ——
-  const genTime = (() => {
-    const g = meta.generatedAt || '';
-    if (g.length < 16) return { time: '--:--', postClose: false };
-    return { time: g.slice(11, 16), postClose: g.slice(0, 10) === meta.lastTradeDate && g.slice(11, 16) >= '15:05' };
-  })();
+  // 口径与主页共用同一实现(见 format.describeGenTime):当日 15:05 ~ 次日 09:30 生成都算盘后数据
+  const genTime = describeGenTime(meta.generatedAt, meta.lastTradeDate);
   const missingDays = dates.length - stats.validDays;
 
   // —— 数据一致性自检(§6.3:时间轴事件数必须 = 摘要 = 明细) ——
