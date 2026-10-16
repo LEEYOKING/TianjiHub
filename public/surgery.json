@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-16 02:08:55",
+    "generatedAt": "2026-10-16 08:01:19",
     "tradeDate": "20261016",
     "tradeDateSlash": "26/10/16"
   },
@@ -11,7 +11,7 @@
       "industry": "专用设备",
       "consecutiveDays": 1,
       "firstSealTime": "09:31:30",
-      "bombedCount": 1,
+      "bombedCount": 2,
       "sealedAmount": 2.63,
       "turnover": 2.24,
       "changePercent": 10.0,
@@ -546,7 +546,120 @@
       "isLateSeal": false
     }
   ],
-  "bigLoser": [],
+  "bigLoser": [
+    {
+      "code": "600127",
+      "name": "金健米业",
+      "industry": "-",
+      "changePercent": -9.01,
+      "turnoverRate": 33.84
+    },
+    {
+      "code": "600202",
+      "name": "哈空调",
+      "industry": "-",
+      "changePercent": -9.92,
+      "turnoverRate": 18.35
+    },
+    {
+      "code": "600408",
+      "name": "安泰集团",
+      "industry": "-",
+      "changePercent": -8.13,
+      "turnoverRate": 22.31
+    },
+    {
+      "code": "600802",
+      "name": "福建水泥",
+      "industry": "-",
+      "changePercent": -8.06,
+      "turnoverRate": 15.92
+    },
+    {
+      "code": "600847",
+      "name": "万里股份",
+      "industry": "-",
+      "changePercent": -8.88,
+      "turnoverRate": 16.26
+    },
+    {
+      "code": "605136",
+      "name": "丽人丽妆",
+      "industry": "-",
+      "changePercent": -9.62,
+      "turnoverRate": 17.42
+    },
+    {
+      "code": "001330",
+      "name": "博纳影业",
+      "industry": "-",
+      "changePercent": -8.24,
+      "turnoverRate": 19.83
+    },
+    {
+      "code": "300107",
+      "name": "建新股份",
+      "industry": "-",
+      "changePercent": -11.97,
+      "turnoverRate": 26.46
+    },
+    {
+      "code": "300299",
+      "name": "富春股份",
+      "industry": "-",
+      "changePercent": -7.27,
+      "turnoverRate": 23.44
+    },
+    {
+      "code": "300497",
+      "name": "富祥股份",
+      "industry": "-",
+      "changePercent": -14.89,
+      "turnoverRate": 15.9
+    },
+    {
+      "code": "300522",
+      "name": "世名科技",
+      "industry": "-",
+      "changePercent": -10.18,
+      "turnoverRate": 15.65
+    },
+    {
+      "code": "300829",
+      "name": "金丹科技",
+      "industry": "-",
+      "changePercent": -8.16,
+      "turnoverRate": 16.75
+    },
+    {
+      "code": "301010",
+      "name": "晶雪节能",
+      "industry": "-",
+      "changePercent": -10.28,
+      "turnoverRate": 22.41
+    },
+    {
+      "code": "301218",
+      "name": "华是科技",
+      "industry": "-",
+      "changePercent": -12.09,
+      "turnoverRate": 26.95
+    },
+    {
+      "code": "301313",
+      "name": "凡拓数创",
+      "industry": "-",
+      "changePercent": -8.07,
+      "turnoverRate": 22.98
+    },
+    {
+      "code": "301697",
+      "name": "贝特利",
+      "industry": "-",
+      "changePercent": -7.32,
+      "turnoverRate": 25.0
+    }
+  ],
   "loserChain": [],
   "loserIntersection": [],
   "prevLimitUpCount": 36,
