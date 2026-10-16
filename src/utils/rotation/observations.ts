@@ -120,6 +120,14 @@ export interface ObservationFacts {
 export interface ObservationMetric {
   k: string;
   v: string;
+  /**
+   * 数值着色口径(仅影响 UI 呈现, 不影响任何统计):
+   *  'strong' = 固定红(强势次数, 与正负无关)
+   *  'weak'   = 固定绿(弱势次数, 与正负无关)
+   *  'signed' = 按数值正负(正红/负绿/零灰)
+   *  缺省     = 常规文字色
+   */
+  tone?: 'strong' | 'weak' | 'signed';
 }
 
 export interface Observation {
@@ -170,15 +178,15 @@ function signedPct(x: number, d = 2): string {
 /** 关键数据 chips（各标签通用；"相对基准"缺失时显示 —） */
 function metricsOf(f: ObservationFacts): ObservationMetric[] {
   return [
-    { k: '强势', v: `${f.strongCount} 次` },
-    { k: '弱势', v: `${f.weakCount} 次` },
+    { k: '强势', v: `${f.strongCount} 次`, tone: 'strong' },
+    { k: '弱势', v: `${f.weakCount} 次`, tone: 'weak' },
     { k: '独立周期', v: `${f.clusterCount} 个` },
     {
       k: '平均间隔',
       v: f.gapStrongSampleInsufficient || f.gapStrongAvg === null ? '样本少' : `${fix1(f.gapStrongAvg)} 日`,
     },
-    { k: '累计收益', v: signedPct(f.cumReturn) },
-    { k: '相对基准', v: f.relStrength === null ? '—' : signedPct(f.relStrength) },
+    { k: '累计收益', v: signedPct(f.cumReturn), tone: 'signed' },
+    { k: '相对基准', v: f.relStrength === null ? '—' : signedPct(f.relStrength), tone: 'signed' },
   ];
 }
 

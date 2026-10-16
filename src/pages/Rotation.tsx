@@ -24,7 +24,7 @@ import type { SectorStats } from '../utils/rotation/analytics';
 import { computeWindow, toWindowView } from '../utils/rotation/ruleEngine';
 import type { SectorType } from '../utils/rotation/types';
 import { OBSERVATION_COLOR, buildObservations, pickHighlightObservations } from '../utils/rotation/observations';
-import type { Observation } from '../utils/rotation/observations';
+import type { Observation, ObservationMetric } from '../utils/rotation/observations';
 
 const TYPE_LABEL: Record<SectorType, string> = { industry: '行业', concept: '概念', region: '地域' };
 
@@ -255,6 +255,23 @@ function BoardList({
   );
 }
 
+/**
+ * 关键数据 chips 的数值着色(与站点红涨绿跌一致):
+ *   强势次数固定红 / 弱势次数固定绿(与数值正负无关);
+ *   收益类(累计收益、相对基准)按数值正负 —— 正红 / 负绿 / 零灰(用 COLOR_FLAT,不用纯黑);
+ *   其余(独立周期、平均间隔等)保持常规文字色。
+ */
+function metricColor(m: ObservationMetric): string {
+  if (m.tone === 'strong') return COLOR_UP;
+  if (m.tone === 'weak') return COLOR_DOWN;
+  if (m.tone === 'signed') {
+    const n = Number(m.v.replace(/[^0-9.+-]/g, ''));   // '+3.21%' → 3.21 ; '—' → 0
+    if (!Number.isNaN(n) && n !== 0) return n > 0 ? COLOR_UP : COLOR_DOWN;
+    return COLOR_FLAT;
+  }
+  return COLOR_TEXT;
+}
+
 /** 近期轮动观察卡片(§5.2:板块名/标签/触发依据/关键数据/最近事件日期/覆盖率/点击进详情) */
 function ObservationCard({
   o,
@@ -326,7 +343,7 @@ function ObservationCard({
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8, fontSize: 11, color: '#86909C' }}>
         {o.metrics.map((m) => (
           <span key={m.k}>
-            {m.k} <b style={{ color: COLOR_TEXT, fontWeight: 600 }}>{m.v}</b>
+            {m.k} <b style={{ color: metricColor(m), fontWeight: 600 }}>{m.v}</b>
           </span>
         ))}
       </div>
