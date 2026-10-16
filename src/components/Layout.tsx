@@ -31,6 +31,35 @@ const Icons = {
   Globe: <Icon d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z" />,
 };
 
+/** 页脚外链样式:默认与正文同色(不抢视觉),hover 时变主题蓝 + 下划线,提示"可点击" */
+const FOOTER_LINK_CSS = `
+  .tj-footer-link { color: #86909C; text-decoration: none; transition: color .15s ease; }
+  .tj-footer-link:hover { color: #1890FF; text-decoration: underline; }
+`;
+
+/**
+ * 站点页脚统一文案 —— 移动端与 PC 端两处页脚共用同一份定义,避免文案漂移。
+ * 【Xhoper】可点击并跳转官网(hover 有高亮+下划线反馈)。
+ */
+function FooterNote() {
+  return (
+    <>
+      <style>{FOOTER_LINK_CSS}</style>
+      数据来源:东方财富、腾讯行情等公开数据。报告由
+      <a
+        className="tj-footer-link"
+        href="https://www.xhoper.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="访问 Xhoper 官网"
+      >
+        【Xhoper】
+      </a>
+      旗下【天机枢】生成，数据仅供复盘参考，不构成投资建议。
+    </>
+  );
+}
+
 export default function Layout({ data, children }: Props) {
   // v2.0.7ea:删 useLiveEmotionTemp(CF Function /api/emotion-temp 已删)
   // — 改用 data.marketOverview.marketTemperature(fetch-data 写入的 8 维算法)
@@ -304,7 +333,7 @@ export default function Layout({ data, children }: Props) {
           <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', paddingTop: isMobile ? 56 : 0 }}>
             <div style={{ flex: 1, padding: '12px 12px 16px' }}>{children}</div>
             <footer style={{ padding: '12px 16px', fontSize: 11, color: '#86909C', textAlign: 'center' }}>
-              数据来源:东方财富、腾讯行情等公开数据。报告由天机枢生成,仅供复盘参考,不构成投资建议。
+              <FooterNote />
             </footer>
           </main>
         </>
@@ -366,7 +395,7 @@ export default function Layout({ data, children }: Props) {
                 background: 'transparent',
               }}
             >
-              数据来源:东方财富、腾讯行情等公开数据。报告由天机枢生成,仅供复盘参考,不构成投资建议。
+              <FooterNote />
             </footer>
           </main>
         </>
