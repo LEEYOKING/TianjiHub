@@ -40,6 +40,14 @@ from datetime import datetime, timezone, timedelta
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_OUT = os.path.abspath(os.path.join(HERE, '..', 'public', 'rotation.json'))
 
+# 最低成功率门槛:只成功拉到极少数板块时,归档是"残缺但看起来有效"的 —— 比整份失败更危险。
+# 2026-10-16 实测事故:东财在成功返回第 1 个板块(青海 BK0163)后开始风控,其余 662 个全失败,
+#   而 main() 原来只拦"全部失败",于是仍写出了只有 1 个板块的残缺归档并上线 → 排名池 n=1 时,
+#   该板块每天都同时是第 1 名(进涨幅榜)和倒数第 1 名(进跌幅榜) → 页面出现
+#   "强势 60 次 + 弱势 60 次"的矛盾数据,还把上一份完整的 663 板块归档覆盖掉了。
+MIN_SUCCESS_RATIO = 0.9
+MIN_SUCCESS_ABS = 10          # 全量场景下的绝对下限(仅在 total 较大时生效,以免破坏 --limit 联调)
+
 # 东财 push2(板块清单)多域名 — 沿用 fetch_real_data.py 的容错思路(海外/云 IP 会间歇性封锁)
 PUSH2_DOMAINS = [
     'https://push2.eastmoney.com',
@@ -340,6 +348,16 @@ def main() -> int:
 
     if not raw_secs:
         print('✗ 全部板块都拉取失败,未写入任何文件(线上保持原样)')
+        return 1
+
+    # 最低成功率门槛(2026-10-16 事故):只成功极少数板块时,残缺归档会"看起来有效"地污染全站
+    total = len(boards)
+    min_ok = max(1, int(total * MIN_SUCCESS_RATIO))
+    if total >= 50:
+        min_ok = max(min_ok, MIN_SUCCESS_ABS)
+    if ok < min_ok:
+        print(f'✗ 成功率过低({ok}/{total},需 ≥{min_ok}),拒绝写入 —— 避免残缺归档覆盖完整数据(线上保持原样)')
+        print(f'  失败示例: {fail[:5]}')
         return 1
 
     # ---- 3.4 组装:交易日骨架 ----

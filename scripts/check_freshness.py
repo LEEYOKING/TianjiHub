@@ -32,6 +32,7 @@ CST = datetime.timezone(datetime.timedelta(hours=8))
 MARKET_OPEN = "09:30"
 MARKET_CLOSE = "15:00"          # 15:00 整点视为已收盘
 CLOSE_READY = "15:05"           # 该时点之后，当日收盘数据才算可取
+MIN_SECTORS = 500               # 板块全集约 663(行业128+概念504+地域31)；低于此视为归档残缺
 MARGIN_SLOT = "30 0 * * 1-5"                      # 08:30 CST 融资补抓档
 RESCUE_SLOTS = ("0 14 * * 1-5", "0 22 * * 1-5")   # 22:00 CST / 次日 06:00 CST 补跑档
 
@@ -130,6 +131,28 @@ def check_file(label: str, path: str, target: str, date_key: str, fmt: str) -> l
     return problems
 
 
+def check_rotation_shape() -> list[str]:
+    """板块数健全性检查：归档必须覆盖完整板块全集（663 个：行业128 + 概念504 + 地域31）。
+
+    2026-10-16 实测事故：东财在成功返回第 1 个板块（青海）后开始风控，其余 662 个全失败，
+    而 fetch_rotation.py 当时只拦"全部失败"，于是写出了只有 1 个板块的残缺归档并上线：
+    排名池 n=1 时该板块每天都同时进涨幅榜与跌幅榜 → 页面上出现"强势 60 次 + 弱势 60 次"的
+    矛盾数据，还把上一份完整的 663 板块归档覆盖掉了。
+    单看 data.json 完全发现不了这件事（它的 tradeDate 是新鲜的），所以必须单独盯"板块数"。
+    这类是**数据损坏**（上线的是错的），比"没更新"更严重，故计入硬问题。
+    """
+    j = load_json("public/rotation.json")
+    if j is None:
+        return []
+    n = len(j.get("sectors") or [])
+    declared = (j.get("meta") or {}).get("sectorCount")
+    if n < MIN_SECTORS:
+        return [
+            f"rotation.json 板块数塌缩：实际 {n} 个（meta.sectorCount={declared}），低于 {MIN_SECTORS} —— 归档残缺、全站统计会失真"
+        ]
+    return []
+
+
 def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], str, bool]:
     """返回 (硬问题, 软问题, 目标交易日, 交易日历是否可信)。
 
@@ -137,10 +160,13 @@ def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[s
       · 硬 = data.json（行情主体）。它断供就意味着整个站点数据停摆，必须让 job 变红。
       · 软 = rotation.json（轮动归档）。它依赖东财 push2his，海外 IP 极易被风控，
         属"高发但可容忍"的失败 —— 用户确认降级为**警告**，不阻断流程。
+    例外：轮动归档的"板块数塌缩"属于数据损坏（上线的是错的、而非没更新），
+    因此归到硬问题里 —— 这类必须变红。
     """
     target, strict = resolve_target(now, dates)
     hard = check_file("data.json（行情主体）", "public/data.json", target, "tradeDate", "compact")
     soft = check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
+    hard += check_rotation_shape()   # 板块数塌缩=数据损坏,计入硬问题(见其 docstring)
     return hard, soft, target, strict
 
 
