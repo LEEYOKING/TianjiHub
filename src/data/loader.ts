@@ -10,7 +10,6 @@ import type {
   DragonTigerStock,
   QuoteData,
   HistoryPoint,
-  KLinePoint,
 } from '../types';
 
 export interface ReportData {
@@ -38,7 +37,6 @@ export interface ReportData {
   highBreakStocks: BreakoutStock[];
   lowPositionStocks: BreakoutStock[];
   allStrongStocks?: BreakoutStock[]; // v1.9.1:全量候选股(给客户端自定义筛选)
-  sectorKlines?: Record<string, { leaderName: string; code?: string; kline: KLinePoint[] }>; // v1.9.3:行业 leader K 线(用于所处位置量化判断)
   dragonTigerStocks: DragonTigerStock[];
   dragonTiger?: {                // v2.0.7bn:龙虎榜数据自身的元信息(实际是哪天披露的)
     tradeDate: string;           // YYYYMMDD,如 20260813
@@ -92,7 +90,7 @@ export function refreshReportData(): Promise<ReportData> {
   return loadReportData(true);
 }
 
-/** 东八区今天 YYYYMMDD(与 useEffectiveTradeDate 的 todayYMD 一致) */
+/** 东八区今天 YYYYMMDD */
 export function getCNTodayYMD(): string {
   const now8 = new Date(Date.now() + 8 * 3600 * 1000);
   const y = now8.getUTCFullYear();

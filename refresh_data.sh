@@ -43,7 +43,7 @@ fi
 
 # 3. 提交
 echo "[3/4] 提交数据..."
-git add public/data.json public/sectorKlines.json public/surgery.json public/prescan.json scripts/fetch_real_data.py
+git add public/data.json public/surgery.json public/prescan.json scripts/fetch_real_data.py
 if git diff --cached --quiet; then
   echo "  ! 无数据变化，跳过提交"
 else

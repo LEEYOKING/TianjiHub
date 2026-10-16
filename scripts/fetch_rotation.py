@@ -7,7 +7,7 @@
     供【板块轮动】页面在前端做规则引擎计算（不引入数据库）。
 
 设计约束（重要）
-    · 本脚本**只新增** public/rotation.json，不读写 data.json / sectorKlines.json 等任何既有文件；
+    · 本脚本**只新增** public/rotation.json，不读写 data.json 等任何既有文件；
     · 不 import 也 exec 任何既有脚本，避免影响现有页面数据链路；
     · 幂等：同一交易日重跑不会产生重复行；区间重跑按 (date, sector) 覆盖。
 

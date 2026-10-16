@@ -8,10 +8,7 @@
   Cache-Control: public, max-age=60, stale-while-revalidate=600
   Access-Control-Allow-Origin: *
 
-# v2.0.7ff:sectorKlines.json 60s 缓存 + SWR 10 分钟 — Sector 页面用
-/sectorKlines.json
-  Cache-Control: public, max-age=60, stale-while-revalidate=600
-  Access-Control-Allow-Origin: *
+# 2026-10-16:sectorKlines.json 已退役(前端无任何代码 fetch 它),其缓存规则一并删除
 
 # surgery.json / prescan.json: 强制不缓存,实时拉最新
 /surgery.json

@@ -1755,64 +1755,16 @@ if strong_df is None:
     strong_df = pd.DataFrame()  # 空 df
 all_strong_stocks = []
 
-# v1.9.3:行业 leader 60 日 K 线(用于"所处位置"量化判断)
 import urllib.request
-def fetch_leader_kline(stock_code: str, days: int = 60):
-    """从腾讯日 K 接口拉 60 天 K 线(用作行业 K 线代理)"""
-    try:
-        # stock_code 可能是 'sh601101' 或纯 '601101'
-        if stock_code.startswith('sh') or stock_code.startswith('sz'):
-            sym = stock_code
-        elif stock_code.startswith('6') or stock_code.startswith('5') or stock_code.startswith('9'):
-            sym = f'sh{stock_code}'
-        else:
-            sym = f'sz{stock_code}'
-        url = f'http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={sym},day,,,{days},qfq'
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read())
-        # qfq 时 key 是 qfqday;无 qfq 时是 day
-        kline = data.get('data', {}).get(sym, {}).get('qfqday') or data.get('data', {}).get(sym, {}).get('day') or []
-        return [{'date': k[0], 'open': float(k[1]), 'close': float(k[2]),
-                 'high': float(k[3]), 'low': float(k[4]), 'amount': float(k[5])} for k in kline]
-    except Exception:
-        return []
 
-# 用 spot_df (已有) 构 name → code 映射
-name_to_code = {}
-if 'spot_df' in dir():
-    for _, row in spot_df.iterrows():
-        n = safe_str(row.get('名称', ''))
-        c = safe_str(row.get('代码', ''))
-        if n and c:
-            name_to_code[n] = c
+# 2026-10-16:移除行业 leader K 线相关死代码(原 fetch_leader_kline + name_to_code 映射)
+# 它们唯一的用途就是生成 sectorKlines.json,该文件已退役 —— 详见下方说明。
 
-# v2.0.8:行业 leader 60 日 K 线 — 直接用东财申万一级的领涨股代码(f140)拉 K 线
-sector_klines = {}
-print("\n  行业 leader 60 日 K 线(用于所处位置判断)...")
-import time as _t
-for i, sec in enumerate(sectors):
-    sw = sec['name']
-    leader = sec.get('leaderName', '-')
-    code = sec.get('leaderCode', '')
-    if not code:
-        # 兜底:用 name_to_code(领涨股名 → 代码)
-        code = name_to_code.get(leader, '')
-    if code:
-        kline = fetch_leader_kline(code, 60)
-        sector_klines[sw] = {'leaderName': leader, 'code': code, 'kline': kline}
-    else:
-        sector_klines[sw] = {'leaderName': leader, 'kline': []}
-    if (i + 1) % 7 == 0:
-        _t.sleep(0.3)
-print(f"  行业 K 线: {sum(1 for v in sector_klines.values() if v.get('kline'))}/{len(sector_klines)} 个有数据")
-
-# v2.0.7ff:行业 K 线单独输出到 sectorKlines.json — Sector 页面进入时按需 fetch,首页 data.json 砍 110KB
-import json as _json
-SKL_PATH = os.path.join(os.path.dirname(OUT), 'sectorKlines.json')
-with open(SKL_PATH, 'w', encoding='utf-8') as f:
-    _json.dump(sector_klines, f, ensure_ascii=False, indent=2)
-print(f"  ✓ 行业 K 线单独输出: {SKL_PATH} ({os.path.getsize(SKL_PATH) / 1024:.1f} KB)")
+# 2026-10-16:退役 sectorKlines.json
+# 前端已无任何代码 fetch 它(全 src 的 fetch() 只有 data.json / rotation.json / prescan.json),
+# data.json 也不含 sectorKlines 键, Sector 页面里 0 处 kline 引用 —— 该文件是历史遗留。
+# 原先这里会拉 28 个行业领涨股 K 线(每 7 个 sleep 0.3s)并单独写盘;现整块移除,
+# 同时省掉这轮东财请求(降低触发风控的概率)。
 for _, row in strong_df.iterrows():
     code = safe_str(row['代码'])
     change = safe_float(row.get('涨跌幅', 0))
@@ -1967,7 +1919,7 @@ data = {
         'publishedAt': '18:00',  # A 股龙虎榜披露时间
         'count': len(dragon_tiger),
     },
-    # v2.0.7ff:sectorKlines 拆到独立 sectorKlines.json(Sector 页面按需 fetch)— data.json 砍 110KB
+    # 2026-10-16:sectorKlines 已退役(前端无任何代码 fetch 它), 不再输出独立文件
 }
 
 # 合并 surgery.json(若有)— 同一个数据快照,避免前端的 stale 数据
