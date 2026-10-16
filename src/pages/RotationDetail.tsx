@@ -13,7 +13,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import { Card, PageHeader } from './Overview';
-import { InfoTip, TitleWithTip, tipItems } from '../components/InfoTip';
+import { TitleWithTip, tipItems } from '../components/InfoTip';
 import { RotationRuleBar, pctColor } from '../components/RotationRulePanel';
 import { useRotationData, useRotationRule } from '../data/rotationData';
 import { inWatchlist, toggleWatch, useWatchlist } from '../data/watchlist';
@@ -345,7 +345,7 @@ export default function RotationDetail() {
       {/* ③ 核心统计摘要(8 卡) + 「更多统计」 */}
       <div style={{ height: 14 }} />
       <Card
-        title={<TitleWithTip text="核心统计摘要" items={tipItems(CORE_LABELS)} title="指标含义 / 计算公式" />}
+        title={<TitleWithTip text="核心统计摘要" items={tipItems([...CORE_LABELS, ...MORE_LABELS])} title="指标含义 / 计算公式" />}
         right={
           <span style={{ fontSize: 11, color: '#86909C' }}>
             窗口近 {dates.length} 个交易日 · 有效交易日 {stats.validDays}
@@ -387,17 +387,17 @@ export default function RotationDetail() {
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {!showMoreStats && (
             <button
-              onClick={() => setShowMoreStats((v) => !v)}
+              onClick={() => setShowMoreStats(true)}
               style={{ border: `1px solid ${COLOR_BORDER}`, background: '#fff', color: '#1890FF', borderRadius: 8, padding: '5px 14px', fontSize: 12, cursor: 'pointer' }}
             >
-              {showMoreStats ? '收起更多统计' : '展开更多统计（+10）'}
+              展开更多统计（+10）
             </button>
-            <InfoTip items={tipItems(MORE_LABELS)} title="更多统计含义" />
-          </span>
+          )}
           {showMoreStats && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(168px, 1fr))', gap: 12, marginTop: 12 }}>
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(168px, 1fr))', gap: 12 }}>
               <KV label="大涨事件日" value={`${stats.largeUpCount} 次`} color={COLOR_UP} sub={`涨幅 ≥ ${rule.riseThreshold}%`} />
               <KV label="大跌事件日" value={`${stats.largeDownCount} 次`} color={COLOR_DOWN} sub={`跌幅 ≤ -${rule.fallThreshold}%`} />
               <KV label="当前连续强势" value={`${stats.currentStrongStreak} 天`} color={stats.currentStrongStreak > 0 ? COLOR_UP : COLOR_FLAT} sub={`窗口内最长 ${stats.longestStrongStreak} 天`} />
@@ -425,7 +425,17 @@ export default function RotationDetail() {
               />
               <KV label="上涨日占比" value={freqWord(stats.upDayRatio)} sub="窗口内有数据日中收涨的比例" />
               <KV label="波动率 / 日均" value={`${(stats.volatility * 100).toFixed(2)}%`} sub={`日均涨跌幅 ${stats.avgPct.toFixed(2)}%（缺失日不计入）`} />
-            </div>
+              </div>
+              {/* 「收起更多统计」放在展开后的数据卡片**下方**(而非上方),避免挡住新增内容 */}
+              <div style={{ marginTop: 12, textAlign: 'center' }}>
+                <button
+                  onClick={() => setShowMoreStats(false)}
+                  style={{ border: `1px solid ${COLOR_BORDER}`, background: '#fff', color: '#1890FF', borderRadius: 8, padding: '5px 14px', fontSize: 12, cursor: 'pointer' }}
+                >
+                  收起更多统计
+                </button>
+              </div>
+            </>
           )}
         </div>
       </Card>
@@ -714,7 +724,16 @@ export default function RotationDetail() {
               <thead>
                 <tr style={{ background: '#F7F9FC', color: '#86909C' }}>
                   {['起始日', '结束日', '事件日数', '簇内最大涨幅', '簇内累计收益', '事件日'].map((h) => (
-                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                    <th
+                      key={h}
+                      style={{
+                        padding: '8px 10px',
+                        // 事件日数 / 簇内最大涨幅 / 簇内累计收益 三列(数值型)居中,其余左对齐
+                        textAlign: ['事件日数', '簇内最大涨幅', '簇内累计收益'].includes(h) ? 'center' : 'left',
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {h}
                     </th>
                   ))}
@@ -725,9 +744,9 @@ export default function RotationDetail() {
                   <tr key={`${c.startDate}-${i}`} style={{ borderBottom: `1px solid ${COLOR_BORDER}` }}>
                     <td style={{ padding: '8px 10px' }}>{c.startDate}</td>
                     <td style={{ padding: '8px 10px' }}>{c.endDate}</td>
-                    <td style={{ padding: '8px 10px' }}>{c.days}</td>
-                    <td style={{ padding: '8px 10px', color: COLOR_UP }}>{c.maxPct >= 0 ? '+' : ''}{c.maxPct.toFixed(2)}%</td>
-                    <td style={{ padding: '8px 10px', color: pctColor(c.cumReturn) }}>{(c.cumReturn * 100).toFixed(2)}%</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>{c.days}</td>
+                    <td style={{ padding: '8px 10px', color: COLOR_UP, textAlign: 'center' }}>{c.maxPct >= 0 ? '+' : ''}{c.maxPct.toFixed(2)}%</td>
+                    <td style={{ padding: '8px 10px', color: pctColor(c.cumReturn), textAlign: 'center' }}>{(c.cumReturn * 100).toFixed(2)}%</td>
                     <td style={{ padding: '8px 10px', color: '#86909C' }}>{c.eventDates.join(', ')}</td>
                   </tr>
                 ))}

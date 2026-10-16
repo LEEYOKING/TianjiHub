@@ -134,6 +134,9 @@ const AUX_CSS = `
   .tj-obs-card:hover { border-color: #1890FF !important; box-shadow: 0 4px 14px rgba(24,144,255,0.10); background: #FCFDFF; }
   @media (max-width: 1280px) { .tj-mini-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 760px) { .tj-mini-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* v2.0.9:近期轮动观察列表 —— 屏幕 >1200px 时 1 行 2 列,否则 1 行 1 列 */
+  .tj-obs-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  @media (min-width: 1201px) { .tj-obs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 `;
 
 function MiniBoardCards({
@@ -835,7 +838,8 @@ export default function Rotation() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* v2.0.9:>1200px 时 1 行 2 列(见 AUX_CSS 的 .tj-obs-grid),窄屏降为 1 列 */}
+            <div className="tj-obs-grid">
               {shownObservations.map((o) => (
                 <ObservationCard
                   key={o.sector.id}
