@@ -62,7 +62,7 @@ function FooterNote() {
 
 export default function Layout({ data, children }: Props) {
   // v2.0.7ea:删 useLiveEmotionTemp(CF Function /api/emotion-temp 已删)
-  // — 改用 data.marketOverview.marketTemperature(fetch-data 写入的 8 维算法)
+  // — 改用 data.marketOverview.marketTemperature(由盘后档 fetch_real_data 写入的 8 维算法)
   // — 盘中不实时(每 10 分钟调 Function)— 改用 baseData,收盘 cron 跑时更新
   const location = useLocation();
   // v2.0.7fd:响应式 — 768px 断点(单一来源 useIsMobile)
@@ -375,7 +375,7 @@ export default function Layout({ data, children }: Props) {
               {renderMenu()}
             </nav>
 
-            {/* v2.0.7ea:情绪温度计 — 改用 baseData.marketOverview.marketTemperature(fetch-data 写入) */}
+            {/* v2.0.7ea:情绪温度计 — 改用 baseData.marketOverview.marketTemperature(由盘后档写入) */}
             {/* v2.0.7fr:user 反馈 0 8px 12px → 0 8px(去掉底部 padding)*/}
             <div style={{ padding: '0px 8px' }}>
               {thermometer}

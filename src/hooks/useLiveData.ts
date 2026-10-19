@@ -517,7 +517,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       const mktTotal = live.market ? (live.market.upCount + live.market.downCount + live.market.flatCount) : 0;
       const mktValid = live.market && mktTotal >= 100;
       if (mktValid) {
-        // v2.0.7d:成交量也实时刷新 + turnoverDiff 由 fetch_real_data 5 cron 算(末 1 vs 末 2 收盘对比)
+        // v2.0.7d:成交量也实时刷新 + turnoverDiff 由 fetch_real_data 盘后档算(末 1 vs 末 2 收盘对比)
         // v2.0.7bb:em 不覆盖 turnoverDiff(避免 8/13 跑出 25659 - 25673 = -14.46 自减)
         // v2.0.8gj:盘中动态算 turnoverDiff(与 live.today 分支同口径)
         // v2.0.8hg:与 live.today 分支同口径(前一交易日收盘从 history 取)
@@ -585,9 +585,9 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       // 二级名之间(半导体/半导体设备、电池/锂电等)会误匹配到错误板块
       const emItem = live.emIndustries.get(sName);
       if (emItem) {
-        // v2.0.7du:em 申万 跟 ths 14:00 数字差 > 3% 时跳过覆盖(走 ths 14:00)
-        // — em 申万是 em 实时,ths 14:00 是 fetch-data 14:00 cron 写
-        // — 数字差 ≤ 3% 时正常覆盖(em 实时比 ths 14:00 更近)
+        // v2.0.7du:em 申万 与 ths 落盘快照 数字差 > 3% 时跳过覆盖(走 ths 快照)
+        // — em 申万是 em 实时,ths 是 data.json 里的落盘快照(由盘后档 fetch_real_data 写入)
+        // — 数字差 ≤ 3% 时正常覆盖(em 实时比 ths 落盘快照更近)
         if (isCrossDay || Math.abs(emItem.changePercent - s.changePercent) <= 3) {
           s.changePercent = emItem.changePercent;
           if (emItem.leaderName && emItem.leaderName !== '-') s.leaderName = emItem.leaderName;

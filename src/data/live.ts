@@ -578,7 +578,7 @@ export async function fetchEMMarketStats(): Promise<EMMarketStats | null> {
 // v2.0.7ea:删 fetchEMEtfStats / fetchEMBondStats 函数
 // — CF Function 删了,useLiveData 改用 baseData(etfStats/bondStats: null)
 // — 盘中 ETF/可转债 不实时拉(em 限流严,实测 5 域名全 FAIL)
-// — 走 baseData.etfUp/etfDown/bondUp/bondDown(fetch-data 18:10 cron 写)
+// — 走 baseData.etfUp/etfDown/bondUp/bondDown(由盘后档跑 fetch_real_data 时写入 data.json)
 // — 留 useLiveData 字段为 null — Layout/Overview 不显示 ETF/可转债 实时值
 
 

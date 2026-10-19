@@ -165,7 +165,7 @@ print(f"  指数 {len(indices)} 个: " + ", ".join(i['name'] for i in indices))
 # v2.0.7ee:用 akshare 拉实际 A 股代码 5,547 只(不靠硬编码区间,避免漏 184 只)
 # — 之前 v2.0.7ea 硬编码区间漏了 沪市 605000-605999(112)/深市 1201+3000-3999/北交所 302132-920992(338)
 # — 实测 8/19 akshare 拉到 5,547 只 — 5,363 vs 5,547 — 漏 184
-# — 用 akshare stock_info_a_code_name() 拿真实代码,fetch-data + React 都用同一份
+# — 用 akshare stock_info_a_code_name() 拿真实代码,盘后档 + React 都用同一份
 # v2.0.8gk:提前读上一份 data.json(数据源失败时 fallback 旧值,避免把 0/硬编码写进线上)
 _prev_data = None
 try:
@@ -653,9 +653,9 @@ if _prev_history:
 
 # v2.0.7ba:追加当日收盘成交额(下次算 turnoverDiff 用)
 # 8/13 跑出 25673,append 到 history 末尾(8/14 跑时 history[-1] = 8/13 收盘)
-# v2.0.7cq:周末 cron 不会跑(UTC 7:35/10:30 北京时间,周一到周五),但防御性再过滤一次
+# v2.0.7cq:cron 只在周一~周五触发(UTC 07:35 / 10:30 等 → 北京 15:35 / 18:35 等),周末不跑,但防御性再过滤一次
 if TODAY.weekday() < 5:  # 周一到周五才 append
-    # v2.0.7dy:append 前先删除 8/18 旧末点(避免 6 次 cron 累加变成 6 倍)
+    # v2.0.7dy:append 前先删除旧末点(避免同一天多档 cron 重复跑时累加成多倍)
     # 之前 fetch-data 多次跑(18:18-18:43)— 每次 append 8/18 末点 — 6 次累加 = 6× 5 页推算 = 异常大
     # 修法:append 前先 removeIf 8/18 末点 — 8/18 当日只保留最新 1 个末点
     today_date = TODAY.strftime('%Y-%m-%d')
@@ -1455,7 +1455,7 @@ except Exception as e:
     if concept_sectors:
         print(f"  概念板块(em fallback) {len(concept_sectors)} 个")
     else:
-        print(f"  概念板块: 无数据,留空 — 等下个 cron em 限流恢复再拉")
+        print(f"  概念板块: 无数据,留空 — 等下个盘后档 em 限流恢复再拉")
 
 # ========== 地域板块(15 个同花顺省份/地域概念) ==========
 print("  地域板块(15 个同花顺省份/地域概念)...")
@@ -1564,7 +1564,7 @@ except Exception as e:
     if region_sectors:
         print(f"  地域板块(em fallback) {len(region_sectors)} 个")
     else:
-        print(f"  地域板块: 无数据,留空 — 等下个 cron em 限流恢复再拉")
+        print(f"  地域板块: 无数据,留空 — 等下个盘后档 em 限流恢复再拉")
 
 # 龙虎榜 + 情绪温度 — v2.0.7ad 真接数据(不 mock)
 import sys
@@ -1573,7 +1573,7 @@ from dragon_tiger_interpreter import DragonTigerInterpreter
 from market_temperature import calculate_market_temperature
 _LHB_INTERP = DragonTigerInterpreter()
 
-# v2.0.7fj:em stock_lhb_stock_statistic_em 海外 IP 限流严(尤其 18:10 cron)— 包 try/except + fallback
+# v2.0.7fj:em stock_lhb_stock_statistic_em 海外 IP 限流严(尤其 18:35 龙虎榜档)— 包 try/except + fallback
 # v2.0.7fk:user 反馈 — 加 2 次 retry,最多 3 次拉取,任一成功即停
 # v2.0.7fv:15min × 2 阻塞 cron 修 — 改成 30s/30s,总阻塞 ≤ 60s
 # — 失败时用 _prev_data(已 line 446 读 git HEAD data.json)的 dragonTigerStocks 作为 fallback
@@ -1831,7 +1831,7 @@ data = {
         'nextTradeDate': _next_trade_date,  # v2.0.8kn:'YYYY-MM-DD' — 前端判断今天是否开盘
         'dataSource': 'akshare (新浪/腾讯/东方财富)',
         # v2.0.7ee:股票代码列表 — React useLiveData 读这个拉腾讯 qt.gtimg.cn
-        # — fetch-data 跑时 akshare 拿真实 5,547 只,React 不靠硬编码
+        # — 盘后档跑时 akshare 拿真实 5,500+ 只,React 不靠硬编码
         'stockCodes': all_codes,
         # v2.0.7fj:标记龙虎榜是否 fallback(海外 IP em 限流)— 前端可显示提示
         'lhbFallback': _lhbFallback,
