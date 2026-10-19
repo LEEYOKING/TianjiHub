@@ -13,8 +13,8 @@
 两种模式：
   --plan  决定本次运行要做什么，输出 mode=… 到 stdout（供 GITHUB_OUTPUT 使用），**永远 exit 0**
   --gate  校验关键数据是否真的是"最近一个交易日的盘后快照"：
-            行情主体 data.json 有问题 → exit 1（让 job 变红）
-            轮动归档 rotation.json 有问题 → 只出 ::warning::，**不阻断流程**
+            行情主体 data.json 或 轮动归档 rotation.json 任何一项不新鲜，都 exit 1（让 job 变红）。
+            注意：本步骤是**最后一步、在「提交并推送」之后**，所以变红不会阻断任何数据提交。
 
 mode 取值：
   margin     只跑 08:30 的融资补抓档（与既有行为一致，不加交易日门槛）
@@ -154,14 +154,15 @@ def check_rotation_shape() -> list[str]:
 
 
 def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], str, bool]:
-    """返回 (硬问题, 软问题, 目标交易日, 交易日历是否可信)。
+    """返回 (行情主体问题, 轮动归档问题, 目标交易日, 交易日历是否可信)。
 
-    为什么要把问题分软硬：
-      · 硬 = data.json（行情主体）。它断供就意味着整个站点数据停摆，必须让 job 变红。
-      · 软 = rotation.json（轮动归档）。它依赖东财 push2his，海外 IP 极易被风控，
-        属"高发但可容忍"的失败 —— 用户确认降级为**警告**，不阻断流程。
-    例外：轮动归档的"板块数塌缩"属于数据损坏（上线的是错的、而非没更新），
-    因此归到硬问题里 —— 这类必须变红。
+    两组问题的区分只用于**措辞与补跑判定**，两者现在都会让 job 变红（见 gate）：
+      · 第一组 = data.json（行情主体）。它断供就意味着整个站点数据停摆。
+      · 第二组 = rotation.json（轮动归档）。依赖东财 push2his，海外 IP 极易被风控。
+    历史：2026-10-15 曾按用户要求把轮动归档降级为"只警告"；2026-10-19 事故后用户改判为
+    **硬失败** —— 因为该步骤在提交之后，变红不阻断流程，而"只警告"等于"看不见"
+    （continue-on-error 还会把该步的结论抹成 success，run 全绿，数据却没更新）。
+    另：轮动归档的"板块数塌缩"属于数据损坏（上线的是错的），一直计入第一组。
     """
     target, strict = resolve_target(now, dates)
     hard = check_file("data.json（行情主体）", "public/data.json", target, "tradeDate", "compact")
@@ -224,12 +225,13 @@ def gate(now: datetime.datetime, dates: list[str]) -> int:
         for p in soft + hard:
             print(f"  - {p}")
         return 0
-    # 软问题（轮动归档）只告警，不阻断流程
+    # 2026-10-19 修订(用户确认)：轮动归档未更新也从"警告"升级为"失败"。
+    # 本步骤是最后一步、在「提交并推送」之后 → 变红不会阻断 data.json 的提交。
     for p in soft:
-        print(f"::warning::轮动归档未更新（不阻断流程）：{p}")
+        print(f"::error::轮动归档未更新（不阻断已完成的提交，但本次 run 判为失败）：{p}")
     if not hard:
-        print(f"⚠️ 行情主体已是最新（目标交易日 {target}），仅轮动归档滞后")
-        return 0
+        print("::error::数据新鲜度校验未通过：行情主体已是最新，问题出在轮动归档（见上）")
+        return 1
     print("::error::数据新鲜度校验未通过（行情主体不是最近交易日的盘后快照）：")
     for p in hard:
         print(f"::error::{p}")
