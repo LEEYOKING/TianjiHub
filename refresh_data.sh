@@ -41,9 +41,22 @@ else
   echo "  ! 手术台数据拉取失败(akshare 风控/限流),本次跳过,不影响主数据"
 fi
 
+# 2.6 板块轮动历史归档(v2.0.9 接入本机链路)
+# — 云端(GitHub runner)的海外 IP 长期被东财 push2/push2his 脉冲式风控(502/RemoteDisconnected),
+#   而家庭 IP 几乎不被封(2026-10-16 那份完整的 667 板块归档就是本机跑出来的)。
+#   故把轮动归档也接进本机一键脚本,作为最可靠的保底路径;失败不阻断主流程。
+echo "[2.6/4] 拉取板块轮动历史归档(约 10-15 分钟,请耐心等待)..."
+if NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_rotation.py --days 120; then
+  echo "  ✓ rotation.json 已更新"
+else
+  echo "  ! 板块轮动归档失败(东财风控/成功率不足,脚本不会写残缺文件),本次跳过,不影响主数据"
+fi
+
 # 3. 提交
 echo "[3/4] 提交数据..."
 git add public/data.json public/surgery.json public/prescan.json scripts/fetch_real_data.py
+# 板块轮动归档(存在才 add,避免脚本失败时报错)
+[ -f public/rotation.json ] && git add public/rotation.json || true
 if git diff --cached --quiet; then
   echo "  ! 无数据变化，跳过提交"
 else
