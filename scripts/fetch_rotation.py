@@ -268,6 +268,7 @@ def main() -> int:
     # ---- 3.1 板块清单 ----
     btypes = ['region', 'industry', 'concept'] if args.only == 'all' else [args.only]
     boards: list[dict] = []
+    failed_types: list[str] = []
     for bt in btypes:
         try:
             lst = fetch_board_list(bt)
@@ -275,17 +276,23 @@ def main() -> int:
             boards.extend(lst)
         except Exception as e:  # noqa: BLE001
             print(f'  [{bt}] 清单拉取失败: {type(e).__name__} {e}')
+            failed_types.append(bt)
 
-    # v2.0.8kz:clist 全域名被风控时的兜底(实测本地/云端均出现过 push2 整域被拒、
-    # 而 push2his 日线正常)→ 用上一份 rotation.json 的板块清单继续重拉日线,
-    # 避免"清单拿不到就整份归档失败"。板块全集极少变动,兜底不影响数据正确性。
-    if not boards:
+    # 2026-10-20 修复:回退必须**按类型**做,而不是"三类全失败才回退"。
+    # 实测(2026-10-20 run):region 清单成功 31 个,而 industry/concept 清单 502 Bad Gateway。
+    # 此时旧的 `if not boards` 不会触发回退 → 行业口径过滤面对 **0 个行业板块** →
+    # 匹配 0/128(申万二级)→ 待拉板块塌到只剩 31 个地域 → 整档必然失败。
+    # 按类型回退后:失败的类型用上一份 rotation.json 里同类型的板块补齐,
+    # 保持"待拉 667 个"的完整尝试面(东财部分恢复时才可能过成功率门槛)。
+    if failed_types:
         prev = load_prev_boards(args.out)
         prev = [b for b in prev if args.only == 'all' or b['type'] == args.only]
-        if prev:
-            print(f'  ⚠ 清单接口全部失败 → 回退上一份 rotation.json 的板块清单: {len(prev)} 个')
-            boards = prev
-        else:
+        for bt in failed_types:
+            add = [b for b in prev if b['type'] == bt]
+            if add:
+                print(f'  ⚠ [{bt}] 清单失败 → 回退上一份 rotation.json 的同类型板块: {len(add)} 个')
+                boards.extend(add)
+        if not boards:
             print('  ✗ 清单全部失败,且无上一份 rotation.json 可兜底 → 放弃本次归档')
             return 1
 
