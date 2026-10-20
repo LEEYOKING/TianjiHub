@@ -82,11 +82,28 @@ jobs:
       #   故失败只能靠最后一步「数据新鲜度校验」暴露：rotation.json 过期 → exit 1 → run 变红。
       #   （原先 gate 只出 ::warning::；2026-10-19 发生"run 全绿但 rotation.json 一行没动、
       #     用户以为成功了"的事故后，用户确认升级为硬失败 —— 该步骤在提交之后，不阻断提交。）
-      - name: 拉取板块轮动历史归档
+      # v2.0.9(2026-10-20)：改为**增量优先**。
+      #   · 全量模式要为 667 个板块各发一次 push2his kline，请求量越大越容易撞上东财脉冲式风控
+      #     —— 实测云端连续两整天 0 成功，全量每 20 分钟一次也接不上；
+      #   · 增量模式只用 ~13 次 clist 分页拿到全部板块**当日**的涨跌幅/成交额，直接 append 到今天
+      #     这一格（口径实测：clist f3/f6 与 kline 当日那根同源，差值仅取数时差），秒级完成；
+      #   · 退出码 3 = 增量不适用（缺口 >1 个交易日 / 首次构建）→ 才回退全量重建。
+      #   另修：全量模式的 kline 请求改为带 beg（东财 lmt 在 beg=0 时失效，
+      #   实测每请求曾拖回 6489 根/566KB，单轮 ~370MB，这正是"跑满 12 分钟被杀"的主因）。
+      - name: 拉取板块轮动历史归档（增量优先，缺口大时回退全量）
         if: steps.plan.outputs.mode == 'postclose'
         continue-on-error: true
         timeout-minutes: 20
-        run: NO_PROXY="*" no_proxy="*" python3 scripts/fetch_rotation.py --days 120
+        run: |
+          export NO_PROXY="*" no_proxy="*"
+          python3 scripts/fetch_rotation.py --incremental
+          rc=$?
+          if [ $rc -eq 3 ]; then
+            echo "增量不适用（缺口 >1 个交易日或首次构建）→ 回退全量重建 --days 120"
+            python3 scripts/fetch_rotation.py --days 120
+            rc=$?
+          fi
+          exit $rc
 
       - name: 提交并推送
         # 早晨补抓档不设交易日门槛(假期工作日也要提交);其余档由 plan 的 mode 决定

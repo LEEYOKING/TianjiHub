@@ -41,15 +41,27 @@ else
   echo "  ! 手术台数据拉取失败(akshare 风控/限流),本次跳过,不影响主数据"
 fi
 
-# 2.6 板块轮动历史归档(v2.0.9 接入本机链路)
+# 2.6 板块轮动历史归档(v2.0.9:改为增量优先)
 # — 云端(GitHub runner)的海外 IP 长期被东财 push2/push2his 脉冲式风控(502/RemoteDisconnected),
 #   而家庭 IP 几乎不被封(2026-10-16 那份完整的 667 板块归档就是本机跑出来的)。
-#   故把轮动归档也接进本机一键脚本,作为最可靠的保底路径;失败不阻断主流程。
-echo "[2.6/4] 拉取板块轮动历史归档(约 10-15 分钟,请耐心等待)..."
-if NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_rotation.py --days 120; then
-  echo "  ✓ rotation.json 已更新"
+#   v2.0.9 起改为**增量优先**:只补缺口的交易日(通常就一格),clist 快路 13 次请求秒级完成;
+#   缺口大/归档损坏时才回退全量重建(约 10-15 分钟)。失败不阻断主流程。
+echo "[2.6/4] 拉取板块轮动历史归档(每日增量)..."
+set +e
+NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_rotation.py --incremental
+ROT_RC=$?
+set -e
+if [ "$ROT_RC" -eq 0 ]; then
+  echo "  ✓ rotation.json 已增量更新"
+elif [ "$ROT_RC" -eq 3 ]; then
+  echo "  ! 增量不适用(缺口过大/归档不可用/首建)，回退全量重建(约 10-15 分钟)..."
+  if NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_rotation.py --days 120; then
+    echo "  ✓ rotation.json 已全量更新"
+  else
+    echo "  ! 全量归档失败(东财风控/成功率不足,脚本不会写残缺文件),本次跳过,不影响主数据"
+  fi
 else
-  echo "  ! 板块轮动归档失败(东财风控/成功率不足,脚本不会写残缺文件),本次跳过,不影响主数据"
+  echo "  ! 增量归档未完成(退出码 $ROT_RC:东财风控或覆盖不足,脚本不写残缺文件),本次跳过,不影响主数据"
 fi
 
 # 3. 提交
