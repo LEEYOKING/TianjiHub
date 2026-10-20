@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-10-19 16:44:33",
-    "tradeDate": "20261019",
-    "tradeDateSlash": "26/10/19"
+    "generatedAt": "2026-10-20 09:03:48",
+    "tradeDate": "20261020",
+    "tradeDateSlash": "26/10/20"
   },
   "sealCards": [
     {
@@ -699,7 +699,7 @@
   "bigLoser": [],
   "loserChain": [],
   "loserIntersection": [],
-  "prevLimitUpCount": 0,
+  "prevLimitUpCount": 46,
   "systemWarning": false,
   "north": [
     {
@@ -707,14 +707,14 @@
       "netBuy": 0.0,
       "netInflow": 0.0,
       "index": "上证指数",
-      "indexChange": 0.39
+      "indexChange": -0.01
     },
     {
       "type": "深港通",
       "netBuy": 0.0,
       "netInflow": 0.0,
       "index": "深证成指",
-      "indexChange": 0.13
+      "indexChange": 0.0
     }
   ],
   "northTotal": 0.0
