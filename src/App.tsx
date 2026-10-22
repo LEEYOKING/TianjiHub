@@ -33,7 +33,15 @@ export default function App() {
   // — 改成 ref + setBaseData 同步写 ref
   const baseDataRef = useRef<ReportData | null>(null);
   // v2.0.7ee:传 baseData.meta.stockCodes 给 useLiveData — 拉真实 5,547 只 A 股腾讯 qt.gtimg.cn
-  const live = useLiveData(true, baseData?.meta?.stockCodes, baseData?.marketOverview?.etfCodes, baseData?.marketOverview?.bondCodes);
+  // v2.0.9(2026-10-22):传"baseData 是否还是昨日" — 盘后云端 cron 未落地时,由 hook 补拉一轮今日收盘,
+  // 否则盘中没打开过的用户盘后进来只能看到昨日收盘(15:30 后 hook 本就不拉数据)。
+  // 还须确认"今天确实是交易日"(meta.nextTradeDate === 今天)— 否则假期里补拉会拿到"全市场 0 涨 0 跌"
+  // 的假快照,把上一交易日的家数覆盖掉。日历缺失时一律不补拉(宁可不补,也不冒险覆盖真值)。
+  const _todayYMD = getCNTodayYMD();
+  const _baseIsToday = String(baseData?.meta?.tradeDate || '') === _todayYMD;
+  const _nextTdYMD = String(baseData?.meta?.nextTradeDate || '').replace(/-/g, '');
+  const _isTradingToday = !!_nextTdYMD && _nextTdYMD === _todayYMD;
+  const live = useLiveData(true, baseData?.meta?.stockCodes, baseData?.marketOverview?.etfCodes, baseData?.marketOverview?.bondCodes, !!baseData && !_baseIsToday && _isTradingToday);
 
   useEffect(() => {
     // v2.0.7o:fetch 失败时如果已有 baseData(后台标签页被节流),静默不显示错误页

@@ -66,6 +66,26 @@ export function isPreMarket(): boolean {
   return mins < 9 * 60 + 30;  // 东八区 9:30 之前
 }
 
+/** 盘后兜底窗口(交易日 15:05 ~ 当日 24:00)
+ *
+ * 背景(2026-10-22 用户反馈):盘后打开网站,「大盘总览」仍是昨日收盘 ——
+ *   ① 云端 cron 延迟严重(实测应 15:35 跑的任务能拖到 22:00~次日 13:00),data.json 未更新;
+ *   ② 用户盘中没打开过页面 → localStorage 里没有当日快照可替代;
+ *   ③ isLiveMarket() 在 15:30 就停了,盘后打开根本不会去拉,于是永远只能显示昨日。
+ * 修法:收盘后只要 baseData 仍是昨日,就补拉一轮今日收盘(由 useLiveData 的 isBackfill 分支执行),
+ * 页面立即显示今天的数据,不必等 cron 落地。
+ *
+ * 上限卡在当天 24:00:跨日后腾讯返回的仍是上一交易日收盘,再拉会把昨日值写成"今日"快照。
+ * (分钟数在 00:00-09:30 天然小于 15:05,故无需额外的跨日判断)
+ */
+export function isPostCloseBackfillWindow(): boolean {
+  const now = new Date(Date.now() + 8 * 3600 * 1000);
+  const day = now.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  return mins >= 15 * 60 + 5;
+}
+
 export interface LiveSnapshot {
   /** 6 个指数实时数据(顺序对应 data.indices) */
   indices: { name?: string; point: number; changeAmount: number; changePercent: number; turnover: number }[];
@@ -107,8 +127,10 @@ export interface LiveSnapshot {
 }
 
 /** 实时数据 hook — 盘中(9:30-15:00)10s 拉全市场/ETF/可转债,60s 拉指数+行业;非盘中 5min
- * 默认 enabled=true */
-export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: string[], bondCodes?: string[]): LiveSnapshot {
+ * 默认 enabled=true
+ * @param staleBaseData baseData 还是昨日(未更新到今天)—— 盘后据此补拉一轮今日收盘,见 isPostCloseBackfillWindow
+ */
+export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: string[], bondCodes?: string[], staleBaseData = false): LiveSnapshot {
   // v2.0.7ee:接 stockCodes 参数(从 baseData.meta.stockCodes 传) — React 端用真实 5,547 只拉腾讯
 
   const [snap, setSnap] = useState<LiveSnapshot>({
@@ -149,6 +171,9 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
   //     时强制刷新一次 + 立即更新 clock,后台节流/节能回收的定时器也能即时恢复。
   const [clock, setClock] = useState(0);
   const forceRefreshRef = useRef<(() => void) | null>(null);
+  // v2.0.9(2026-10-22):盘后兜底状态 — 成功拉到今日收盘即停;失败最多重试 3 轮(30s 探针驱动)
+  const backfillTriesRef = useRef(0);
+  const backfillDoneRef = useRef(false);
   useEffect(() => {
     // 探针:常驻 30s 一次 setClock,让主 effect 能识别盘中/非盘中边界变化
     const t = setInterval(() => setClock((c) => c + 1), 30_000);
@@ -184,7 +209,13 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
     // — 0:00-9:30 仍然 return 不跑,卡片走 baseData 8/21(已手动改 2505/2862/46 同花顺口径)
     // — 8/22 18:30 cron 会用新算法(指数成交额)重写 8/21 末点 → 8/22 9:30 开盘后 useLiveData 正常拉盘中
     const isLive = isLiveMarket();
-    if (!isLive) return;
+    // v2.0.9(2026-10-22):盘后兜底 — 收盘后 baseData 仍是昨日(云端 cron 尚未落地)、且本地也没有当日快照时,
+    // 拉一轮今日收盘,让「大盘总览」立即显示今天的数据。只拉一轮、不建定时器(最多重试 3 轮),
+    // 避免像盘中那样整晚每 60s 拖 5500 只。
+    const isBackfill = !isLive && staleBaseData && isPostCloseBackfillWindow()
+      && !backfillDoneRef.current && backfillTriesRef.current < 3;
+    if (!isLive && !isBackfill) return;
+    if (isBackfill) backfillTriesRef.current += 1;
     // 10s 拉快:全市场 + ETF + 可转债 + 指数 + today(v2.0.7g:加 today 同步,避免曲线图落后)
     // v2.0.7cs:safe 加重试 — em/sina 拉失败时 800ms 后重试 1 次
     // — 之前拉失败直接 fallback,看起来"上周五收盘"(user 反馈)
@@ -255,6 +286,8 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
         }
         setSnap((prev) => {
           const hasAny = !!mkt;
+          // 盘后兜底:拿到有效的全市场快照(≥4000 只,见 fetchMarketSummary 门槛)即算完成,不再重试
+          if (mkt) backfillDoneRef.current = true;
           return {
             ...prev,
             // 拉到 null(失败)→ 保留 prev,不写死 null — sticky
@@ -314,6 +347,9 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
     marketTick();
     slowTick();
 
+    // 盘后兜底:只拉这一轮,不建定时器(下一轮由 30s 探针在失败时再触发,最多 3 轮)
+    if (!isLive) return;
+
     // v2.0.7gf:指数 20s 高频 + 全市场/行业 60s 低频
     const indexIntv = setInterval(indexTick, 20_000);
     const marketIntv = setInterval(marketTick, 60_000);
@@ -324,7 +360,8 @@ export function useLiveData(enabled = true, stockCodes?: string[], etfCodes?: st
       clearInterval(slowIntv);
       forceRefreshRef.current = null;   // v2.0.8jk:非盘中清理引用(避免误触发 stale tick)
     };
-  }, [enabled, clock]);   // v2.0.8jk:依赖加 clock — 探针驱动,跨期进入盘中也自动重建定时器
+  }, [enabled, clock, staleBaseData]);   // v2.0.8jk:依赖加 clock — 探针驱动,跨期进入盘中也自动重建定时器
+                                         // v2.0.9:依赖加 staleBaseData — baseData 到位/更新为今日时重新评估盘后兜底
 
   return snap;
 }
