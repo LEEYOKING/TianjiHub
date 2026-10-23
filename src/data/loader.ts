@@ -99,6 +99,26 @@ export function getCNTodayYMD(): string {
   return `${y}${m}${d}`;
 }
 
+/** 判断 data.json 是不是**盘后快照**(而不是盘中误跑产生的快照)
+ *
+ * 2026-10-23 事故:本机 10:31 跑了 fetch_real_data.py,写出的 data.json 里
+ *   tradeDate=今天 / generatedAt=10:31 / 成交额只有半天的 7958 亿。
+ * 前端此前只看 tradeDate —— 见到"今天"就当收盘真值,既不走 localStorage 快照,也不触发盘后兜底,
+ * 于是整晚显示上午的数据。故这里把"生成时点早于 15:05"的数据判为非盘后快照。
+ *
+ * 返回 false 时调用方应视为"数据仍是旧的":用当日快照替代 / 触发盘后补拉。
+ * (generatedAt 为其他日期或格式异常时按盘后快照处理,避免历史数据被误判)
+ */
+export function isPostCloseSnapshot(meta: { generatedAt?: string; tradeDate?: string } | undefined): boolean {
+  const gen = String(meta?.generatedAt || '');
+  const td = String(meta?.tradeDate || '');
+  if (gen.length >= 16 && td.length === 8) {
+    const genDate = gen.slice(0, 10).replace(/-/g, '');
+    if (genDate === td) return gen.slice(11, 16) >= '15:05';
+  }
+  return true;
+}
+
 // v2.0.8:盘中/收盘定格快照持久化 — 15:00 后刷新仍显示今日收盘数据,
 // 不依赖 15:30 盘后脚本(可能限流失败)。快照是纯 JSON,直接存 localStorage。
 const SNAP_KEY = 'tjhub-live-snapshot';

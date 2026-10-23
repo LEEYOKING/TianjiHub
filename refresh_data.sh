@@ -12,6 +12,18 @@ cd "$(dirname "$0")"
 
 TODAY=$(TZ=Asia/Shanghai date '+%Y-%m-%d')
 
+# 0. 盘中保护（2026-10-23 事故：上午 10:31 跑本脚本，把盘中快照当收盘数据写进 data.json，
+#    页面整晚显示"今天但其实是上午"的数据）。
+#    口径与 check_freshness.py / fetch_real_data.py / fetch_rotation.py 一致：15:05 之前不跑。
+DOW=$(TZ=Asia/Shanghai date '+%u')
+HHMM=$(TZ=Asia/Shanghai date '+%H%M')
+if [ "$DOW" -le 5 ] && [ "$HHMM" -ge "0930" ] && [ "$HHMM" -lt "1505" ]; then
+  echo "✗ 现在是交易时段（09:30~15:05 CST），拒绝运行。"
+  echo "  盘中拉取到的是未收盘快照，写成 data.json 会被当成收盘数据（成交额/涨跌家数都不完整）。"
+  echo "  请在 15:05 之后重跑本脚本。"
+  exit 1
+fi
+
 echo "=================================================="
 echo " 天机枢盘后刷新 · ${TODAY}"
 echo "=================================================="

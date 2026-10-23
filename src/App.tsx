@@ -14,7 +14,7 @@ const FirstBoard = lazy(() => import('./pages/FirstBoard'));
 // v2.0.8ks:板块轮动 — 原「轮动档案 / 轮动时间轴」两页已合并为单页 /rotation
 const Rotation = lazy(() => import('./pages/Rotation'));
 const RotationDetail = lazy(() => import('./pages/RotationDetail'));
-import { loadReportData, getCNTodayYMD, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
+import { loadReportData, getCNTodayYMD, isPostCloseSnapshot, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
 
 // 全局 live context — PageHeader 通过它读 lastUpdatedAt
@@ -39,9 +39,14 @@ export default function App() {
   // 的假快照,把上一交易日的家数覆盖掉。日历缺失时一律不补拉(宁可不补,也不冒险覆盖真值)。
   const _todayYMD = getCNTodayYMD();
   const _baseIsToday = String(baseData?.meta?.tradeDate || '') === _todayYMD;
+  // 2026-10-23 事故:v2.0.9 的盘后兜底只看 tradeDate,而盘中误跑写出的 data.json 也标"今天"
+  //   → 既不触发兜底、也不走当日快照,整晚显示上午数据。故再校验生成时点是否为盘后(≥15:05)。
+  const _baseIsClose = isPostCloseSnapshot(baseData?.meta);
+  const _baseStale = !_baseIsToday || !_baseIsClose;
   const _nextTdYMD = String(baseData?.meta?.nextTradeDate || '').replace(/-/g, '');
-  const _isTradingToday = !!_nextTdYMD && _nextTdYMD === _todayYMD;
-  const live = useLiveData(true, baseData?.meta?.stockCodes, baseData?.marketOverview?.etfCodes, baseData?.marketOverview?.bondCodes, !!baseData && !_baseIsToday && _isTradingToday);
+  // 今天是否交易日:baseData 已是今天的 → 它本身证明今天是交易日;否则用 nextTradeDate 判断
+  const _isTradingToday = _baseIsToday ? true : (!!_nextTdYMD && _nextTdYMD === _todayYMD);
+  const live = useLiveData(true, baseData?.meta?.stockCodes, baseData?.marketOverview?.etfCodes, baseData?.marketOverview?.bondCodes, !!baseData && _baseStale && _isTradingToday);
 
   useEffect(() => {
     // v2.0.7o:fetch 失败时如果已有 baseData(后台标签页被节流),静默不显示错误页
@@ -50,8 +55,9 @@ export default function App() {
       loadReportData(true)
         .then((d) => {
           // v2.0.8:盘后(data 仍是昨日)用今日盘中定格快照替代,避免 15:00 后刷新回滚到上一交易日
+          // 2026-10-23:data 标"今天"但生成于盘中(误跑)时同样不可信 → 也用当日快照替代
           let finalData = d;
-          if (String(d.meta?.tradeDate) !== getCNTodayYMD()) {
+          if (String(d.meta?.tradeDate) !== getCNTodayYMD() || !isPostCloseSnapshot(d.meta)) {
             const snap = loadLiveSnapshot();
             // v2.0.8kn:快照的 meta 用最新 data.json 的 meta 覆盖 — 否则快照里缺 nextTradeDate(交易日历),
             // mergeLiveData 会退化为"工作日"判断,假期盘中仍会插入假数据点

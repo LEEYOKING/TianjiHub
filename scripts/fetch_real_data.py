@@ -28,6 +28,18 @@ TRADE_DATE = TODAY.strftime('%Y%m%d')
 TRADE_DATE_DASH = TODAY.strftime('%Y-%m-%d')
 TRADE_DATE_SLASH = TODAY.strftime('%y/%m/%d')
 
+# 盘中保护(2026-10-23 事故):交易日 09:30~15:05 直接拒绝运行。
+#   事故经过:本机 10:31 跑了一次刷新,把盘中快照当成收盘数据写进 data.json
+#   (tradeDate=今天、generatedAt=10:31、成交额只有半天的 7958 亿、涨跌 407:5145),
+#   前端看到 tradeDate 是今天便当作"今日收盘",连盘后兜底都不会触发,于是整晚显示上午数据。
+#   口径与 check_freshness.py 的盘中保护、fetch_rotation.py 的 CLOSE_READY 保持一致。
+if TODAY.weekday() < 5 and (9, 30) <= (TODAY.hour, TODAY.minute) < (15, 5):
+    raise SystemExit(
+        '✗ 现在是交易时段(09:30~15:05),拒绝运行。\n'
+        '  盘中拉到的是未收盘快照(成交额/涨跌家数都不完整),写成 data.json 会被当成收盘数据。\n'
+        '  请在 15:05 之后重跑。'
+    )
+
 # v2.0.7cs:周末直接退出(防御性 — 之前 v2.0.7cr 已加 GitHub Actions isTradingDay 判断,
 # 但 manual workflow_dispatch / 本地跑 仍可能周末执行,污染 baseData)
 # — 周末 akshare 接口返回 stale 数据(融资只到 8/13 / 涨停池空)

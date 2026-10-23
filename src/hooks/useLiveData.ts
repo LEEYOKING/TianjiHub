@@ -15,7 +15,7 @@ import {
   fetchETFAndBondStats,  // v2.0.7gg:ETF/可转债盘中实时
   SINA_INDUSTRY_LABELS,
 } from '../data/live';
-import { getCNTodayYMD, type ReportData } from '../data/loader';
+import { getCNTodayYMD, isPostCloseSnapshot, type ReportData } from '../data/loader';
 import { calcLiveEmotionTemperature } from '../utils/marketTemperature';
 
 // v2.0.8hh:市场情绪温度节流缓存 — 用户要求盘中 5-10 分钟刷新一次(而非每 10s 跟随 fastTick 跳变)
@@ -523,7 +523,9 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
       //   此时 baseData 走当日快照、turnoverDiff 无权威值,前端用 live 收盘定格值自算
       // — baseData 已是今日(15:35 cron 跑过,turnoverDiff=脚本权威值)时保留,不覆盖
       const _liveProgress = _tradingProgressCN();
-      const _baseIsToday = String(data.meta?.tradeDate) === getCNTodayYMD();
+      // 2026-10-23:除 tradeDate 外还要确认是盘后快照 — 盘中误跑写出的 data.json 也标"今天",
+      // 若当作权威值保留,页面会一直显示上午成交额/家数(且 turnoverDiff 是半天的假值)。
+      const _baseIsToday = String(data.meta?.tradeDate) === getCNTodayYMD() && isPostCloseSnapshot(data.meta);
       if (!_baseIsToday && _prevTurnover > 0) {
         const _diff = _todayVol - _prevTurnover * Math.min(_liveProgress, 1);
         next.marketOverview.turnoverDiff = Math.round(_diff * 100) / 100;
@@ -565,7 +567,7 @@ export function mergeLiveData(data: ReportData, live: LiveSnapshot): ReportData 
         next.marketOverview.marketTurnover = _todayVol2;
         // v2.0.8hh:盘中+盘后统一计算(同 today 分支,进度取 min(进度,1))
         const _liveProgress2 = _tradingProgressCN();
-        const _baseIsToday2 = String(data.meta?.tradeDate) === getCNTodayYMD();
+        const _baseIsToday2 = String(data.meta?.tradeDate) === getCNTodayYMD() && isPostCloseSnapshot(data.meta);
         if (!_baseIsToday2 && _prevTurnover2 > 0) {
           next.marketOverview.turnoverDiff = Math.round((_todayVol2 - _prevTurnover2 * Math.min(_liveProgress2, 1)) * 100) / 100;
         }
