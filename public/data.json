@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-23 20:49:41",
+    "generatedAt": "2026-10-23 23:24:39",
     "tradeDate": "20261023",
     "tradeDateSlash": "26/10/23",
     "nextTradeDate": "2026-10-26",
@@ -5588,7 +5588,7 @@
   "marketOverview": {
     "tradeDate": "20261023",
     "tradeDateSlash": "26/10/23",
-    "generatedAt": "2026-10-23 20:49",
+    "generatedAt": "2026-10-23 23:24",
     "marketTurnover": 19732.14,
     "turnoverDiff": 4309.67,
     "marketTemperature": {
@@ -26524,7 +26524,7 @@
   },
   "surgery": {
     "meta": {
-      "generatedAt": "2026-10-23 18:31:44",
+      "generatedAt": "2026-10-23 21:00:54",
       "tradeDate": "20261023",
       "tradeDateSlash": "26/10/23"
     },
@@ -27763,7 +27763,7 @@
     "bigLoser": [],
     "loserChain": [],
     "loserIntersection": [],
-    "prevLimitUpCount": 33,
+    "prevLimitUpCount": 0,
     "systemWarning": false,
     "north": [
       {
