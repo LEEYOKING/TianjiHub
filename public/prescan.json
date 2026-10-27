@@ -1,9 +1,30 @@
 {
   "meta": {
-    "generatedAt": "2026-10-27 17:22:34",
+    "generatedAt": "2026-10-27 17:56:34",
     "tradeDate": "20261027"
   },
   "assets": [
+    {
+      "code": "USDCNH",
+      "name": "离岸人民币",
+      "price": 6.6664,
+      "changePct": 0.0,
+      "series": []
+    },
+    {
+      "code": "GC",
+      "name": "纽约黄金",
+      "price": 4010.61,
+      "changePct": -0.02,
+      "series": []
+    },
+    {
+      "code": "CL",
+      "name": "WTI 原油",
+      "price": 101.86,
+      "changePct": 0.1,
+      "series": []
+    },
     {
       "code": "SPX",
       "name": "标普500",
