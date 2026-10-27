@@ -29,7 +29,8 @@
       快路用 13 次 clist 分页拿全部 667 板块的当日涨跌幅/成交额(clist 与 kline 当日值同源),
       push2 被风控时退回逐板块 kline(按缺口取数,单次仅 ~14KB)。**每日盘后默认走这条**。
     · 全量 --days N:重建整份归档。只在"首次构建"或"归档不可用/缺口 >30 个交易日"时才用。
-    退出码:0=成功/无需归档;1=数据源不可用或覆盖不足(不写文件);3=增量不适用 → 回退全量。
+    退出码:0=成功/无需归档;1=覆盖不足(疑似脏数据,需人看);
+            3=增量不适用 → 回退全量;4=数据源整体不可达(重试无意义,调用方应降级为告警)。
 """
 # 兼容 Python 3.9(macOS 自带)
 from __future__ import annotations
@@ -89,6 +90,17 @@ BENCH_NAME = '沪深300'
 # ---------- 增量模式相关 ----------
 # 增量不适用(无历史归档 / 历史列不对齐 / 缺口>1 个交易日)→ 调用方回退全量重建
 EXIT_NEED_FULL = 3
+# 数据源整体不可达(东财 push2/push2his 对本出口 IP 一律 RemoteDisconnected)→ 调用方只告警
+EXIT_SOURCE_DOWN = 4
+
+# 基准(沪深300)日线/交易日骨架的第二数据源:腾讯日线。
+# 2026-10-27 实测:东财 push2/push2his 全线 RemoteDisconnected(0.2s 即断,换 IP/换 IPv6 均然),
+#   而腾讯 qt.gtimg.cn / web.ifzq.gtimg.cn 正常 —— 且腾讯日线算出的沪深300 涨跌幅与归档
+#   bench 历史值逐日完全一致(10-16 +0.11 / 10-19 +0.09 / 10-20 -0.54 / 10-21 -0.97)。
+#   故骨架与基准改走腾讯,不再让"第一根基准 K 线"卡死整轮增量。
+TX_BENCH_URL = ('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+                '?param=sh000300,day,,,{bars},qfq')
+TX_UA = {'User-Agent': 'Mozilla/5.0', 'Referer': 'https://gu.qq.com/'}
 # 当日收盘就绪时点(CST):该时点之前 clist/kline 给的当日值都是**盘中快照**,
 # 归档成"完整交易日"就是把假收盘数据写进库(与 data.json 的盘中事故同源),故一律拒绝。
 CLOSE_READY = '15:05'
@@ -332,6 +344,32 @@ def fetch_kline(secid: str, bars: int, beg: str = '0') -> tuple[str, list[list]]
     return name, rows
 
 
+def fetch_bench_tx(bars: int = 40) -> dict[str, float]:
+    """腾讯日线取「沪深300 每个交易日的涨跌幅」→ {YYYY-MM-DD: pct}
+
+    同时充当**交易日骨架**:new_days 就是这里面晚于归档末日的日期,
+    所以即使东财 push2his 全挂,也能知道"今天是不是该补、该补哪几天"。
+    返回结构:data.sh000300.{qfqday|day} = [[date, open, close, high, low, volume], ...]
+    """
+    url = TX_BENCH_URL.format(bars=int(bars))
+    req = urllib.request.Request(url, headers=TX_UA)
+    raw = urllib.request.urlopen(req, timeout=15, context=SSL_CTX).read().decode('utf-8', 'ignore')
+    node = (json.loads(raw).get('data') or {}).get('sh000300') or {}
+    rows = node.get('qfqday') or node.get('day') or []
+    out: dict[str, float] = {}
+    prev = None
+    for r in rows:
+        try:
+            d = str(r[0])
+            close = float(r[2])
+        except (TypeError, ValueError, IndexError):
+            continue
+        if prev is not None and prev > 0:
+            out[d] = round((close - prev) / prev * 100, 2)
+        prev = close
+    return out
+
+
 def fetch_kline_many(items: list[dict], bars: int, beg: str, throttle: float = 0.12,
                      workers: int = 6) -> tuple[dict[str, list[list]], list[dict]]:
     """并发拉多个板块的日线 → ({板块id: rows}, [{id, name, err}])
@@ -432,13 +470,25 @@ def run_incremental(args) -> int:
     today = now8.strftime('%Y-%m-%d')
     hhmm = now8.strftime('%H:%M')
 
-    # 交易日骨架 + 基准当日涨跌幅:沪深300 日线(1 次请求),它同时回答"最近有哪些交易日"
+    # 交易日骨架 + 基准当日涨跌幅:优先腾讯日线(不依赖东财),东财 push2his 仅作备份。
+    # 2026-10-27 事故:这一段原来只走 push2his,东财一被封就在**第一次请求**处 return 1,
+    #   连后面的 clist 快路都没机会试 —— 云端因此连续 6 个交易日 0 产出。
+    bench_map: dict[str, float] = {}
     try:
-        _bn, brows = fetch_kline(BENCH_SECID, 30, kline_beg(30))
-        bench_map = {r[0]: r[2] for r in brows}
+        bench_map = fetch_bench_tx(40)
+        print(f'  · 基准/交易日骨架(腾讯日线): {len(bench_map)} 个交易日')
     except Exception as e:  # noqa: BLE001
-        print(f'  ✗ 基准 {BENCH_NAME} 日线拉取失败({type(e).__name__} {e}) → 本次跳过(保持原归档)')
-        return 1
+        print(f'  ⚠ 腾讯基准失败({type(e).__name__} {e}) → 退回东财 push2his')
+        try:
+            _bn, brows = fetch_kline(BENCH_SECID, 30, kline_beg(30))
+            bench_map = {r[0]: r[2] for r in brows}
+        except Exception as e2:  # noqa: BLE001
+            print(f'  ✗ 基准 {BENCH_NAME} 两个数据源都不可达({type(e2).__name__} {e2})'
+                  f' → 本次跳过(保持原归档)')
+            return EXIT_SOURCE_DOWN
+    if not bench_map:
+        print('  ✗ 基准日线为空(腾讯/东财都没给数据) → 本次跳过(保持原归档)')
+        return EXIT_SOURCE_DOWN
 
     new_days = [d for d in sorted(bench_map) if d > last]
     # 只补"已完整收盘"的日子:当日收盘前(或非交易日)那根是盘中快照,归档成完整交易日
@@ -486,12 +536,30 @@ def run_incremental(args) -> int:
 
     # ---- 取数②（兜底）：逐板块 kline 取缺口那几天(缺口>1 天 / 目标日不是今天时只能走这条) ----
     if not by_day:
+        # 先用 2 次请求探一下 push2his 是否还活着 —— 服务器 RST 时 667 个板块白撞一遍要 ~1 分钟,
+        # 而且云端每个 cron 档都撞一次,等于持续给风控续期。
+        _beg = (datetime.strptime(pending[0], '%Y-%m-%d') - timedelta(days=5)).strftime('%Y%m%d')
+        _alive = False
+        for _s in secs[:2]:
+            try:
+                if fetch_kline('90.' + _s['id'], len(pending) + 8, _beg)[1]:
+                    _alive = True
+                    break
+            except Exception:  # noqa: BLE001
+                continue
+        if not _alive:
+            print('  ✗ push2his 探测失败(前 2 个板块都拉不到日线) → 数据源不可达,本次跳过(保持原归档)')
+            return EXIT_SOURCE_DOWN
         by_day, failed = fetch_kline_days(secs, pending, args.throttle)
 
     # ---- 覆盖门槛:与全量同一套防"残缺归档污染全站"的逻辑(只看最后一格=页面当前值) ----
     last_col = by_day[pending[-1]]
     covered = sum(1 for s in secs if last_col[s['id']][0] is not None)
     min_ok = max(1, int(len(secs) * MIN_SUCCESS_RATIO))
+    if covered == 0:
+        print('  ✗ 所有板块都没取到数据(东财 push2 与 push2his 均不可达) → 本次跳过(保持原归档)')
+        print(f'    失败板块示例: {failed[:8]}')
+        return EXIT_SOURCE_DOWN
     if covered < min_ok:
         print(f'  ✗ 最新交易日覆盖过低({covered}/{len(secs)},需 ≥{min_ok}) → 拒绝写入(线上保持原归档)')
         print(f'    失败板块示例: {failed[:8]}')
@@ -633,8 +701,8 @@ def main() -> int:
                 print(f'  ⚠ [{bt}] 清单失败 → 回退上一份 rotation.json 的同类型板块: {len(add)} 个')
                 boards.extend(add)
         if not boards:
-            print('  ✗ 清单全部失败,且无上一份 rotation.json 可兜底 → 放弃本次归档')
-            return 1
+            print('  ✗ 清单全部失败,且无上一份 rotation.json 可兜底 → 放弃本次归档(数据源不可达)')
+            return EXIT_SOURCE_DOWN
 
     # 行业口径过滤:只保留申万二级(与前端【板块涨跌】页一致)
     if 'industry' in btypes:
@@ -688,8 +756,8 @@ def main() -> int:
     print(f'  拉取完成:耗时 {time.time() - t0:.0f}s')
 
     if not raw_secs:
-        print('✗ 全部板块都拉取失败,未写入任何文件(线上保持原样)')
-        return 1
+        print('✗ 全部板块都拉取失败(数据源不可达),未写入任何文件(线上保持原样)')
+        return EXIT_SOURCE_DOWN
 
     # 最低成功率门槛(2026-10-16 事故):只成功极少数板块时,残缺归档会"看起来有效"地污染全站
     total = len(boards)

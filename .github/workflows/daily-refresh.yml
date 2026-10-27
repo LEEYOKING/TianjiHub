@@ -64,6 +64,14 @@ jobs:
         if: steps.plan.outputs.mode == 'postclose'
         run: NO_PROXY="*" no_proxy="*" python3 scripts/fetch_real_data.py
 
+      # 本档不跑轮动时显式标记 —— 否则收尾的「数据新鲜度校验」会把"归档过期"算到这一档头上，
+      # 让 08:30 融资补抓档这类本来不碰轮动的运行无故变红。
+      # Settings → Variables 里设 ROTATION_ENABLED=false 可临时完全停掉对东财的请求
+      # （出口 IP 被风控期间，每次触发都在给封禁续期）。
+      - name: 标记轮动未尝试
+        if: steps.plan.outputs.mode != 'postclose' || vars.ROTATION_ENABLED == 'false'
+        run: echo "ROT_RC=notrun" >> "$GITHUB_ENV"
+
       - name: 拉取手术台数据(封成比评分/亏钱传导/北向)
         if: steps.plan.outputs.mode == 'postclose'
         run: |
@@ -80,6 +88,8 @@ jobs:
       #   —— GitHub API 里该步骤仍是 "success"（不只是 UI 的绿勾），所以本步显示 ✅
       #   完全不代表归档真的更新了。
       #   故失败只能靠最后一步「数据新鲜度校验」暴露：rotation.json 过期 → exit 1 → run 变红。
+      #   2026-10-27 补充：若本步以退出码 4 结束（东财 push2/push2his 对 Runner IP 整体不可达），
+      #   说明重试无意义 → 收尾校验只告警 + Job Summary，不判红；覆盖不足/超时仍判红。
       #   （原先 gate 只出 ::warning::；2026-10-19 发生"run 全绿但 rotation.json 一行没动、
       #     用户以为成功了"的事故后，用户确认升级为硬失败 —— 该步骤在提交之后，不阻断提交。）
       # v2.0.9(2026-10-20)：改为**增量优先**。
@@ -91,17 +101,25 @@ jobs:
       #   另修：全量模式的 kline 请求改为带 beg（东财 lmt 在 beg=0 时失效，
       #   实测每请求曾拖回 6489 根/566KB，单轮 ~370MB，这正是"跑满 12 分钟被杀"的主因）。
       - name: 拉取板块轮动历史归档（增量优先，缺口大时回退全量）
-        if: steps.plan.outputs.mode == 'postclose'
+        if: steps.plan.outputs.mode == 'postclose' && vars.ROTATION_ENABLED != 'false'
         continue-on-error: true
         timeout-minutes: 20
         run: |
           export NO_PROXY="*" no_proxy="*"
+          # GitHub Actions 默认 bash -e:命令非 0 就直接终止本步,原来那句 rc=$? 永远取不到,
+          # 于是退出码 3 的"回退全量"分支从来没执行过。这里显式 set +e。
+          set +e
           python3 scripts/fetch_rotation.py --incremental
           rc=$?
           if [ $rc -eq 3 ]; then
             echo "增量不适用（缺口 >1 个交易日或首次构建）→ 回退全量重建 --days 120"
             python3 scripts/fetch_rotation.py --days 120
             rc=$?
+          fi
+          # 把退出码传给收尾的「数据新鲜度校验」:4=数据源整体不可达(重试无意义)→ 只告警不判红
+          echo "ROT_RC=$rc" >> "$GITHUB_ENV"
+          if [ $rc -eq 4 ]; then
+            echo "::warning::东财 push2/push2his 对当前出口 IP 不可达（RemoteDisconnected）→ 轮动归档本次跳过，不判为失败"
           fi
           exit $rc
 
@@ -137,4 +155,6 @@ jobs:
       # 不满足即 exit 1，让这次 run 标红 —— 这样"断供"会立刻显形，而不是等你发现报告日期不动。
       - name: 数据新鲜度校验（过期即失败，避免静默断供）
         if: always() && steps.plan.outputs.mode != 'skip'
+        env:
+          ROT_RC: ${{ env.ROT_RC }}
         run: python3 scripts/check_freshness.py --gate

@@ -72,6 +72,9 @@ elif [ "$ROT_RC" -eq 3 ]; then
   else
     echo "  ! 全量归档失败(东财风控/成功率不足,脚本不会写残缺文件),本次跳过,不影响主数据"
   fi
+elif [ "$ROT_RC" -eq 4 ]; then
+  echo "  ! 东财 push2/push2his 对当前网络不可达(RemoteDisconnected)，本次跳过轮动归档"
+  echo "    → 换一个网络(如手机热点)再跑一次即可补齐；脚本不会写残缺文件"
 else
   echo "  ! 增量归档未完成(退出码 $ROT_RC:东财风控或覆盖不足,脚本不写残缺文件),本次跳过,不影响主数据"
 fi

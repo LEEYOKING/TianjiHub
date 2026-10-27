@@ -214,8 +214,31 @@ def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) 
 
 
 # ---------------- 模式：--gate ----------------
+def _summary(lines: list[str]) -> None:
+    """往 GitHub Actions 的 Job Summary 追加一段 —— 只有告警时也能在 run 首页看见。"""
+    p = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not p:
+        return
+    try:
+        with open(p, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def gate(now: datetime.datetime, dates: list[str]) -> int:
     hard, soft, target, strict = inspect(now, dates)
+    # 轮动步骤的退出码(由 workflow 写进 GITHUB_ENV):
+    #   4      = 东财 push2/push2his 整体不可达(外部风控,重试无意义)
+    #   notrun = 本档根本不跑轮动(如 08:30 融资补抓档),不该由它背"归档过期"的锅
+    #   空     = 轮动步骤跑了但没写退出码(超时/被杀) —— 需要人看,仍判红
+    # 2026-10-27 实测:push2 全域名 0.2s 被 RST,而 quote.eastmoney.com / datacenter-web 均 200,
+    #   本机与 GitHub Runner 出口 IP 同时如此 —— 属对方对该 IP 的行情接口风控。
+    # 此前轮动过期一律判红 → 连续 6 个交易日每个 cron 档都红,红灯失去信息量,
+    #   真出问题时反而不容易注意到。故 4 / notrun 降级为告警 + Job Summary,
+    #   覆盖不足(1)、增量不适用后全量也失败(3)、超时(空)仍判红 —— 那才是需要人看的问题。
+    rot_rc = os.environ.get("ROT_RC", "")
+    rot_external = rot_rc in ("4", "notrun")
     if not hard and not soft:
         print(f"✅ 数据新鲜度校验通过（目标交易日 {target}）")
         return 0
@@ -225,10 +248,29 @@ def gate(now: datetime.datetime, dates: list[str]) -> int:
         for p in soft + hard:
             print(f"  - {p}")
         return 0
-    # 2026-10-19 修订(用户确认)：轮动归档未更新也从"警告"升级为"失败"。
-    # 本步骤是最后一步、在「提交并推送」之后 → 变红不会阻断 data.json 的提交。
+    # 2026-10-19 修订(用户确认)：轮动归档未更新从"警告"升级为"失败"（避免"run 全绿但数据没动"的静默断供）。
+    # 2026-10-27 修订：仅当轮动步骤确认为"数据源不可达"(ROT_RC=4)或"本档未跑轮动"(notrun)时
+    # 降级为告警，其余情况保持硬失败。
     for p in soft:
-        print(f"::error::轮动归档未更新（不阻断已完成的提交，但本次 run 判为失败）：{p}")
+        if rot_external:
+            why = "数据源不可达" if rot_rc == "4" else "本档未尝试轮动"
+            print(f"::warning::轮动归档未更新（{why}，本次不判失败）：{p}")
+        else:
+            print(f"::error::轮动归档未更新（不阻断已完成的提交，但本次 run 判为失败）：{p}")
+    if not hard and rot_external:
+        if rot_rc == "4":
+            _summary([
+                "### ⚠ 板块轮动归档未更新（本次不判失败）",
+                "",
+                *[f"- {p}" for p in soft],
+                "",
+                "**原因**：东财 push2/push2his 对当前出口 IP 拒绝连接（RemoteDisconnected）——"
+                "同一时刻 `quote.eastmoney.com` / `datacenter-web.eastmoney.com` 均正常，属对方对"
+                "该 IP 的行情接口风控，不是代码缺陷，重试不会自行恢复。",
+                "",
+                "**处理**：换一个未被风控的网络（如手机热点）在国内网络下跑 `./refresh_data.sh` 补齐。",
+            ])
+        return 0
     if not hard:
         print("::error::数据新鲜度校验未通过：行情主体已是最新，问题出在轮动归档（见上）")
         return 1
