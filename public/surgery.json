@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-27 03:50:19",
+    "generatedAt": "2026-10-27 09:00:54",
     "tradeDate": "20261027",
     "tradeDateSlash": "26/10/27"
   },
@@ -842,14 +842,14 @@
       "netBuy": 0.0,
       "netInflow": 0.0,
       "index": "上证指数",
-      "indexChange": 0.19
+      "indexChange": -0.01
     },
     {
       "type": "深港通",
       "netBuy": 0.0,
       "netInflow": 0.0,
       "index": "深证成指",
-      "indexChange": -1.19
+      "indexChange": 0.0
     }
   ],
   "northTotal": 0.0
