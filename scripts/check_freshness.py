@@ -32,7 +32,10 @@ CST = datetime.timezone(datetime.timedelta(hours=8))
 MARKET_OPEN = "09:30"
 MARKET_CLOSE = "15:00"          # 15:00 整点视为已收盘
 CLOSE_READY = "15:05"           # 该时点之后，当日收盘数据才算可取
-MIN_SECTORS = 500               # 板块全集约 663(行业128+概念504+地域31)；低于此视为归档残缺
+# 板块全集约 417(同花顺口径:行业90+概念294+地域33)；低于此视为归档残缺
+# 阈值取 417×0.84 ≈ 350，与 fetch_rotation_ths.py 的 MIN_SUCCESS_RATIO=0.85 对齐
+# （旧东财口径是 663 个,2026-10-28 换源后同步下调，否则新归档一上线就会被判"塌缩"）
+MIN_SECTORS = 350
 MARGIN_SLOT = "30 0 * * 1-5"                      # 08:30 CST 融资补抓档
 RESCUE_SLOTS = ("0 14 * * 1-5", "0 22 * * 1-5")   # 22:00 CST / 次日 06:00 CST 补跑档
 
@@ -132,7 +135,7 @@ def check_file(label: str, path: str, target: str, date_key: str, fmt: str) -> l
 
 
 def check_rotation_shape() -> list[str]:
-    """板块数健全性检查：归档必须覆盖完整板块全集（663 个：行业128 + 概念504 + 地域31）。
+    """板块数健全性检查：归档必须覆盖完整板块全集（同花顺口径 417 个：行业90 + 概念294 + 地域33）。
 
     2026-10-16 实测事故：东财在成功返回第 1 个板块（青海）后开始风控，其余 662 个全失败，
     而 fetch_rotation.py 当时只拦"全部失败"，于是写出了只有 1 个板块的残缺归档并上线：
