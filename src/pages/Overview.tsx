@@ -450,7 +450,7 @@ export default function Overview({ data }: { data: ReportData }) {
       {/* 第一行:6 张卡 — 成交量 / 上涨家数 / 下跌家数 / 涨跌停比 / 可转债 / ETF */}
       <div className="overview-stats-row">
         <StatCard label="成交量" value={idx.marketTurnover} suffix="亿"
-          subLeft="较上一日增量" subValue={idx.turnoverDiff} suffix2="亿" subValueColor="updown" />
+          subLeft="较上1日增量" subValue={idx.turnoverDiff} suffix2="亿" subValueColor="updown" />
         {/* v2.0.8gj:合并"上涨家数"+"下跌家数"为一张"涨/跌家数"卡,第3行仅保留"平盘 xxx" */}
         <StatCard
           label="涨/跌家数"
