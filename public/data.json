@@ -8090,15 +8090,9 @@
     },
     "marginHistory": [
       {
-        "date": "2026-07-29",
-        "margin_balance": 13366.95,
-        "margin_balance_diff": 0,
-        "sh_close": 3828.47
-      },
-      {
         "date": "2026-07-30",
         "margin_balance": 13222.12,
-        "margin_balance_diff": -144.83,
+        "margin_balance_diff": 0,
         "sh_close": 3804.69
       },
       {
@@ -8448,6 +8442,12 @@
         "margin_balance": 12303.08,
         "margin_balance_diff": 30.39,
         "sh_close": 3681.47
+      },
+      {
+        "date": "2026-10-29",
+        "margin_balance": 12181.89,
+        "margin_balance_diff": -121.19,
+        "sh_close": 3651.43
       }
     ]
   },
