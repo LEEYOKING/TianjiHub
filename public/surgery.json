@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-03 00:58:28",
+    "generatedAt": "2026-11-03 01:35:53",
     "tradeDate": "20261103",
     "tradeDateSlash": "26/11/03"
   },
@@ -1881,7 +1881,36 @@
       "isLateSeal": false
     }
   ],
-  "bigLoser": [],
+  "bigLoser": [
+    {
+      "code": "920201",
+      "name": "百瑞吉",
+      "industry": "-",
+      "changePercent": -7.09,
+      "turnoverRate": 33.84
+    },
+    {
+      "code": "603028",
+      "name": "赛福天",
+      "industry": "-",
+      "changePercent": -9.98,
+      "turnoverRate": 18.79
+    },
+    {
+      "code": "603278",
+      "name": "大业股份",
+      "industry": "-",
+      "changePercent": -9.99,
+      "turnoverRate": 15.81
+    },
+    {
+      "code": "301079",
+      "name": "邵阳液压",
+      "industry": "-",
+      "changePercent": -7.34,
+      "turnoverRate": 33.26
+    }
+  ],
   "loserChain": [],
   "loserIntersection": [],
   "prevLimitUpCount": 125,
