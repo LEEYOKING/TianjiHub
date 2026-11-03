@@ -122,7 +122,15 @@ def check_file(label: str, path: str, target: str, date_key: str, fmt: str) -> l
         got = raw
 
     if got != target:
-        problems.append(f"{label} 仍停留在 {got or '未知'}，而最近该完成的交易日是 {target}")
+        if got and got > target:
+            # 2026-11-03 事故:22:00 补跑档被 GitHub 延迟到次日 00:49 才跑,脚本按"日历今天"
+            # 写了 tradeDate=11-03,而内容其实是 11-02 的收盘 → 这里报"比目标还新"。
+            problems.append(
+                f"{label} 的日期 {got} 比最近该完成的交易日 {target} 还新 —— "
+                "多半是补跑档跨零点后把上一交易日的收盘数据标成了今天（见 fetch_real_data.py 的 tradeDate 取值）"
+            )
+        else:
+            problems.append(f"{label} 仍停留在 {got or '未知'}，而最近该完成的交易日是 {target}")
 
     gen = str(meta.get("generatedAt") or "")
     if len(gen) >= 16 and got and gen[:10] == got:

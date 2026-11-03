@@ -24,9 +24,44 @@ OUT = os.path.abspath(OUT)
 
 # v1.9.1 修复:用东八区(Asia/Shanghai)日期 — 8:44 sandbox 8.7 上午 8:44,东八区日期是 8.7
 TODAY = datetime.utcnow() + timedelta(hours=8)
-TRADE_DATE = TODAY.strftime('%Y%m%d')
-TRADE_DATE_DASH = TODAY.strftime('%Y-%m-%d')
-TRADE_DATE_SLASH = TODAY.strftime('%y/%m/%d')
+
+CLOSE_READY = (15, 5)
+
+
+def _last_closed_trade_date(now) -> str:
+    """最近一个**已完成收盘**的交易日 → 'YYYY-MM-DD'。
+
+    2026-11-03 事故:cron 的 22:00 补跑档被 GitHub 延迟到次日 00:49 才真正开跑,
+    脚本仍按"日历今天"写入 tradeDate=2026-11-03,而拉到的其实是 11-02 的收盘数据 ——
+    前端把 11-02 的行情当成 11-03 的收盘价展示,收尾的 check_freshness 也会判
+    "data.json 比最近该完成的交易日还新"而整档报红。
+    改为按"最近已完成收盘的交易日"取日期:15:05 之前(凌晨/早晨补跑档)→ 上一交易日。
+    口径与 check_freshness.resolve_target 保持一致。
+    """
+    today = now.strftime('%Y-%m-%d')
+    after_close = (now.hour, now.minute) >= CLOSE_READY
+    try:
+        cal = sorted(str(x) for x in ak.tool_trade_date_hist_sina()['trade_date'].tolist())
+    except Exception as e:  # noqa: BLE001
+        print(f"  ⚠ 交易日历获取失败({e}),tradeDate 退化为「上一工作日」")
+        cal = []
+    if cal:
+        if today in cal and after_close:
+            return today
+        earlier = [d for d in cal if d < today]
+        return earlier[-1] if earlier else today
+    # 兜底:仅按工作日(不含法定节假日识别)
+    if now.weekday() < 5 and after_close:
+        return today
+    d = now.date() - timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return d.strftime('%Y-%m-%d')
+
+
+TRADE_DATE_DASH = _last_closed_trade_date(TODAY)
+TRADE_DATE = TRADE_DATE_DASH.replace('-', '')
+TRADE_DATE_SLASH = f"{TRADE_DATE_DASH[2:4]}/{TRADE_DATE_DASH[5:7]}/{TRADE_DATE_DASH[8:10]}"
 
 # 盘中保护(2026-10-23 事故):交易日 09:30~15:05 直接拒绝运行。
 #   事故经过:本机 10:31 跑了一次刷新,把盘中快照当成收盘数据写进 data.json

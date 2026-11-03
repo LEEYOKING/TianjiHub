@@ -1,9 +1,9 @@
 {
   "meta": {
     "generatedAt": "2026-11-03 00:49:08",
-    "tradeDate": "20261103",
-    "tradeDateSlash": "26/11/03",
-    "nextTradeDate": "2026-11-04",
+    "tradeDate": "20261102",
+    "tradeDateSlash": "26/11/02",
+    "nextTradeDate": "2026-11-03",
     "dataSource": "akshare (新浪/腾讯/东方财富)",
     "stockCodes": [
       "sz000001",
@@ -5586,8 +5586,8 @@
     "lhbFallback": false
   },
   "marketOverview": {
-    "tradeDate": "20261103",
-    "tradeDateSlash": "26/11/03",
+    "tradeDate": "20261102",
+    "tradeDateSlash": "26/11/02",
     "generatedAt": "2026-11-03 00:49",
     "marketTurnover": 17956.37,
     "turnoverDiff": 1076.61,
