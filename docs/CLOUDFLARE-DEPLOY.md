@@ -13,13 +13,13 @@
 1. 登录后,左侧菜单 **Workers & Pages** → **Create application**
 2. 选 **Pages** 标签 → **Connect to Git**
 3. 选 **GitHub** → 授权 Cloudflare 访问 GitHub
-4. 选仓库 `LEEYOKING/tianjishu-a` → **Begin setup**
+4. 选仓库 `LEEYOKING/TianjiHub` → **Begin setup**
 
 ### 步骤 3:配置 Build(1 分钟)
 
 | 字段 | 值 |
 |---|---|
-| Project name | `tianjishu-a` |
+| Project name | `tianjihub` |
 | Production branch | `main` |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
@@ -35,11 +35,11 @@ Cloudflare 自动:
 2. 跑 `npm ci && npm run build`
 3. 部署 `dist/` 到全球 CDN
 
-完成后给你一个域名:`https://tianjishu-a-6is.pages.dev`(`-6is` 是你 Cloudflare 账号 suffix)
+完成后给你一个域名:`https://tianjihub.pages.dev`(`-<suffix>` 是 Cloudflare 账号 suffix,以控制台显示为准)
 
 ### 步骤 5:绑定自定义域名(可选)
 
-如果你有自己的域名(比如 tianjishu.com):
+如果你有自己的域名(当前线上用的是 `tj.xhoper.com`):
 1. Pages 项目 → **Custom domains** → **Set up a custom domain**
 2. 输入域名,Cloudflare 自动加 DNS 记录
 3. 5-10 分钟生效
@@ -49,7 +49,7 @@ Cloudflare 自动:
 之后你每次 `git push origin main`:
 - Cloudflare 自动触发部署
 - 1-2 分钟完成
-- `https://tianjishu-a-6is.pages.dev` 自动更新到最新版
+- `https://tianjihub.pages.dev` / `https://tj.xhoper.com` 自动更新到最新版
 
 ## 国内访问速度
 
@@ -74,7 +74,7 @@ Cloudflare 自动:
 如果用 GitHub Actions:
 1. Cloudflare 控制台 → **My Profile** → **API Tokens** → **Create Token**
 2. 模板选 **Edit Cloudflare Pages**
-3. 选你的 account + 项目 tianjishu-a
+3. 选你的 account + 项目 tianjihub
 4. 创建 token,复制
 5. GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 6. 加 `CLOUDFLARE_API_TOKEN` (上面那个 token)

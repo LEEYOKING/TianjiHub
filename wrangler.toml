@@ -2,7 +2,7 @@
 # 用 Git 集成,Cloudflare 自动 deploy Pages,不用 wrangler deploy
 # wrangler.toml 留着仅作项目标识(不影响 build)
 
-name = "tianjishu-a"
+name = "tianjihub"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "dist"
 
