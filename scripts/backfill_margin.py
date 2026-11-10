@@ -13,55 +13,22 @@ marketOverview.marginHistory。**不动其它任何字段**,因此在盘前/假�
 """
 # 兼容 Python 3.9(macOS 自带)
 from __future__ import annotations
-import akshare as ak
 import json
 import os
-import time
 import warnings
 
 warnings.filterwarnings('ignore')
+
+# 与 fetch_real_data.py 共用同一份多源实现：上交所官方优先、金十镜像兜底。
+# 2026-11-10 起金十镜像停更(线上融资流向卡在 11-05 的原因)，不可再单独依赖。
+from margin_history import fetch_margin_history
 
 OUT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'public', 'data.json'))
 
 
 def _fetch_margin_history():
     """返回 list[dict{date, margin_balance, margin_balance_diff, sh_close}],失败返 None"""
-    df = None
-    for attempt in range(5):
-        try:
-            df = ak.macro_china_market_margin_sh()
-            if df is not None and len(df) > 0:
-                break
-            print(f"    融资融券 第 {attempt + 1} 次:返空,重试...")
-        except Exception as e:
-            print(f"    融资融券 第 {attempt + 1} 次 失败: {e}")
-        time.sleep(2)
-    if df is None or len(df) == 0:
-        return None
-    df = df.tail(60).copy()
-    df['日期'] = df['日期'].astype(str)
-    # 同期沪市收盘(双 Y 轴用)
-    sh_map = {}
-    try:
-        idx = ak.stock_zh_index_daily(symbol='sh000001')
-        idx['date'] = idx['date'].astype(str)
-        sh_map = dict(zip(idx['date'], idx['close']))
-    except Exception:
-        pass
-    out = []
-    for _, r in df.iterrows():
-        d = r['日期']
-        mb = round(float(r['融资余额']) / 1e8, 2)  # 元 → 亿
-        sc = sh_map.get(d)
-        out.append({
-            'date': d,
-            'margin_balance': mb,
-            'margin_balance_diff': 0,  # 下面算
-            'sh_close': round(float(sc), 2) if sc is not None else None,
-        })
-    for i in range(1, len(out)):
-        out[i]['margin_balance_diff'] = round(out[i]['margin_balance'] - out[i - 1]['margin_balance'], 2)
-    return out
+    return fetch_margin_history()
 
 
 def main():

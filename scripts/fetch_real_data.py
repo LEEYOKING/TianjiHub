@@ -839,70 +839,18 @@ def _fetch_main_capital_flow_20d():
         print(f"    主力资金流(行业) 失败: {type(e).__name__}: {str(e)[:60]}")
         return None
 
-# 2) 融资融券历史(沪+深合并,60 个交易日)
+# 2) 融资融券历史(沪市融资余额,60 个交易日)
+# 2026-11-10:原实现只调 ak.macro_china_market_margin_sh —— 它其实是金十数据的第三方镜像
+# (cdn.jin10.com/data_center/reports/fs_1.json),该镜像从 11-06 起静默停更,导致线上
+# 「融资流向」长期停在 11-05(而 data.json 本身每天正常更新,极难发现)。
+# 现改为 scripts/margin_history.py 多源取最新(上交所官方 stock_margin_sse 优先)。
+from margin_history import fetch_margin_history
+
+
 def _fetch_margin_history():
-    """返回 list[dict{date, margin_balance, margin_balance_diff}],失败返 None
-    v2.0.7ab:只用 sh 一份(akshare sh + sz 实际都返回"沪深两市合计",不能相加)
-    验证:5/22 sh=14688.01亿,同花顺=14688.01亿 ✓ 一致
-    v2.0.7dg:ak.macro_china_market_margin_sh 限流严(8/17 19:07 跑时返到 8/14,实际能拉到 8/17)
-      → 加 retry 3 次,2s 间隔,大概率能拉到最新数据
-      → 仍失败才返 None(降级用 HEAD 旧数据)
-    """
-    df = None
-    for attempt in range(5):  # v2.0.7dj:retry 3 → 5(早盘限流严,多 retry 提高成功率)
-        try:
-            df = ak.macro_china_market_margin_sh()
-            if df is not None and len(df) > 0:
-                break
-            print(f"    沪深融资融券 第 {attempt+1} 次:返空,重试...")
-        except Exception as e:
-            print(f"    沪深融资融券 第 {attempt+1} 次 失败: {e}")
-        time.sleep(2)
-    if df is None or len(df) == 0:
-        return None
-    # 取最近 60 个交易日
-    df = df.tail(60).copy()
-    df['日期'] = df['日期'].astype(str)
-    # 拉同期沪市收盘指数(用于双 Y 轴)
-    sh_idx_map = {}
-    try:
-        sh_idx_df = ak.stock_zh_index_daily(symbol='sh000001')
-        if sh_idx_df is not None and len(sh_idx_df) > 0:
-            sh_idx_df['date'] = sh_idx_df['date'].astype(str)
-            sh_idx_map = dict(zip(sh_idx_df['date'], sh_idx_df['close']))
-    except Exception:
-        pass
-    out = []
-    for _, r in df.iterrows():
-        d = r['日期']
-        margin_balance = float(r['融资余额']) / 1e8  # 元 → 亿
-        sh_close = sh_idx_map.get(d)
-        out.append({
-            'date': d,
-            'margin_balance': round(margin_balance, 2),
-            'margin_balance_diff': 0,  # 后面算
-            'sh_close': round(float(sh_close), 2) if sh_close is not None else None,
-        })
-    # 计算每日净流入
-    for i in range(1, len(out)):
-        out[i]['margin_balance_diff'] = round(out[i]['margin_balance'] - out[i-1]['margin_balance'], 2)
-    # v2.0.7ef:akshare 数据源延迟 1 天(8/19 收盘后只到 8/18)→ 直接写入 8/18 末行
-    # — 之前 v2.0.7eb 加 "if last_date < today_str: return None" 检查
-    # — 导致 8/19 15:18 跑时 last_date=8/18 < today=8/19 → 返 None → marginHistory=None
-    # — React 端读到 None → 显示"融资融券数据暂未拉到"
-    # — user 反馈:8/18 还能看到 8/17 数据,为什么 8/19 拉不到
-    # — 实际 8/18 那次跑时(8/18 18:10 cron),akshare 末行 = 8/18 → 通过检查写入
-    # — 8/19 15:18 跑(8/19 cron 没跑成功,沙箱手动跑)akshare 末行 = 8/18 < today 8/19 → 返 None
-    # — 修法:删 `< today_str` 检查,让 fetch-data 写入 akshare 末行(8/18)+ React 端加 "数据延迟 1 天" 提示
-    last_date = out[-1]['date'] if out else ''
-    today_str = TODAY.strftime('%Y-%m-%d')
-    # v2.0.7ef:删 `< today_str` 检查 — 即使 stale 1 天也写入
-    # — 标记:如果 last_date < today_str,print stale 信息(供 debug + 前端展示)
-    if last_date and last_date < today_str:
-        print(f"    沪深融资融券 末行 {last_date} < today {today_str} (akshare 延迟 1 天),仍写入(前端显示'昨值'提示)")
-    else:
-        print(f"    沪深融资融券 OK,最后日期:{last_date},{len(out)} 天")
-    return out
+    """返回 list[dict{date, margin_balance, margin_balance_diff, sh_close}],失败返 None"""
+    return fetch_margin_history()
+
 
 _main_capital_flow = _fetch_main_capital_flow_20d()
 _margin_history = _fetch_margin_history()

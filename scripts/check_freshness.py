@@ -164,6 +164,36 @@ def check_rotation_shape() -> list[str]:
     return []
 
 
+def check_margin_freshness(target: str, dates: list[str]) -> list[str]:
+    """融资流向（marketOverview.marginHistory）的末点日期检查。
+
+    2026-11-10 事故：唯一数据源 akshare.macro_china_market_margin_sh 实为金十数据镜像，
+    该镜像从 11-06 起静默停更；而 data.json 的 tradeDate 每天正常前进，页面只表现为
+    "融资流向这张图不动"，没有任何告警，用户过了好几天才发现。
+    单看 tradeDate 完全发现不了，必须单独盯这条曲线的末点。
+
+    容忍度：允许落后 1 个交易日 —— 交易所 T 日的融资余额要 T 日晚间才发布，
+    22:00 那次跑经常还拿不到，由次日 08:30 的 backfill_margin.py 补齐。
+    落后 ≥2 个交易日说明数据源已经断供，计入硬问题（让 run 变红）。
+    """
+    j = load_json("public/data.json")
+    if j is None:
+        return []
+    mh = (j.get("marketOverview") or {}).get("marginHistory") or []
+    if not mh:
+        return ["data.json 缺少 marginHistory（融资流向无数据）"]
+    last = str(mh[-1].get("date") or "")
+    if not dates:
+        return []   # 交易日历不可用时无法判断"落后几个交易日"
+    earlier = [d for d in dates if d < target]
+    allowed = earlier[-1] if earlier else target
+    if last < allowed:
+        return [
+            f"融资流向（marginHistory）停留在 {last}，落后超过 1 个交易日（至少应到 {allowed}）"
+        ]
+    return []
+
+
 def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], str, bool]:
     """返回 (行情主体问题, 轮动归档问题, 目标交易日, 交易日历是否可信)。
 
@@ -179,6 +209,7 @@ def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[s
     hard = check_file("data.json（行情主体）", "public/data.json", target, "tradeDate", "compact")
     soft = check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
     hard += check_rotation_shape()   # 板块数塌缩=数据损坏,计入硬问题(见其 docstring)
+    hard += check_margin_freshness(target, dates)   # 融资流向断供(2026-11-10 事故)
     return hard, soft, target, strict
 
 
@@ -285,7 +316,7 @@ def gate(now: datetime.datetime, dates: list[str]) -> int:
     if not hard:
         print("::error::数据新鲜度校验未通过：行情主体已是最新，问题出在轮动归档（见上）")
         return 1
-    print("::error::数据新鲜度校验未通过（行情主体不是最近交易日的盘后快照）：")
+    print("::error::数据新鲜度校验未通过（明细见下；不阻断已完成的提交，但本次 run 判为失败）：")
     for p in hard:
         print(f"::error::{p}")
     return 1
