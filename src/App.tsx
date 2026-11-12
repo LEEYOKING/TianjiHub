@@ -2,20 +2,34 @@ import { useEffect, useState, useRef, useMemo, createContext, useContext, lazy, 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Overview from './pages/Overview';
+// 2026-11-12:lazy chunk 拉取失败(部署传播期 CDN 404)会让 React 卸载整棵树 → 整页白屏。
+// 这里统一兜底:失败时强制刷新一次(带 sessionStorage 标记,避免死循环),刷新后走新部署的 chunk。
+const RELOAD_FLAG = 'chunk-reload-at';
+const lazyWithRetry = <T extends { default: React.ComponentType<any> }>(factory: () => Promise<T>) =>
+  lazy(() =>
+    factory().catch((e) => {
+      const last = Number(sessionStorage.getItem(RELOAD_FLAG) || 0);
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
+        window.location.reload();
+      }
+      throw e;
+    }),
+  );
 // v2.0.7ff:按页面代码分割 — 首屏只 load Overview,其他页面 React.lazy 按路由 fetch
-const Sector = lazy(() => import('./pages/Sector'));
-const LimitUp = lazy(() => import('./pages/LimitUp'));
-const LimitDown = lazy(() => import('./pages/LimitDown'));
-const AnomalyStock = lazy(() => import('./pages/AnomalyStock'));
-const DragonTiger = lazy(() => import('./pages/DragonTiger'));
-const Surgery = lazy(() => import('./pages/Surgery'));
-const PreScan = lazy(() => import('./pages/PreScan'));
-const FirstBoard = lazy(() => import('./pages/FirstBoard'));
+const Sector = lazyWithRetry(() => import('./pages/Sector'));
+const LimitUp = lazyWithRetry(() => import('./pages/LimitUp'));
+const LimitDown = lazyWithRetry(() => import('./pages/LimitDown'));
+const AnomalyStock = lazyWithRetry(() => import('./pages/AnomalyStock'));
+const DragonTiger = lazyWithRetry(() => import('./pages/DragonTiger'));
+const Surgery = lazyWithRetry(() => import('./pages/Surgery'));
+const PreScan = lazyWithRetry(() => import('./pages/PreScan'));
+const FirstBoard = lazyWithRetry(() => import('./pages/FirstBoard'));
 // v2.0.8ks:板块轮动 — 原「轮动档案 / 轮动时间轴」两页已合并为单页 /rotation
-const Rotation = lazy(() => import('./pages/Rotation'));
-const RotationDetail = lazy(() => import('./pages/RotationDetail'));
-// 日历回溯（每日板块/个股榜单归档）
-const Calendar = lazy(() => import('./pages/Calendar'));
+const Rotation = lazyWithRetry(() => import('./pages/Rotation'));
+const RotationDetail = lazyWithRetry(() => import('./pages/RotationDetail'));
+// 日历回溯：不打成独立 chunk，直接进主包 —— 避免历史 chunk 被 CDN/浏览器缓存成 404 后整页白屏
+import Calendar from './pages/Calendar';
 import { loadReportData, getCNTodayYMD, isPostCloseSnapshot, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
 
