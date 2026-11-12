@@ -136,31 +136,40 @@ function DiffColumn({ rows, added, dropped, amountUnit }: {
       {rows.length === 0 && <div style={{ fontSize: 12, color: '#C9CDD4', padding: '10px 0' }}>无数据</div>}
       {rows.map((r, i) => (
         <div key={r.key} style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '5px 6px', borderRadius: 6,
+          // 固定列宽栅格：名次/名称/涨跌幅/成交额/标记 五列在所有行严格对齐，
+          // 避免有无「新进/掉出」标记时元素宽度不同造成视觉错位
+          display: 'grid', gridTemplateColumns: '18px minmax(0, 1fr) 54px 58px 28px',
+          alignItems: 'center', columnGap: 6, padding: '5px 6px', borderRadius: 6,
           background: added.has(r.key) ? 'rgba(255,77,79,0.07)' : dropped.has(r.key) ? 'rgba(134,144,156,0.07)' : 'transparent',
         }}>
-          <span style={{ width: 16, fontSize: 11, color: '#C9CDD4', flexShrink: 0 }}>{i + 1}</span>
+          <span style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'left' }}>{i + 1}</span>
           <span style={{
-            flex: 1, minWidth: 0, fontSize: 12, color: COLOR_TEXT, fontWeight: 500,
+            fontSize: 12, color: COLOR_TEXT, fontWeight: 500,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{r.name}</span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: pctColor(r.pct), flexShrink: 0 }}>{fmtPct(r.pct)}</span>
-          <span style={{ fontSize: 11, color: '#86909C', width: 56, textAlign: 'right', flexShrink: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: pctColor(r.pct), textAlign: 'right' }}>{fmtPct(r.pct)}</span>
+          <span style={{ fontSize: 11, color: '#86909C', textAlign: 'right' }}>
             {r.amount.toFixed(r.amount >= 100 ? 0 : 1)}{amountUnit}
           </span>
-          {added.has(r.key) && <span style={{ fontSize: 10, color: COLOR_UP, flexShrink: 0 }}>新进</span>}
-          {dropped.has(r.key) && <span style={{ fontSize: 10, color: '#86909C', flexShrink: 0 }}>掉出</span>}
+          <span style={{ fontSize: 10, textAlign: 'right', color: added.has(r.key) ? COLOR_UP : '#86909C' }}>
+            {added.has(r.key) ? '新进' : dropped.has(r.key) ? '掉出' : ''}
+          </span>
         </div>
       ))}
     </div>
   );
 }
 
-function DiffCard({ title, a, b, amountUnit }: { title: string; a: DiffRow[]; b: DiffRow[]; amountUnit: string }) {
+function DiffCard({ title, a, b, amountUnit, aDate, bDate }: {
+  title: string; a: DiffRow[]; b: DiffRow[]; amountUnit: string; aDate: string; bDate: string;
+}) {
   const { added, dropped } = useMemo(() => diffKeys(a, b, (x) => x.key), [a, b]);
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '10px 12px' }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginBottom: 6 }}>{title}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>{title}</span>
+        <span style={{ fontSize: 11, color: '#86909C' }}>左 {aDate} ｜ 右 {bDate}</span>
+      </div>
       <div style={{ display: 'flex', gap: 10 }}>
         <DiffColumn rows={a} added={added} dropped={dropped} amountUnit={amountUnit} />
         <div style={{ width: 1, background: '#F2F3F5' }} />
@@ -170,7 +179,7 @@ function DiffCard({ title, a, b, amountUnit }: { title: string; a: DiffRow[]; b:
   );
 }
 
-function ComparePanel({ a, b, onExit }: { a: string; b: string; onExit: () => void }) {
+function ComparePanel({ a, b }: { a: string; b: string }) {
   const isMobile = useIsMobile();
   const [da, setDa] = useState<CalendarDay | null>(null);
   const [db, setDb] = useState<CalendarDay | null>(null);
@@ -201,20 +210,6 @@ function ComparePanel({ a, b, onExit }: { a: string; b: string; onExit: () => vo
 
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8,
-        background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '10px 14px', marginBottom: 12,
-      }}>
-        <div style={{ fontSize: 13, color: COLOR_TEXT }}>
-          <span style={{ fontWeight: 600 }}>日期对比</span>
-          <span style={{ marginLeft: 10, color: '#86909C' }}>左 = {a}　右 = {b}</span>
-        </div>
-        <button onClick={onExit}
-          style={{ padding: '4px 12px', fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969' }}>
-          退出对比
-        </button>
-      </div>
-
       {err && <div style={{ color: '#E60012', fontSize: 13, marginBottom: 10 }}>加载失败：{err}</div>}
       {!da || !db ? (
         <div style={{ fontSize: 13, color: '#86909C', padding: '16px 0' }}>加载中…</div>
@@ -253,13 +248,13 @@ function ComparePanel({ a, b, onExit }: { a: string; b: string; onExit: () => vo
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-            <DiffCard title="板块涨幅 TOP10" a={toSectorRows(da.sectors.up)} b={toSectorRows(db.sectors.up)} amountUnit="亿" />
-            <DiffCard title="板块跌幅 TOP10" a={toSectorRows(da.sectors.down)} b={toSectorRows(db.sectors.down)} amountUnit="亿" />
+            <DiffCard title="板块涨幅 TOP10" a={toSectorRows(da.sectors.up)} b={toSectorRows(db.sectors.up)} amountUnit="亿" aDate={a} bDate={b} />
+            <DiffCard title="板块跌幅 TOP10" a={toSectorRows(da.sectors.down)} b={toSectorRows(db.sectors.down)} amountUnit="亿" aDate={a} bDate={b} />
             {da.stocks && db.stocks ? (
               <>
-                <DiffCard title="个股涨幅 TOP10" a={toStockRows(da.stocks.up)} b={toStockRows(db.stocks.up)} amountUnit="亿" />
-                <DiffCard title="个股跌幅 TOP10" a={toStockRows(da.stocks.down)} b={toStockRows(db.stocks.down)} amountUnit="亿" />
-                <DiffCard title="个股成交额 TOP10" a={toStockRows(da.stocks.volume)} b={toStockRows(db.stocks.volume)} amountUnit="亿" />
+                <DiffCard title="个股涨幅 TOP10" a={toStockRows(da.stocks.up)} b={toStockRows(db.stocks.up)} amountUnit="亿" aDate={a} bDate={b} />
+                <DiffCard title="个股跌幅 TOP10" a={toStockRows(da.stocks.down)} b={toStockRows(db.stocks.down)} amountUnit="亿" aDate={a} bDate={b} />
+                <DiffCard title="个股成交额 TOP10" a={toStockRows(da.stocks.volume)} b={toStockRows(db.stocks.volume)} amountUnit="亿" aDate={a} bDate={b} />
               </>
             ) : (
               <div style={{
@@ -343,6 +338,12 @@ export default function Calendar() {
   // 最旧月份：不允许再往前翻（数据保留，只在交互上拦截）
   const minYM = earliest ? { y: Number(earliest.slice(0, 4)), m: Number(earliest.slice(5, 7)) } : null;
   const atMinMonth = !!(y != null && m != null && minYM && y * 12 + m <= minYM.y * 12 + minYM.m);
+  // 最晚只到「当前自然月」与「最后归档月」中较早的那个，不允许翻到未来
+  const now = new Date();
+  const monthOf = (s: string) => Number(s.slice(0, 4)) * 12 + Number(s.slice(5, 7));
+  const maxMonth = Math.min(monthOf(latest || '') || (now.getFullYear() * 12 + now.getMonth() + 1),
+    now.getFullYear() * 12 + now.getMonth() + 1);
+  const atMaxMonth = !!(y != null && m != null && y * 12 + m >= maxMonth);
 
   // 主线识别：只用 index.json 的每日 TOP5，进入页面即可算，不额外拉数据
   // 窗口取 20 个交易日 —— 实测 10 日窗内没有任何板块能进榜 3 次（板块轮动极快），
@@ -433,12 +434,26 @@ export default function Calendar() {
           <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT, minWidth: 108, textAlign: 'center' }}>
             {y != null && m != null ? `${y} 年 ${m} 月` : '—'}
           </span>
-          <button onClick={() => shift(1)} aria-label="下个月"
-            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969', fontSize: 15 }}>›</button>
+          <span title={atMaxMonth ? '已是最新月份' : '下个月'} style={{ display: 'inline-flex' }}>
+            <button
+              onClick={() => { if (!atMaxMonth) shift(1); }}
+              disabled={atMaxMonth}
+              aria-label="下个月"
+              style={{
+                width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
+                cursor: atMaxMonth ? 'default' : 'pointer', color: '#4E5969', fontSize: 15,
+                opacity: atMaxMonth ? 0.35 : 1,
+              }}>›</button>
+          </span>
           <button
-            onClick={() => { if (latest) { setY(Number(latest.slice(0, 4))); setM(Number(latest.slice(5, 7))); } }}
+            onClick={() => {
+              const todayMonth = now.getFullYear() * 12 + now.getMonth() + 1;
+              const t = Math.min(Math.max(todayMonth, minYM ? minYM.y * 12 + minYM.m : todayMonth), maxMonth || todayMonth);
+              setY(Math.floor((t - 1) / 12));
+              setM(((t - 1) % 12) + 1);
+            }}
             style={{ marginLeft: 4, padding: '4px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969' }}>
-            最新
+            回到今天
           </button>
         </div>
 
@@ -471,7 +486,7 @@ export default function Calendar() {
       {error && <div style={{ padding: 24, color: '#E60012', fontSize: 13 }}>日历数据加载失败：{error}</div>}
 
       {!!cmpA && !!cmpB && (
-        <ComparePanel a={cmpA} b={cmpB} onExit={exitCompare} />
+        <ComparePanel a={cmpA} b={cmpB} />
       )}
 
       {!loading && !error && (
@@ -536,7 +551,7 @@ export default function Calendar() {
                     style={{
                       position: 'relative',
                       textAlign: 'center', cursor: info ? 'pointer' : 'default',
-                      minHeight: isMobile ? 70 : 104,
+                      minHeight: isMobile ? 74 : 108,
                       borderRadius: 0,
                       border: 'none',
                       borderRight: i % 7 !== 6 ? '1px solid #F2F3F5' : 'none',
@@ -563,15 +578,15 @@ export default function Calendar() {
                       )}
                       {selected && (
                         <span style={{
-                          fontSize: 10, fontWeight: 700, color: '#fff', background: '#111827',
-                          borderRadius: 6, padding: '0 4px', lineHeight: '14px',
+                          fontSize: 11, fontWeight: 700, color: '#fff', background: '#111827',
+                          borderRadius: 6, padding: '0 4px', lineHeight: '15px',
                         }}>{isA ? 'A' : 'B'}</span>
                       )}
                     </div>
 
                     {/* 第一要素：日期数字居中，加大加粗 */}
                     <span style={{
-                      fontSize: isMobile ? 19 : 25,
+                      fontSize: isMobile ? 20 : 26,
                       fontWeight: 700,
                       lineHeight: 1,
                       letterSpacing: '-0.02em',
@@ -579,7 +594,7 @@ export default function Calendar() {
                     }}>{d}</span>
 
                     {!info && closed && (
-                      <div style={{ fontSize: 10, color: '#B4B9C1', marginTop: 7 }}>休市</div>
+                      <div style={{ fontSize: 11, color: '#B4B9C1', marginTop: 7 }}>休市</div>
                     )}
 
                     {info && (
@@ -590,16 +605,16 @@ export default function Calendar() {
                             gap: 3, maxWidth: '100%', lineHeight: 1.2,
                           }}>
                             <span style={{
-                              fontSize: 11, color: '#4E5969', maxWidth: isMobile ? 48 : 74,
+                              fontSize: 12, color: '#4E5969', maxWidth: isMobile ? 52 : 78,
                               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                             }}>{info.topUp[0].name}</span>
-                            <span style={{ fontSize: 11, color: COLOR_UP, fontWeight: 600, flexShrink: 0 }}>
+                            <span style={{ fontSize: 12, color: COLOR_UP, fontWeight: 600, flexShrink: 0 }}>
                               {fmtPct(info.topUp[0].pct)}
                             </span>
                           </div>
                         )}
                         {!isMobile && (
-                          <div style={{ marginTop: 4, fontSize: 10, color: '#86909C' }}>
+                          <div style={{ marginTop: 4, fontSize: 11, color: '#86909C' }}>
                             {info.limitUp != null ? `涨停 ${info.limitUp}` : ''}
                             {info.up != null ? `${info.limitUp != null ? ' · ' : ''}${info.up}↑ ${info.down}↓` : ''}
                           </div>
