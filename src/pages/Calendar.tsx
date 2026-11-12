@@ -354,6 +354,14 @@ export default function Calendar() {
   const tradeSet = useMemo(() => new Set(index?.meta.tradeDates || []), [index]);
   const hasTradeList = !!index?.meta.tradeDates?.length;
 
+  // 当前月份的交易天数：优先用真实交易日清单，缺失时退回已归档天数
+  const monthTradeCount = useMemo(() => {
+    if (y == null || m == null) return 0;
+    const prefix = `${y}-${pad2(m)}`;
+    const src = hasTradeList ? (index?.meta.tradeDates || []) : (index?.days || []).map((d) => d.date);
+    return src.filter((d) => d.startsWith(prefix)).length;
+  }, [index, y, m, hasTradeList]);
+
   // 最旧月份：不允许再往前翻（数据保留，只在交互上拦截）
   const minYM = earliest ? { y: Number(earliest.slice(0, 4)), m: Number(earliest.slice(5, 7)) } : null;
   const atMinMonth = !!(y != null && m != null && minYM && y * 12 + m <= minYM.y * 12 + minYM.m);
@@ -433,10 +441,11 @@ export default function Calendar() {
         <>
       <MainlineCard rows={mainlines} windowDays={MAINLINE_WINDOW} />
 
-      {/* 工具栏 */}
+      {/* 工具栏 + 日历网格 + 图例：视觉上拼成一张大卡片（上/中/下三段共用边框） */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
-        background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '10px 14px', marginBottom: 14,
+        padding: '10px 14px', border: '1px solid #E5E7EB', borderBottom: 'none',
+        borderRadius: '14px 14px 0 0', background: '#fff',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span title={atMinMonth ? '仅支持查询6个月内数据' : '上个月'} style={{ display: 'inline-flex' }}>
@@ -445,13 +454,18 @@ export default function Calendar() {
               disabled={atMinMonth}
               aria-label="上个月"
               style={{
-                width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
-                cursor: atMinMonth ? 'default' : 'pointer', color: '#4E5969', fontSize: 15,
+                width: 34, height: 40, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
+                cursor: atMinMonth ? 'default' : 'pointer', color: '#4E5969', fontSize: 16,
                 opacity: atMinMonth ? 0.35 : 1,
               }}>‹</button>
           </span>
-          <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT, minWidth: 108, textAlign: 'center' }}>
-            {y != null && m != null ? `${y} 年 ${m} 月` : '—'}
+          <span style={{ minWidth: 116, textAlign: 'center', display: 'inline-flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT }}>
+              {y != null && m != null ? `${y} 年 ${m} 月` : '—'}
+            </span>
+            <span style={{ fontSize: 11, color: '#A9AEB8' }}>
+              共 <b style={{ color: COLOR_TEXT, fontWeight: 600 }}>{monthTradeCount}</b> 交易日
+            </span>
           </span>
           <span title={atMaxMonth ? '已是最新月份' : '下个月'} style={{ display: 'inline-flex' }}>
             <button
@@ -459,8 +473,8 @@ export default function Calendar() {
               disabled={atMaxMonth}
               aria-label="下个月"
               style={{
-                width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
-                cursor: atMaxMonth ? 'default' : 'pointer', color: '#4E5969', fontSize: 15,
+                width: 34, height: 40, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
+                cursor: atMaxMonth ? 'default' : 'pointer', color: '#4E5969', fontSize: 16,
                 opacity: atMaxMonth ? 0.35 : 1,
               }}>›</button>
           </span>
@@ -471,7 +485,7 @@ export default function Calendar() {
               setY(Math.floor((t - 1) / 12));
               setM(((t - 1) % 12) + 1);
             }}
-            style={{ marginLeft: 4, padding: '4px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969' }}>
+            style={{ marginLeft: 4, padding: '4px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969', height: 30 }}>
             回到今天
           </button>
         </div>
@@ -511,7 +525,7 @@ export default function Calendar() {
       {!loading && !error && (
         <div>
           {/* Mac 日历式：整块网格 + 细分隔线，表头与日期同处一个容器 */}
-          <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+          <div style={{ background: '#fff', borderLeft: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', borderTop: '1px solid #EDEFF2' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
               {WEEKDAYS.map((w, i) => (
                 <div
@@ -646,7 +660,10 @@ export default function Calendar() {
             </div>
           </div>
 
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '10px 14px', marginTop: 12 }}>
+          <div style={{
+            padding: '9px 14px', border: '1px solid #E5E7EB', borderTop: '1px solid #EDEFF2',
+            borderRadius: '0 0 14px 14px', background: '#fff',
+          }}>
 
           {/* 图例 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 11, color: '#86909C' }}>
