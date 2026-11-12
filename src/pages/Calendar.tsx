@@ -490,7 +490,8 @@ export default function Calendar() {
                     borderRadius: 10,
                     border: `1px solid ${selected ? '#111827' : hs.borderColor}`,
                     boxShadow: selected ? '0 0 0 2px rgba(17,24,39,0.12)' : 'none',
-                    background: info ? hs.background : weekend ? '#F2F3F5' : '#FAFBFC',
+                    // 周末与节假日统一用同一种「无数据」底色（#FAFBFC），只靠格内「休市」文案区分
+                    background: info ? hs.background : '#FAFBFC',
                     padding: isMobile ? '4px 5px' : '7px 9px',
                     font: 'inherit',
                     transition: 'transform .12s ease',
@@ -561,10 +562,7 @@ export default function Calendar() {
               <i style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(14,205,112,0.26)', display: 'inline-block' }} />跌多
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <i style={{ width: 12, height: 12, borderRadius: 3, background: '#FAFBFC', border: '1px solid #EDEFF2', display: 'inline-block' }} />未归档
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <i style={{ width: 12, height: 12, borderRadius: 3, background: '#F2F3F5', border: '1px solid #EDEFF2', display: 'inline-block' }} />周末休市
+              <i style={{ width: 12, height: 12, borderRadius: 3, background: '#FAFBFC', border: '1px solid #EDEFF2', display: 'inline-block' }} />未归档（含周末/节假日）
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <i style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }} />有事件标注
