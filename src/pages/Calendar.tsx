@@ -269,19 +269,12 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
             <DiffCard title="板块涨幅 TOP10" a={toSectorRows(da.sectors.up)} b={toSectorRows(db.sectors.up)} amountUnit="亿" aDate={a} bDate={b} />
             <DiffCard title="板块跌幅 TOP10" a={toSectorRows(da.sectors.down)} b={toSectorRows(db.sectors.down)} amountUnit="亿" aDate={a} bDate={b} />
-            {da.stocks && db.stocks ? (
+            {da.stocks && db.stocks && (
               <>
                 <DiffCard title="个股涨幅 TOP10" a={toStockRows(da.stocks.up)} b={toStockRows(db.stocks.up)} amountUnit="亿" aDate={a} bDate={b} />
                 <DiffCard title="个股跌幅 TOP10" a={toStockRows(da.stocks.down)} b={toStockRows(db.stocks.down)} amountUnit="亿" aDate={a} bDate={b} />
                 <DiffCard title="个股成交额 TOP10" a={toStockRows(da.stocks.volume)} b={toStockRows(db.stocks.volume)} amountUnit="亿" aDate={a} bDate={b} />
               </>
-            ) : (
-              <div style={{
-                gridColumn: isMobile ? 'auto' : '1 / -1', background: '#fff', border: '1px dashed #E5E7EB',
-                borderRadius: 12, padding: '14px 16px', fontSize: 12, color: '#86909C', lineHeight: 1.8,
-              }}>
-                个股榜只能逐日累积（无历史接口），所以 5–10 月的历史日期没有个股榜。请选两个「日历上线后」的交易日做个股对比。
-              </div>
             )}
           </div>
         </>
@@ -447,7 +440,7 @@ export default function Calendar() {
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
-          padding: '10px 14px', borderBottom: '1px solid #EDEFF2',
+          padding: '20px 14px 10px',
         }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span title={atMinMonth ? '仅支持查询6个月内数据' : '上个月'} style={{ display: 'inline-flex' }}>
@@ -527,7 +520,7 @@ export default function Calendar() {
       )}
 
       {!loading && !error && (
-        <div style={{ padding: '12px 14px' }}>
+        <div style={{ padding: '12px 14px 22px' }}>
           {/* 日历网格：大卡片内部的独立小卡片，四周留白 */}
           <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
@@ -664,9 +657,7 @@ export default function Calendar() {
             </div>
           </div>
 
-          <div style={{
-            marginTop: 12, paddingTop: 10, borderTop: '1px solid #F2F3F5',
-          }}>
+          <div style={{ marginTop: 14 }}>
 
           {/* 图例 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 11, color: '#86909C' }}>
