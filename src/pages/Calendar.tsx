@@ -543,7 +543,7 @@ export default function Calendar() {
                   style={{
                     textAlign: 'center',
                     padding: isMobile ? '11px 0' : '14px 0',
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: 600,
                     color: '#4E5969',
                     background: '#fff',
