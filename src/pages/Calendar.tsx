@@ -14,7 +14,7 @@ import { PageHeader } from './Overview';
 import CalendarDayModal from '../components/CalendarDayModal';
 import CalendarRankings from '../components/CalendarRankings';
 import { useCalendarEvents } from '../data/calendarEvents';
-import { findMainlines, type MainlineRow } from '../utils/calendar/period';
+import { findMainlines, FEATURE_LABEL, type MainlineFeature, type MainlineRow } from '../utils/calendar/period';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
   dashToSlash,
@@ -63,6 +63,14 @@ function heatStyle(d?: CalendarIndexDay): React.CSSProperties {
 }
 
 // ---------------- 主线识别 ----------------
+/** 辅助标签配色：主标签（在榜/退潮）用实心，辅助标签用浅底色，避免抢主状态 */
+const FEATURE_STYLE: Record<MainlineFeature, { color: string; bg: string }> = {
+  accelerating: { color: '#D25F00', bg: 'rgba(245,166,35,0.14)' },
+  streak: { color: '#1264C0', bg: 'rgba(24,144,255,0.12)' },
+  new: { color: '#C4232A', bg: 'rgba(255,77,79,0.12)' },
+  evergreen: { color: '#0E8A4F', bg: 'rgba(14,205,112,0.12)' },
+};
+
 function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: number }) {
   const isMobile = useIsMobile();
   if (!rows.length) {
@@ -80,7 +88,7 @@ function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: n
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: COLOR_TEXT }}>主线识别</span>
         <span style={{ fontSize: 11, color: '#86909C' }}>
-          近 {windowDays} 个交易日内进入「涨幅榜 TOP5」≥ 3 次；仍在榜者视为当前主线
+          近 {windowDays} 个交易日内进入「涨幅榜 TOP5」≥ 3 次；主标签 在榜/退潮，辅助标签 新晋/持续/加速/常青
         </span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
@@ -94,15 +102,26 @@ function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: n
               <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {r.name}
               </span>
-              {r.isActive ? (
-                <span style={{ fontSize: 10, color: '#fff', background: COLOR_UP, borderRadius: 6, padding: '1px 6px', flexShrink: 0 }}>
-                  在榜
-                </span>
-              ) : (
-                <span style={{ fontSize: 10, color: '#86909C', background: '#F2F3F5', borderRadius: 6, padding: '1px 6px', flexShrink: 0 }}>
-                  退潮
-                </span>
-              )}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                {r.isActive ? (
+                  <span style={{ fontSize: 10, color: '#fff', background: COLOR_UP, borderRadius: 6, padding: '1px 6px' }}>
+                    在榜
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 10, color: '#86909C', background: '#F2F3F5', borderRadius: 6, padding: '1px 6px' }}>
+                    退潮
+                  </span>
+                )}
+                {r.feature && (
+                  <span style={{
+                    fontSize: 10, borderRadius: 6, padding: '1px 6px',
+                    color: FEATURE_STYLE[r.feature].color,
+                    background: FEATURE_STYLE[r.feature].bg,
+                  }}>
+                    {FEATURE_LABEL[r.feature]}
+                  </span>
+                )}
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6, fontSize: 11, color: '#86909C' }}>
               <span>上榜 <b style={{ color: COLOR_TEXT, fontSize: 15 }}>{r.count}</b> 次</span>

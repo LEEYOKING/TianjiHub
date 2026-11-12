@@ -129,7 +129,18 @@ export interface MainlineRow {
   sumPct: number;
   lastDate: string;     // 最近一次在榜日期
   isActive: boolean;    // 最新交易日是否仍在榜
+  /** 辅助特征（最多一个）：新晋 / 持续 / 加速 / 常青 */
+  feature: MainlineFeature | null;
 }
+
+export type MainlineFeature = 'new' | 'streak' | 'accelerating' | 'evergreen';
+
+export const FEATURE_LABEL: Record<MainlineFeature, string> = {
+  new: '新晋',
+  streak: '持续',
+  accelerating: '加速',
+  evergreen: '常青',
+};
 
 /**
  * 主线识别：近 window 个已归档交易日里，进入「板块涨幅 TOP5」次数 ≥ minCount 的板块。
@@ -145,38 +156,54 @@ export function findMainlines(
   if (!win.length) return [];
   const latestDate = win[win.length - 1].date;
 
-  const acc = new Map<string, { name: string; type: string; pcts: number[]; dates: string[] }>();
-  for (const d of win) {
+  const acc = new Map<string, { name: string; type: string; hits: { idx: number; pct: number; date: string }[] }>();
+  win.forEach((d, idx) => {
     for (const s of d.topUp || []) {
       let a = acc.get(s.id);
       if (!a) {
-        a = { name: s.name, type: s.type, pcts: [], dates: [] };
+        a = { name: s.name, type: s.type, hits: [] };
         acc.set(s.id, a);
       }
-      a.pcts.push(s.pct);
-      a.dates.push(d.date);
+      a.hits.push({ idx, pct: s.pct, date: d.date });
     }
-  }
+  });
 
   const rows: MainlineRow[] = [];
   acc.forEach((a, id) => {
-    if (a.dates.length < minCount) return;
+    if (a.hits.length < minCount) return;
+    const dates = a.hits.map((h) => h.date);
+    const pcts = a.hits.map((h) => h.pct);
     let consecutive = 0;
     for (let i = win.length - 1; i >= 0; i--) {
       if ((win[i].topUp || []).some((s) => s.id === id)) consecutive += 1;
       else break;
     }
-    const sumPct = a.pcts.reduce((x, y) => x + y, 0);
+    const sumPct = pcts.reduce((x, y) => x + y, 0);
+    const isActive = dates[dates.length - 1] === latestDate;
+
+    // 辅助特征：只取一个，按信息量优先级判定
+    // 加速 = 近 5 个交易日在榜日的均涨 > 此前在榜日均涨（两边都要有样本）
+    const recent = a.hits.filter((h) => h.idx >= win.length - 5).map((h) => h.pct);
+    const earlier = a.hits.filter((h) => h.idx < win.length - 5).map((h) => h.pct);
+    const avg = (xs: number[]) => xs.reduce((x, y) => x + y, 0) / xs.length;
+    const accelerating = recent.length >= 1 && earlier.length >= 1 && avg(recent) > avg(earlier);
+    let feature: MainlineFeature | null = null;
+    if (accelerating) feature = 'accelerating';
+    else if (consecutive >= 3) feature = 'streak';
+    else if (isActive && consecutive === 1) feature = 'new';
+    else if (dates.length / win.length >= 0.5) feature = 'evergreen';
+
     rows.push({
       id,
       name: a.name,
       type: a.type,
-      count: a.dates.length,
+      count: dates.length,
       consecutive,
-      avgPct: sumPct / a.pcts.length,
+      avgPct: sumPct / pcts.length,
       sumPct,
-      lastDate: a.dates[a.dates.length - 1],
-      isActive: a.dates[a.dates.length - 1] === latestDate,
+      lastDate: dates[dates.length - 1],
+      isActive,
+      feature,
     });
   });
 
