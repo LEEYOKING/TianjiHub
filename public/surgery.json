@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-13 00:19:38",
+    "generatedAt": "2026-11-13 02:40:53",
     "tradeDate": "20261113",
     "tradeDateSlash": "26/11/13"
   },
@@ -564,7 +564,7 @@
   "bigLoser": [],
   "loserChain": [],
   "loserIntersection": [],
-  "prevLimitUpCount": 0,
+  "prevLimitUpCount": 37,
   "systemWarning": false,
   "north": [
     {
