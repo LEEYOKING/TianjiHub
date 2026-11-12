@@ -12,6 +12,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from './Overview';
 import CalendarDayModal from '../components/CalendarDayModal';
+import CalendarRankings from '../components/CalendarRankings';
+import { useCalendarEvents } from '../data/calendarEvents';
+import { findMainlines, type MainlineRow } from '../utils/calendar/period';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
   dashToSlash,
@@ -56,6 +59,62 @@ function heatStyle(d?: CalendarIndexDay): React.CSSProperties {
   }
   const k = Math.min(1, (0.5 - r) / 0.5);
   return { background: `rgba(14,205,112,${(0.06 + 0.30 * k).toFixed(3)})`, borderColor: 'rgba(14,205,112,0.22)' };
+}
+
+// ---------------- 主线识别 ----------------
+function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: number }) {
+  const isMobile = useIsMobile();
+  if (!rows.length) {
+    return (
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '12px 16px', marginBottom: 14 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: COLOR_TEXT }}>主线识别</div>
+        <div style={{ fontSize: 12, color: '#86909C', marginTop: 6 }}>
+          近 {windowDays} 个交易日暂无板块反复进入涨幅榜前五 —— 市场处于快速轮动、无明确主线状态。
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '12px 16px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: COLOR_TEXT }}>主线识别</span>
+        <span style={{ fontSize: 11, color: '#86909C' }}>
+          近 {windowDays} 个交易日内进入「涨幅榜 TOP5」≥ 3 次；仍在榜者视为当前主线
+        </span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+        {rows.map((r) => (
+          <div key={r.id} style={{
+            border: `1px solid ${r.isActive ? 'rgba(255,77,79,0.28)' : '#EDEFF2'}`,
+            background: r.isActive ? 'rgba(255,77,79,0.05)' : '#FAFBFC',
+            borderRadius: 10, padding: '9px 11px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {r.name}
+              </span>
+              {r.isActive ? (
+                <span style={{ fontSize: 10, color: '#fff', background: COLOR_UP, borderRadius: 6, padding: '1px 6px', flexShrink: 0 }}>
+                  在榜
+                </span>
+              ) : (
+                <span style={{ fontSize: 10, color: '#86909C', background: '#F2F3F5', borderRadius: 6, padding: '1px 6px', flexShrink: 0 }}>
+                  退潮
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6, fontSize: 11, color: '#86909C' }}>
+              <span>上榜 <b style={{ color: COLOR_TEXT, fontSize: 15 }}>{r.count}</b> 次</span>
+              {r.consecutive > 0 && <span>连续 {r.consecutive} 天</span>}
+              <span style={{ marginLeft: 'auto', color: pctColor(r.avgPct), fontWeight: 600 }}>
+                均涨 {fmtPct(r.avgPct)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ---------------- 对比：榜单并排 diff ----------------
@@ -222,6 +281,7 @@ export default function Calendar() {
   const isMobile = useIsMobile();
   const [y, setY] = useState<number | null>(null);
   const [m, setM] = useState<number | null>(null);
+  const [view, setView] = useState<'calendar' | 'week' | 'month'>('calendar');
   const [openDate, setOpenDate] = useState<string | null>(null);
   const [compareOn, setCompareOn] = useState(false);
   const [cmpA, setCmpA] = useState<string | null>(null);
@@ -275,6 +335,27 @@ export default function Calendar() {
   const cells = y != null && m != null ? buildCells(y, m) : [];
   const latest = index?.meta.lastDate || '';
 
+  // 主线识别：只用 index.json 的每日 TOP5，进入页面即可算，不额外拉数据
+  // 窗口取 20 个交易日 —— 实测 10 日窗内没有任何板块能进榜 3 次（板块轮动极快），
+  // 20 日窗口才能稳定识别出「反复走强」的方向
+  const MAINLINE_WINDOW = 20;
+  const mainlines = useMemo(
+    () => findMainlines(index?.days || [], MAINLINE_WINDOW, 3).slice(0, 8),
+    [index],
+  );
+
+  // 事件标注（localStorage）
+  const events = useCalendarEvents();
+  const eventDates = useMemo(() => new Set(events.map((e) => e.date)), [events]);
+  const monthEvents = useMemo(
+    () => (y != null && m != null
+      ? events
+          .filter((e) => e.date.startsWith(`${y}-${pad2(m)}`))
+          .sort((a, b) => a.date.localeCompare(b.date))
+      : []),
+    [events, y, m],
+  );
+
   // 弹窗内 ← → 翻页：在已归档日期序列里前后移动
   const dayList = index?.days || [];
   const openIdx = openDate ? dayList.findIndex((d) => d.date === openDate) : -1;
@@ -292,6 +373,36 @@ export default function Calendar() {
         liveTag="收盘归档"
         lastUpdatedAt={0}
       />
+
+      {/* 视图切换：日历 / 周榜 / 月榜 */}
+      <div style={{
+        display: 'inline-flex', gap: 4, padding: 4, marginBottom: 14,
+        background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,
+      }}>
+        {([
+          { k: 'calendar', label: '日历' },
+          { k: 'week', label: '周榜' },
+          { k: 'month', label: '月榜' },
+        ] as const).map((t) => (
+          <button
+            key={t.k}
+            onClick={() => { setView(t.k); if (t.k !== 'calendar') exitCompare(); }}
+            style={{
+              padding: '6px 16px', fontSize: 13, borderRadius: 8, cursor: 'pointer', fontWeight: 500,
+              border: 'none',
+              background: view === t.k ? '#111827' : 'transparent',
+              color: view === t.k ? '#fff' : '#4E5969',
+              transition: 'all .15s',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'calendar' ? (
+        <>
+      <MainlineCard rows={mainlines} windowDays={MAINLINE_WINDOW} />
 
       {/* 工具栏 */}
       <div style={{
@@ -368,7 +479,7 @@ export default function Calendar() {
               return (
                 <button
                   key={ds}
-                  onClick={() => pickDate(ds)}
+                  onClick={() => { if (info) pickDate(ds); }}
                   title={info ? `${ds} · 点击查看当日榜单` : `${ds} · 未归档（休市或早于归档起点）`}
                   style={{
                     textAlign: 'left', cursor: info ? 'pointer' : 'default',
@@ -384,12 +495,20 @@ export default function Calendar() {
                 >
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 4 }}>
                     <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: info ? COLOR_TEXT : '#C9CDD4' }}>{d}</span>
-                    {selected && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, color: '#fff', background: '#111827',
-                        borderRadius: 6, padding: '0 4px', lineHeight: '14px',
-                      }}>{isA ? 'A' : 'B'}</span>
-                    )}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      {eventDates.has(ds) && (
+                        <i
+                          title="该日有事件标注"
+                          style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }}
+                        />
+                      )}
+                      {selected && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, color: '#fff', background: '#111827',
+                          borderRadius: 6, padding: '0 4px', lineHeight: '14px',
+                        }}>{isA ? 'A' : 'B'}</span>
+                      )}
+                    </span>
                   </div>
 
                   {!info && <div style={{ fontSize: 10, color: '#C9CDD4', marginTop: 6 }}>{new Date(Date.UTC(y!, m! - 1, d)).getUTCDay() % 6 === 0 ? '休市' : ''}</div>}
@@ -437,8 +556,29 @@ export default function Calendar() {
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <i style={{ width: 12, height: 12, borderRadius: 3, background: '#FAFBFC', border: '1px solid #EDEFF2', display: 'inline-block' }} />未归档
             </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <i style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }} />有事件标注
+            </span>
             <span>格内：涨停数 + 当日最强板块（成交额 ≥ 5 亿）</span>
           </div>
+
+          {/* 本月事件 */}
+          {monthEvents.length > 0 && (
+            <div style={{ marginTop: 14, borderTop: '1px solid #F2F3F5', paddingTop: 12 }}>
+              <div style={{ fontSize: 12, color: '#86909C', marginBottom: 6 }}>本月事件标注</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {monthEvents.map((e) => (
+                  <div key={`${e.date}-${e.createdAt}`} style={{ display: 'flex', gap: 8, fontSize: 12 }}>
+                    <span
+                      onClick={() => setOpenDate(e.date)}
+                      style={{ color: '#4E5969', fontWeight: 600, width: 74, flexShrink: 0, cursor: 'pointer' }}
+                    >{e.date.slice(5)}</span>
+                    <span style={{ color: COLOR_TEXT }}>{e.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -449,6 +589,10 @@ export default function Calendar() {
           onPrev={openIdx > 0 ? () => stepOpen(-1) : undefined}
           onNext={openIdx >= 0 && openIdx < dayList.length - 1 ? () => stepOpen(1) : undefined}
         />
+      )}
+        </>
+      ) : (
+        <CalendarRankings kind={view} />
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 // 数据按需从 public/calendar/YYYY-MM-DD.json 拉取（父页面已做按日缓存）。
 import { useEffect, useState } from 'react';
 import { loadCalendarDay, type CalendarDay, type CalendarSector, type CalendarStock, type CalendarSummary } from '../data/calendarData';
+import { addEvent, removeEvent, useCalendarEvents } from '../data/calendarEvents';
 import { COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -120,11 +121,15 @@ export default function CalendarDayModal({ date, onClose, onPrev, onNext }: Prop
   const isMobile = useIsMobile();
   const [day, setDay] = useState<CalendarDay | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const allEvents = useCalendarEvents();
+  const myEvents = allEvents.filter((e) => e.date === date);
 
   useEffect(() => {
     let alive = true;
     setDay(null);
     setErr(null);
+    setDraft('');
     loadCalendarDay(date)
       .then((d) => alive && setDay(d))
       .catch((e) => alive && setErr(String(e?.message || e)));
@@ -226,6 +231,59 @@ export default function CalendarDayModal({ date, onClose, onPrev, onNext }: Prop
                 该交易日只有板块榜 —— 个股榜没有历史接口，自日历上线起逐日累积（约 6 个月后补齐近半年）。
               </div>
             )}
+
+            {/* 事件标注（存 localStorage，仅本机可见） */}
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '12px 14px', marginTop: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>事件标注</span>
+                <span style={{ fontSize: 11, color: '#C9CDD4' }}>本机记录（localStorage），不影响统计口径</span>
+              </div>
+
+              {myEvents.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                  {myEvents.map((e) => (
+                    <div key={e.createdAt} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                      <i style={{ width: 5, height: 5, borderRadius: '50%', background: '#F5A623', flexShrink: 0 }} />
+                      <span style={{ flex: 1, color: COLOR_TEXT, wordBreak: 'break-all' }}>{e.text}</span>
+                      <button
+                        onClick={() => removeEvent(date, e.createdAt)}
+                        title="删除"
+                        style={{ border: 'none', background: 'transparent', color: '#C9CDD4', cursor: 'pointer', fontSize: 12, padding: '0 2px' }}
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && draft.trim()) {
+                      addEvent(date, draft);
+                      setDraft('');
+                    }
+                  }}
+                  placeholder="记一笔：政策 / 消息面 / 情绪拐点…（回车保存）"
+                  style={{
+                    flex: 1, minWidth: 0, fontSize: 12, padding: '7px 10px', borderRadius: 8,
+                    border: '1px solid #E5E7EB', outline: 'none', color: COLOR_TEXT,
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (!draft.trim()) return;
+                    addEvent(date, draft);
+                    setDraft('');
+                  }}
+                  style={{
+                    padding: '0 14px', fontSize: 12, borderRadius: 8, cursor: 'pointer',
+                    border: '1px solid #111827', background: '#111827', color: '#fff', flexShrink: 0,
+                  }}
+                >添加</button>
+              </div>
+            </div>
 
             <div style={{ marginTop: 10, fontSize: 11, color: '#C9CDD4' }}>
               归档于 {day.meta.generatedAt}
