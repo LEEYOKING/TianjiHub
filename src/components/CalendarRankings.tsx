@@ -22,7 +22,7 @@ function RankTable({ rows, tone }: { rows: PeriodRankRow[]; tone: 'up' | 'down' 
             {['#', '板块', '区间累计', '日均', '上涨天数', '日均成交额'].map((h, i) => (
               <th key={h} style={{
                 padding: '7px 8px', fontSize: 12, color: '#86909C', fontWeight: 500,
-                textAlign: i <= 1 ? 'left' : 'right', whiteSpace: 'nowrap',
+                textAlign: i <= 1 ? 'left' : 'center', whiteSpace: 'nowrap',
               }}>{h}</th>
             ))}
           </tr>
@@ -37,12 +37,12 @@ function RankTable({ rows, tone }: { rows: PeriodRankRow[]; tone: 'up' | 'down' 
                   {r.type === 'concept' ? '概念' : r.type === 'region' ? '地域' : '行业'}
                 </span>
               </td>
-              <td style={{ padding: '7px 8px', fontSize: 13, textAlign: 'right', fontWeight: 700, color: tone === 'up' ? COLOR_UP : COLOR_DOWN }}>
+              <td style={{ padding: '7px 8px', fontSize: 13, textAlign: 'center', fontWeight: 700, color: tone === 'up' ? COLOR_UP : COLOR_DOWN }}>
                 {fmtPct(r.cumPct)}
               </td>
-              <td style={{ padding: '7px 8px', fontSize: 12, textAlign: 'right', color: pctColor(r.avgPct) }}>{fmtPct(r.avgPct)}</td>
-              <td style={{ padding: '7px 8px', fontSize: 12, textAlign: 'right', color: '#4E5969' }}>{r.upDays}/{r.days}</td>
-              <td style={{ padding: '7px 8px', fontSize: 12, textAlign: 'right', color: '#86909C' }}>{r.avgAmt.toFixed(0)}亿</td>
+              <td style={{ padding: '7px 8px', fontSize: 12, textAlign: 'center', color: pctColor(r.avgPct) }}>{fmtPct(r.avgPct)}</td>
+              <td style={{ padding: '7px 8px', fontSize: 12, textAlign: 'center', color: '#4E5969' }}>{r.upDays}/{r.days}</td>
+              <td style={{ padding: '7px 8px', fontSize: 12, textAlign: 'center', color: '#86909C' }}>{r.avgAmt.toFixed(0)}亿</td>
             </tr>
           ))}
         </tbody>
