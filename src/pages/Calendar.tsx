@@ -475,64 +475,92 @@ export default function Calendar() {
       )}
 
       {!loading && !error && (
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: isMobile ? '10px 8px 14px' : '14px 16px 18px' }}>
-          {/* 表头：周一~周日 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 10, marginBottom: 8 }}>
-            {WEEKDAYS.map((w, i) => (
-              <div key={w} style={{ textAlign: 'center', fontSize: 12, color: i >= 5 ? '#C9CDD4' : '#86909C', fontWeight: 500 }}>
-                {isMobile ? w : `周${w}`}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 10 }}>
-            {cells.map((d, i) => {
-              if (d == null) return <div key={`b${i}`} />;
-              const ds = `${y}-${pad2(m!)}-${pad2(d)}`;
-              const info = dayMap.get(ds);
-              const isA = cmpA === ds;
-              const isB = cmpB === ds;
-              const selected = isA || isB;
-              const hs = heatStyle(info);
-              const wd = weekdayOf(y!, m!, d);
-              const weekend = wd >= 5;
-              // 休市 = 无归档 且（不在交易日清单里 且 不晚于最后归档日）
-              // 节假日与周末同样处理；清单缺失时退化为「只认周末」
-              const closed = !info && (hasTradeList
-                ? (!tradeSet.has(ds) && ds <= latest)
-                : weekend);
-              const closedLabel = weekend ? '周末休市' : '节假日休市';
-              return (
-                <button
-                  key={ds}
-                  onClick={() => { if (info) pickDate(ds); }}
-                  title={
-                    info
-                      ? `${ds} · 点击查看当日榜单`
-                      : closed
-                        ? `${ds} · ${closedLabel}`
-                        : `${ds} · 未归档（待补跑或晚于最后归档日）`
-                  }
+        <div>
+          {/* Mac 日历式：整块网格 + 细分隔线，表头与日期同处一个容器 */}
+          <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {WEEKDAYS.map((w, i) => (
+                <div
+                  key={w}
                   style={{
-                    textAlign: 'left', cursor: info ? 'pointer' : 'default',
-                    minHeight: isMobile ? 52 : 86,
-                    borderRadius: 10,
-                    border: `1px solid ${selected ? '#111827' : hs.borderColor}`,
-                    boxShadow: selected ? '0 0 0 2px rgba(17,24,39,0.12)' : 'none',
-                    // 周末与节假日统一用同一种「无数据」底色（#FAFBFC），只靠格内「休市」文案区分
-                    background: info ? hs.background : '#FAFBFC',
-                    padding: isMobile ? '4px 5px' : '7px 9px',
-                    font: 'inherit',
-                    transition: 'transform .12s ease',
+                    textAlign: 'center',
+                    padding: isMobile ? '7px 0' : '9px 0',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: i >= 5 ? '#A9AEB8' : '#4E5969',
+                    background: '#FAFBFC',
+                    borderRight: i < 6 ? '1px solid #EDEFF2' : 'none',
+                    borderBottom: '1px solid #E5E7EB',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 4 }}>
-                    <span style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: info ? COLOR_TEXT : '#C9CDD4' }}>{d}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {isMobile ? w : `周${w}`}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {cells.map((d, i) => {
+                if (d == null) {
+                  // 月初空位：保留格线，让网格连续
+                  return <div key={`b${i}`} style={{
+                    background: '#FCFCFD',
+                    borderRight: i % 7 !== 6 ? '1px solid #F2F3F5' : 'none',
+                    borderBottom: '1px solid #F2F3F5',
+                  }} />;
+                }
+                const ds = `${y}-${pad2(m!)}-${pad2(d)}`;
+                const info = dayMap.get(ds);
+                const isA = cmpA === ds;
+                const isB = cmpB === ds;
+                const selected = isA || isB;
+                const hs = heatStyle(info);
+                const wd = weekdayOf(y!, m!, d);
+                const weekend = wd >= 5;
+                // 休市 = 无归档 且（不在交易日清单里 且 不晚于最后归档日）
+                // 节假日与周末同样处理；清单缺失时退化为「只认周末」
+                const closed = !info && (hasTradeList
+                  ? (!tradeSet.has(ds) && ds <= latest)
+                  : weekend);
+                const closedLabel = weekend ? '周末休市' : '节假日休市';
+                return (
+                  <button
+                    key={ds}
+                    onClick={() => { if (info) pickDate(ds); }}
+                    title={
+                      info
+                        ? `${ds} · 点击查看当日榜单`
+                        : closed
+                          ? `${ds} · ${closedLabel}`
+                          : `${ds} · 未归档（待补跑或晚于最后归档日）`
+                    }
+                    style={{
+                      textAlign: 'left', cursor: info ? 'pointer' : 'default',
+                      minHeight: isMobile ? 64 : 100,
+                      borderRadius: 0,
+                      border: 'none',
+                      borderRight: i % 7 !== 6 ? '1px solid #F2F3F5' : 'none',
+                      borderBottom: '1px solid #F2F3F5',
+                      boxShadow: selected ? 'inset 0 0 0 2px #111827' : 'none',
+                      // 周末与节假日统一用同一种「无数据」底色（#FAFBFC），只靠格内「休市」文案区分
+                      background: info ? hs.background : '#FAFBFC',
+                      padding: isMobile ? '6px 7px 8px' : '9px 11px 10px',
+                      font: 'inherit',
+                      transition: 'background .12s ease',
+                    }}
+                  >
+                    {/* 第一要素：日期数字，加大加粗，始终左上对齐 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{
+                        fontSize: isMobile ? 17 : 21,
+                        fontWeight: 700,
+                        lineHeight: 1,
+                        letterSpacing: '-0.02em',
+                        color: info ? '#111827' : closed ? '#B4B9C1' : '#C9CDD4',
+                      }}>{d}</span>
                       {eventDates.has(ds) && (
                         <i
                           title="该日有事件标注"
-                          style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }}
+                          style={{ width: 5, height: 5, borderRadius: '50%', background: '#F5A623', display: 'inline-block', marginTop: 2 }}
                         />
                       )}
                       {selected && (
@@ -541,49 +569,49 @@ export default function Calendar() {
                           borderRadius: 6, padding: '0 4px', lineHeight: '14px',
                         }}>{isA ? 'A' : 'B'}</span>
                       )}
-                    </span>
-                  </div>
-
-                  {!info && (
-                    <div style={{ fontSize: 10, color: '#C9CDD4', marginTop: 6 }}>
-                      {closed ? '休市' : ''}
                     </div>
-                  )}
 
-                  {info && (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, flexWrap: 'wrap' }}>
-                        {info.limitUp != null && (
-                          <span style={{ fontSize: 10, color: COLOR_UP, background: 'rgba(255,77,79,0.10)', borderRadius: 4, padding: '0 4px', lineHeight: '15px' }}>
-                            涨停 {info.limitUp}
-                          </span>
-                        )}
-                        {info.limitDown != null && info.limitDown > 0 && (
-                          <span style={{ fontSize: 10, color: COLOR_DOWN, background: 'rgba(14,205,112,0.10)', borderRadius: 4, padding: '0 4px', lineHeight: '15px' }}>
-                            跌停 {info.limitDown}
-                          </span>
-                        )}
-                        {info.up != null && (
-                          <span style={{ fontSize: 10, color: '#86909C' }}>{info.up}↑ / {info.down}↓</span>
-                        )}
-                      </div>
-                      {info.topUp?.[0] && !isMobile && (
-                        <div style={{
-                          marginTop: 5, fontSize: 11, color: COLOR_TEXT, display: 'flex', justifyContent: 'space-between', gap: 4,
-                        }}>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.topUp[0].name}</span>
-                          <span style={{ color: COLOR_UP, fontWeight: 600, flexShrink: 0 }}>{fmtPct(info.topUp[0].pct)}</span>
+                    {!info && closed && (
+                      <div style={{ fontSize: 10, color: '#B4B9C1', marginTop: 6 }}>休市</div>
+                    )}
+
+                    {info && (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                          {info.limitUp != null && (
+                            <span style={{ fontSize: 10, color: COLOR_UP, background: 'rgba(255,77,79,0.10)', borderRadius: 4, padding: '0 4px', lineHeight: '15px' }}>
+                              涨停 {info.limitUp}
+                            </span>
+                          )}
+                          {info.limitDown != null && info.limitDown > 0 && (
+                            <span style={{ fontSize: 10, color: COLOR_DOWN, background: 'rgba(14,205,112,0.10)', borderRadius: 4, padding: '0 4px', lineHeight: '15px' }}>
+                              跌停 {info.limitDown}
+                            </span>
+                          )}
+                          {info.up != null && !isMobile && (
+                            <span style={{ fontSize: 10, color: '#86909C' }}>{info.up}↑ {info.down}↓</span>
+                          )}
                         </div>
-                      )}
-                    </>
-                  )}
-                </button>
-              );
-            })}
+                        {info.topUp?.[0] && !isMobile && (
+                          <div style={{
+                            marginTop: 6, fontSize: 11, color: COLOR_TEXT, display: 'flex', justifyContent: 'space-between', gap: 4,
+                          }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.topUp[0].name}</span>
+                            <span style={{ color: COLOR_UP, fontWeight: 600, flexShrink: 0 }}>{fmtPct(info.topUp[0].pct)}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '10px 14px', marginTop: 12 }}>
+
           {/* 图例 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 14, fontSize: 11, color: '#86909C' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 11, color: '#86909C' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <i style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(255,77,79,0.30)', display: 'inline-block' }} />涨多
             </span>
@@ -616,6 +644,7 @@ export default function Calendar() {
               </div>
             </div>
           )}
+        </div>
         </div>
       )}
 
