@@ -28,23 +28,24 @@ import {
 } from '../data/calendarData';
 import { COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 
-const WEEKDAYS = ['一', '二', '三', '四', '五'];
+const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 const pctColor = (v: number) => (v > 0 ? COLOR_UP : v < 0 ? COLOR_DOWN : COLOR_FLAT);
 const fmtPct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-/** 生成某月的格子（只含周一~周五；周六日不展示，用前置空格保证列对齐） */
+/** 生成某月的格子：周一~周日 7 列，非交易日由调用方置灰 */
 function buildCells(year: number, month: number): (number | null)[] {
   const firstWd = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7; // 周一=0
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstWd; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    const wd = (new Date(Date.UTC(year, month - 1, d)).getUTCDay() + 6) % 7;
-    if (wd >= 5) continue;   // 周末不展示
-    cells.push(d);
-  }
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
   return cells;
+}
+
+/** 该日是周几（周一=0 … 周日=6） */
+function weekdayOf(year: number, month: number, day: number): number {
+  return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
 }
 
 /** 格子的热力底色：涨多红、跌多绿；无摘要（历史仅板块榜）为中性 */
@@ -458,16 +459,16 @@ export default function Calendar() {
 
       {!loading && !error && (
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: isMobile ? '10px 8px 14px' : '14px 16px 18px' }}>
-          {/* 表头：周一~周五 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: isMobile ? 6 : 10, marginBottom: 8 }}>
-            {WEEKDAYS.map((w) => (
-              <div key={w} style={{ textAlign: 'center', fontSize: 12, color: '#86909C', fontWeight: 500 }}>
+          {/* 表头：周一~周日 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 10, marginBottom: 8 }}>
+            {WEEKDAYS.map((w, i) => (
+              <div key={w} style={{ textAlign: 'center', fontSize: 12, color: i >= 5 ? '#C9CDD4' : '#86909C', fontWeight: 500 }}>
                 {isMobile ? w : `周${w}`}
               </div>
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: isMobile ? 6 : 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 4 : 10 }}>
             {cells.map((d, i) => {
               if (d == null) return <div key={`b${i}`} />;
               const ds = `${y}-${pad2(m!)}-${pad2(d)}`;
@@ -476,25 +477,27 @@ export default function Calendar() {
               const isB = cmpB === ds;
               const selected = isA || isB;
               const hs = heatStyle(info);
+              const wd = weekdayOf(y!, m!, d);
+              const weekend = wd >= 5;
               return (
                 <button
                   key={ds}
                   onClick={() => { if (info) pickDate(ds); }}
-                  title={info ? `${ds} · 点击查看当日榜单` : `${ds} · 未归档（休市或早于归档起点）`}
+                  title={info ? `${ds} · 点击查看当日榜单` : `${ds} · ${weekend ? '周末休市' : '未归档（假日或早于归档起点）'}`}
                   style={{
                     textAlign: 'left', cursor: info ? 'pointer' : 'default',
-                    minHeight: isMobile ? 62 : 86,
+                    minHeight: isMobile ? 52 : 86,
                     borderRadius: 10,
                     border: `1px solid ${selected ? '#111827' : hs.borderColor}`,
                     boxShadow: selected ? '0 0 0 2px rgba(17,24,39,0.12)' : 'none',
-                    background: info ? hs.background : '#FAFBFC',
-                    padding: isMobile ? '5px 6px' : '7px 9px',
+                    background: info ? hs.background : weekend ? '#F2F3F5' : '#FAFBFC',
+                    padding: isMobile ? '4px 5px' : '7px 9px',
                     font: 'inherit',
                     transition: 'transform .12s ease',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 4 }}>
-                    <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: info ? COLOR_TEXT : '#C9CDD4' }}>{d}</span>
+                    <span style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: info ? COLOR_TEXT : '#C9CDD4' }}>{d}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                       {eventDates.has(ds) && (
                         <i
@@ -511,7 +514,11 @@ export default function Calendar() {
                     </span>
                   </div>
 
-                  {!info && <div style={{ fontSize: 10, color: '#C9CDD4', marginTop: 6 }}>{new Date(Date.UTC(y!, m! - 1, d)).getUTCDay() % 6 === 0 ? '休市' : ''}</div>}
+                  {!info && (
+                    <div style={{ fontSize: 10, color: '#C9CDD4', marginTop: 6 }}>
+                      {weekend ? '休市' : ''}
+                    </div>
+                  )}
 
                   {info && (
                     <>
@@ -555,6 +562,9 @@ export default function Calendar() {
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <i style={{ width: 12, height: 12, borderRadius: 3, background: '#FAFBFC', border: '1px solid #EDEFF2', display: 'inline-block' }} />未归档
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <i style={{ width: 12, height: 12, borderRadius: 3, background: '#F2F3F5', border: '1px solid #EDEFF2', display: 'inline-block' }} />周末休市
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <i style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }} />有事件标注
