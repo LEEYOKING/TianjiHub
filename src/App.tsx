@@ -1,68 +1,96 @@
-import { useEffect, useState, useRef, useMemo, createContext, useContext, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import Overview from './pages/Overview';
+import {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  createContext,
+  useContext,
+  lazy,
+  Suspense,
+} from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Layout from './components/Layout'
+import Overview from './pages/Overview'
 // 2026-11-12:lazy chunk 拉取失败(部署传播期 CDN 404)会让 React 卸载整棵树 → 整页白屏。
 // 这里统一兜底:失败时强制刷新一次(带 sessionStorage 标记,避免死循环),刷新后走新部署的 chunk。
-const RELOAD_FLAG = 'chunk-reload-at';
-const lazyWithRetry = <T extends { default: React.ComponentType<any> }>(factory: () => Promise<T>) =>
+const RELOAD_FLAG = 'chunk-reload-at'
+const lazyWithRetry = <T extends { default: React.ComponentType<any> }>(
+  factory: () => Promise<T>,
+) =>
   lazy(() =>
     factory().catch((e) => {
-      const last = Number(sessionStorage.getItem(RELOAD_FLAG) || 0);
+      const last = Number(sessionStorage.getItem(RELOAD_FLAG) || 0)
       if (Date.now() - last > 10_000) {
-        sessionStorage.setItem(RELOAD_FLAG, String(Date.now()));
-        window.location.reload();
+        sessionStorage.setItem(RELOAD_FLAG, String(Date.now()))
+        window.location.reload()
       }
-      throw e;
+      throw e
     }),
-  );
+  )
 // v2.0.7ff:按页面代码分割 — 首屏只 load Overview,其他页面 React.lazy 按路由 fetch
-const Sector = lazyWithRetry(() => import('./pages/Sector'));
-const LimitUp = lazyWithRetry(() => import('./pages/LimitUp'));
-const LimitDown = lazyWithRetry(() => import('./pages/LimitDown'));
-const AnomalyStock = lazyWithRetry(() => import('./pages/AnomalyStock'));
-const DragonTiger = lazyWithRetry(() => import('./pages/DragonTiger'));
-const Surgery = lazyWithRetry(() => import('./pages/Surgery'));
-const PreScan = lazyWithRetry(() => import('./pages/PreScan'));
-const FirstBoard = lazyWithRetry(() => import('./pages/FirstBoard'));
+const Sector = lazyWithRetry(() => import('./pages/Sector'))
+const LimitUp = lazyWithRetry(() => import('./pages/LimitUp'))
+const LimitDown = lazyWithRetry(() => import('./pages/LimitDown'))
+const AnomalyStock = lazyWithRetry(() => import('./pages/AnomalyStock'))
+const DragonTiger = lazyWithRetry(() => import('./pages/DragonTiger'))
+const Surgery = lazyWithRetry(() => import('./pages/Surgery'))
+const PreScan = lazyWithRetry(() => import('./pages/PreScan'))
+const FirstBoard = lazyWithRetry(() => import('./pages/FirstBoard'))
 // v2.0.8ks:板块轮动 — 原「轮动档案 / 轮动时间轴」两页已合并为单页 /rotation
-const Rotation = lazyWithRetry(() => import('./pages/Rotation'));
-const RotationDetail = lazyWithRetry(() => import('./pages/RotationDetail'));
+const Rotation = lazyWithRetry(() => import('./pages/Rotation'))
+const RotationDetail = lazyWithRetry(() => import('./pages/RotationDetail'))
 // 日历回溯：不打成独立 chunk，直接进主包 —— 避免历史 chunk 被 CDN/浏览器缓存成 404 后整页白屏
-import Calendar from './pages/Calendar';
-import { loadReportData, getCNTodayYMD, isPostCloseSnapshot, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
-import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
+import Calendar from './pages/Calendar'
+import {
+  loadReportData,
+  getCNTodayYMD,
+  isPostCloseSnapshot,
+  saveLiveSnapshot,
+  loadLiveSnapshot,
+  type ReportData,
+} from './data/loader'
+import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData'
 
 // 全局 live context — PageHeader 通过它读 lastUpdatedAt
 // v2.0.8kn:附带 nextTradeDate(交易日历) — PageHeader 据此判断今天是否开盘,非交易日不显示"假期当天"
-export type LiveContextValue = LiveSnapshot & { nextTradeDate?: string };
+export type LiveContextValue = LiveSnapshot & { nextTradeDate?: string }
 const LiveContext = createContext<LiveContextValue>({
-  indices: [], market: null, history: null, today: null, fetchedAt: 0,
-} as unknown as LiveContextValue);
-export const useLive = () => useContext(LiveContext);
+  indices: [],
+  market: null,
+  history: null,
+  today: null,
+  fetchedAt: 0,
+} as unknown as LiveContextValue)
+export const useLive = () => useContext(LiveContext)
 
 export default function App() {
-  const [baseData, setBaseData] = useState<ReportData | null>(null);
-  const [baseErr, setBaseErr] = useState<string | null>(null);
+  const [baseData, setBaseData] = useState<ReportData | null>(null)
+  const [baseErr, setBaseErr] = useState<string | null>(null)
   // v2.0.7fv:L3 修 — 用 ref 跟踪 baseData 最新值,避免 useEffect 闭包问题
   // — 改前 setState in updater 违反 React 18 规则
   // — 改成 ref + setBaseData 同步写 ref
-  const baseDataRef = useRef<ReportData | null>(null);
+  const baseDataRef = useRef<ReportData | null>(null)
   // v2.0.7ee:传 baseData.meta.stockCodes 给 useLiveData — 拉真实 5,547 只 A 股腾讯 qt.gtimg.cn
   // v2.0.9(2026-10-22):传"baseData 是否还是昨日" — 盘后云端 cron 未落地时,由 hook 补拉一轮今日收盘,
   // 否则盘中没打开过的用户盘后进来只能看到昨日收盘(15:30 后 hook 本就不拉数据)。
   // 还须确认"今天确实是交易日"(meta.nextTradeDate === 今天)— 否则假期里补拉会拿到"全市场 0 涨 0 跌"
   // 的假快照,把上一交易日的家数覆盖掉。日历缺失时一律不补拉(宁可不补,也不冒险覆盖真值)。
-  const _todayYMD = getCNTodayYMD();
-  const _baseIsToday = String(baseData?.meta?.tradeDate || '') === _todayYMD;
+  const _todayYMD = getCNTodayYMD()
+  const _baseIsToday = String(baseData?.meta?.tradeDate || '') === _todayYMD
   // 2026-10-23 事故:v2.0.9 的盘后兜底只看 tradeDate,而盘中误跑写出的 data.json 也标"今天"
   //   → 既不触发兜底、也不走当日快照,整晚显示上午数据。故再校验生成时点是否为盘后(≥15:05)。
-  const _baseIsClose = isPostCloseSnapshot(baseData?.meta);
-  const _baseStale = !_baseIsToday || !_baseIsClose;
-  const _nextTdYMD = String(baseData?.meta?.nextTradeDate || '').replace(/-/g, '');
+  const _baseIsClose = isPostCloseSnapshot(baseData?.meta)
+  const _baseStale = !_baseIsToday || !_baseIsClose
+  const _nextTdYMD = String(baseData?.meta?.nextTradeDate || '').replace(/-/g, '')
   // 今天是否交易日:baseData 已是今天的 → 它本身证明今天是交易日;否则用 nextTradeDate 判断
-  const _isTradingToday = _baseIsToday ? true : (!!_nextTdYMD && _nextTdYMD === _todayYMD);
-  const live = useLiveData(true, baseData?.meta?.stockCodes, baseData?.marketOverview?.etfCodes, baseData?.marketOverview?.bondCodes, !!baseData && _baseStale && _isTradingToday);
+  const _isTradingToday = _baseIsToday ? true : !!_nextTdYMD && _nextTdYMD === _todayYMD
+  const live = useLiveData(
+    true,
+    baseData?.meta?.stockCodes,
+    baseData?.marketOverview?.etfCodes,
+    baseData?.marketOverview?.bondCodes,
+    !!baseData && _baseStale && _isTradingToday,
+  )
 
   useEffect(() => {
     // v2.0.7o:fetch 失败时如果已有 baseData(后台标签页被节流),静默不显示错误页
@@ -72,66 +100,78 @@ export default function App() {
         .then((d) => {
           // v2.0.8:盘后(data 仍是昨日)用今日盘中定格快照替代,避免 15:00 后刷新回滚到上一交易日
           // 2026-10-23:data 标"今天"但生成于盘中(误跑)时同样不可信 → 也用当日快照替代
-          let finalData = d;
+          let finalData = d
           if (String(d.meta?.tradeDate) !== getCNTodayYMD() || !isPostCloseSnapshot(d.meta)) {
-            const snap = loadLiveSnapshot();
+            const snap = loadLiveSnapshot()
             // v2.0.8kn:快照的 meta 用最新 data.json 的 meta 覆盖 — 否则快照里缺 nextTradeDate(交易日历),
             // mergeLiveData 会退化为"工作日"判断,假期盘中仍会插入假数据点
-            if (snap) finalData = { ...snap, meta: d.meta };
+            if (snap) finalData = { ...snap, meta: d.meta }
           }
-          baseDataRef.current = finalData;
-          setBaseData(finalData);
-          setBaseErr(null);
+          baseDataRef.current = finalData
+          setBaseData(finalData)
+          setBaseErr(null)
         })
         .catch((e) => {
           // 只在首次加载失败(baseData 还没设)时报错;后续失败静默(后台节流/网络抖动)
           if (baseDataRef.current === null) {
-            setBaseErr(String(e?.message || e));
+            setBaseErr(String(e?.message || e))
           }
-        });
-    fetchData();
-    const reloadTimer = setInterval(fetchData, 60_000);
-    return () => clearInterval(reloadTimer);
-  }, []);
+        })
+    fetchData()
+    const reloadTimer = setInterval(fetchData, 60_000)
+    return () => clearInterval(reloadTimer)
+  }, [])
 
   const merged = useMemo(() => {
-    if (!baseData) return null;
-    return mergeLiveData(baseData, live);
-  }, [baseData, live]);
+    if (!baseData) return null
+    return mergeLiveData(baseData, live)
+  }, [baseData, live])
 
   // v2.0.8kn:live context 值附带 nextTradeDate(交易日历),供 PageHeader 判断"今天是否开盘"
   const liveCtxValue = useMemo<LiveContextValue>(
     () => ({ ...live, nextTradeDate: baseData?.meta?.nextTradeDate }),
     [live, baseData],
-  );
+  )
 
   // v2.0.8:盘中/收盘持续缓存今日快照(live 拉到实时后,15:00 定格值自然被缓存,刷新不丢)
   useEffect(() => {
     if (merged && live.fetchedAt > 0) {
-      saveLiveSnapshot(merged);
+      saveLiveSnapshot(merged)
     }
-  }, [merged]);
+  }, [merged])
 
   if (baseErr) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}>
         <div style={{ textAlign: 'center', maxWidth: 480, padding: 24 }}>
           <h2 style={{ color: '#E60012', marginBottom: 12 }}>数据加载失败</h2>
           <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 6 }}>{baseErr}</p>
-          <p style={{ color: '#9ca3af', fontSize: 12, marginBottom: 20 }}>可能原因:网络不稳定 / GitHub Pages 部署中 / 服务器异常</p>
+          <p style={{ color: '#9ca3af', fontSize: 12, marginBottom: 20 }}>
+            可能原因:网络不稳定 / GitHub Pages 部署中 / 服务器异常
+          </p>
           <button
             onClick={() => window.location.reload()}
             style={{
-              padding: '8px 20px', fontSize: 14, fontWeight: 500,
-              color: '#fff', background: '#1890ff', border: 'none', borderRadius: 6,
+              padding: '8px 20px',
+              fontSize: 14,
+              fontWeight: 500,
+              color: '#fff',
+              background: '#1890ff',
+              border: 'none',
+              borderRadius: 6,
               cursor: 'pointer',
-            }}
-          >
+            }}>
             🔄 重新加载
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   // v1.9.1 启动页文案 + loading 动画 + v2.0 粒子背景
@@ -142,19 +182,37 @@ export default function App() {
   // — 修法:merged 有数据(从 baseData 来)就直接显示,实时数据后台拉
   if (!merged) {
     return (
-      <div style={{
-        position: 'relative',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100vh', background: 'linear-gradient(180deg, #fafbff 0%, #f5f7fa 100%)',
-        flexDirection: 'column', gap: 20, overflow: 'hidden',
-      }}>
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: 'linear-gradient(180deg, #fafbff 0%, #f5f7fa 100%)',
+          flexDirection: 'column',
+          gap: 20,
+          overflow: 'hidden',
+        }}>
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 20,
+          }}>
           {/* v2.0.7fw:启动页两行文案 → 替换为 brand-logo(算筹 + 天机枢),保留下方"进入中..."动效 */}
           <img src="/logo1.png" alt="天机枢" style={{ height: 110, width: 'auto' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 13, color: '#1890ff', fontWeight: 500 }}>A股每日复盘，正在进入您的天机枢...</span>
+            <span style={{ fontSize: 13, color: '#1890ff', fontWeight: 500 }}>
+              A股每日复盘，正在进入您的天机枢...
+            </span>
             <span className="loading-dots">
-              <span /><span /><span />
+              <span />
+              <span />
+              <span />
             </span>
           </div>
         </div>
@@ -173,7 +231,7 @@ export default function App() {
           }
         `}</style>
       </div>
-    );
+    )
   }
 
   return (
@@ -181,7 +239,10 @@ export default function App() {
       <BrowserRouter>
         <Layout data={merged}>
           {/* v2.0.7ff:lazy 加载页面 fallback — 显示简单 loading,避免白屏 */}
-          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#86909C' }}>页面加载中…</div>}>
+          <Suspense
+            fallback={
+              <div style={{ padding: 40, textAlign: 'center', color: '#86909C' }}>页面加载中…</div>
+            }>
             <Routes>
               <Route path="/" element={<Navigate to="/overview" replace />} />
               <Route path="/overview" element={<Overview data={merged} />} />
@@ -189,8 +250,14 @@ export default function App() {
               <Route path="/limit-up" element={<LimitUp data={merged} />} />
               <Route path="/limit-down" element={<LimitDown data={merged} />} />
               <Route path="/breakout" element={<AnomalyStock type="breakout" data={merged} />} />
-              <Route path="/high-break" element={<AnomalyStock type="high-break" data={merged} />} />
-              <Route path="/low-position" element={<AnomalyStock type="low-position" data={merged} />} />
+              <Route
+                path="/high-break"
+                element={<AnomalyStock type="high-break" data={merged} />}
+              />
+              <Route
+                path="/low-position"
+                element={<AnomalyStock type="low-position" data={merged} />}
+              />
               <Route path="/dragon-tiger" element={<DragonTiger data={merged} />} />
               <Route path="/surgery" element={<Surgery data={merged} />} />
               <Route path="/prescan" element={<PreScan />} />
@@ -205,5 +272,5 @@ export default function App() {
         </Layout>
       </BrowserRouter>
     </LiveContext.Provider>
-  );
+  )
 }

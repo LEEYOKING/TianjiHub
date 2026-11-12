@@ -1,80 +1,80 @@
 // A股特有:红涨绿跌(和欧美相反) - 全局色值统一
-export const COLOR_UP = '#ff4d4f';      // 红色,代表上涨(0x5)
-export const COLOR_DOWN = '#0ecd70';    // 绿色,代表下跌(0x0)
-export const COLOR_FLAT = '#999999';    // 灰色,平盘
-export const COLOR_TEXT = '#111827';    // 主文字黑
-export const COLOR_PURPLE = 'rgb(154, 129, 252)';   // #9A81FC
-export const COLOR_BLUE = 'rgb(80, 162, 254)';      // #50A2FE
-export const COLOR_ORANGE = 'rgb(255, 167, 76)';    // #FFA74C
-export const COLOR_EGGSHELL = '#FFEAA7';             // 蛋黄色 (C 级)
-export const COLOR_PRIMARY = '#1890FF';              // 主题蓝(保持不变)
-export const COLOR_BG_ALT = '#F5F7FA';
-export const COLOR_BORDER = '#EBEEF5';
+export const COLOR_UP = '#ff4d4f' // 红色,代表上涨(0x5)
+export const COLOR_DOWN = '#0ecd70' // 绿色,代表下跌(0x0)
+export const COLOR_FLAT = '#999999' // 灰色,平盘
+export const COLOR_TEXT = '#111827' // 主文字黑
+export const COLOR_PURPLE = 'rgb(154, 129, 252)' // #9A81FC
+export const COLOR_BLUE = 'rgb(80, 162, 254)' // #50A2FE
+export const COLOR_ORANGE = 'rgb(255, 167, 76)' // #FFA74C
+export const COLOR_EGGSHELL = '#FFEAA7' // 蛋黄色 (C 级)
+export const COLOR_PRIMARY = '#1890FF' // 主题蓝(保持不变)
+export const COLOR_BG_ALT = '#F5F7FA'
+export const COLOR_BORDER = '#EBEEF5'
 
 /**
  * 根据数值返回A股颜色
  */
 export function colorOf(v: number): string {
-  if (v > 0) return COLOR_UP;
-  if (v < 0) return COLOR_DOWN;
-  return COLOR_FLAT;
+  if (v > 0) return COLOR_UP
+  if (v < 0) return COLOR_DOWN
+  return COLOR_FLAT
 }
 
 /**
  * 格式化带正负号的百分比(+3.48% / -1.16%)
  */
 export function formatPercent(v: number, withSign = true): string {
-  if (v === null || v === undefined || isNaN(v)) return '-';
-  const abs = Math.abs(v).toFixed(2);
+  if (v === null || v === undefined || isNaN(v)) return '-'
+  const abs = Math.abs(v).toFixed(2)
   if (withSign) {
-    if (v > 0) return `+${abs}%`;
-    if (v < 0) return `-${abs}%`;
-    return `0.00%`;
+    if (v > 0) return `+${abs}%`
+    if (v < 0) return `-${abs}%`
+    return `0.00%`
   }
-  return `${v.toFixed(2)}%`;
+  return `${v.toFixed(2)}%`
 }
 
 export function formatPrice(v: number): string {
-  if (v === null || v === undefined || isNaN(v)) return '-';
-  return v.toFixed(2);
+  if (v === null || v === undefined || isNaN(v)) return '-'
+  return v.toFixed(2)
 }
 
 export function formatYi(v: number, unit = '亿'): string {
-  if (v === null || v === undefined || isNaN(v)) return '-';
-  if (Math.abs(v) >= 10000) return `${(v / 10000).toFixed(2)}万亿`;
-  return `${v.toFixed(2)}${unit}`;
+  if (v === null || v === undefined || isNaN(v)) return '-'
+  if (Math.abs(v) >= 10000) return `${(v / 10000).toFixed(2)}万亿`
+  return `${v.toFixed(2)}${unit}`
 }
 
 export function formatWan(v: number): string {
-  if (v === null || v === undefined || isNaN(v)) return '-';
-  return `${v.toFixed(0)}万`;
+  if (v === null || v === undefined || isNaN(v)) return '-'
+  return `${v.toFixed(0)}万`
 }
 
 export function formatNumber(v: number): string {
-  if (v === null || v === undefined || isNaN(v)) return '-';
-  return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+  if (v === null || v === undefined || isNaN(v)) return '-'
+  return v.toLocaleString('zh-CN', { maximumFractionDigits: 2 })
 }
 
 /** 时间字符串 "09:25:00" 转分钟数(用于判断尾盘偷鸡) */
 export function timeToMinutes(s: string): number {
   try {
-    const [h, m] = s.split(':').map(Number);
-    return h * 60 + m;
+    const [h, m] = s.split(':').map(Number)
+    return h * 60 + m
   } catch {
-    return -1;
+    return -1
   }
 }
 
 /** 'YYYY-MM-DD' → 次日 'YYYY-MM-DD'(纯日期运算,用 UTC 以免受本地时区/夏令时干扰) */
 export function nextDateStr(d: string): string {
-  if (!d || d.length < 10) return '';
-  const y = Number(d.slice(0, 4));
-  const m = Number(d.slice(5, 7));
-  const day = Number(d.slice(8, 10));
-  if (!y || !m || !day) return '';
-  const t = new Date(Date.UTC(y, m - 1, day) + 86400000);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+  if (!d || d.length < 10) return ''
+  const y = Number(d.slice(0, 4))
+  const m = Number(d.slice(5, 7))
+  const day = Number(d.slice(8, 10))
+  if (!y || !m || !day) return ''
+  const t = new Date(Date.UTC(y, m - 1, day) + 86400000)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`
 }
 
 /**
@@ -94,11 +94,11 @@ export function describeGenTime(
   generatedAt?: string,
   lastTradeDate?: string,
 ): { time: string; postClose: boolean } {
-  const g = generatedAt || '';
-  if (g.length < 16) return { time: '--:--', postClose: false };
-  const date = g.slice(0, 10);
-  const time = g.slice(11, 16);
-  const sameDayPostClose = date === lastTradeDate && time >= '15:05';
-  const nextDayPreOpen = date === nextDateStr(lastTradeDate || '') && time < '09:30';
-  return { time, postClose: sameDayPostClose || nextDayPreOpen };
+  const g = generatedAt || ''
+  if (g.length < 16) return { time: '--:--', postClose: false }
+  const date = g.slice(0, 10)
+  const time = g.slice(11, 16)
+  const sameDayPostClose = date === lastTradeDate && time >= '15:05'
+  const nextDayPreOpen = date === nextDateStr(lastTradeDate || '') && time < '09:30'
+  return { time, postClose: sameDayPostClose || nextDayPreOpen }
 }

@@ -1,8 +1,8 @@
-import { COLOR_UP } from '../utils/format';
+import { COLOR_UP } from '../utils/format'
 
 interface Props {
-  title: string;
-  extra?: React.ReactNode;
+  title: string
+  extra?: React.ReactNode
 }
 
 /** 区域标题:左侧红色竖条 + 黑色标题 */
@@ -16,8 +16,7 @@ export default function SectionTitle({ title, extra }: Props) {
         borderBottom: '1px solid #EBEEF5',
         paddingBottom: 12,
         marginBottom: 16,
-      }}
-    >
+      }}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <span
           style={{
@@ -33,5 +32,5 @@ export default function SectionTitle({ title, extra }: Props) {
       </div>
       {extra && <div>{extra}</div>}
     </div>
-  );
+  )
 }

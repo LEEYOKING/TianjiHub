@@ -1,7 +1,7 @@
 // 板块轮动:规则摘要栏 + 规则配置抽屉
 // 口径一致性:所有轮动页共用 rotationData 里的规则单例;此处只负责"展示 + 修改"
 // 视觉:沿用站点既有卡片体系(圆角 14 / CARD_SHADOW / #E5E7EB 边框 / 红涨绿跌)
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 import {
   COLOR_BORDER,
   COLOR_DOWN,
@@ -9,15 +9,15 @@ import {
   COLOR_PRIMARY,
   COLOR_TEXT,
   COLOR_UP,
-} from '../utils/format';
-import { SCORE_WEIGHTS } from '../utils/rotation/analytics';
+} from '../utils/format'
+import { SCORE_WEIGHTS } from '../utils/rotation/analytics'
 import {
   DEFAULT_RULE,
   serializeRule,
   validateRule,
   type RotationRuleSet,
   type SectorType,
-} from '../utils/rotation/types';
+} from '../utils/rotation/types'
 import {
   decodePreset,
   loadPresets,
@@ -26,9 +26,9 @@ import {
   upsertPreset,
   PRESET_LIMIT,
   type RulePreset,
-} from '../data/rotationData';
+} from '../data/rotationData'
 
-const CARD_SHADOW = '0 1px 3px rgba(0, 0, 0, 0.04), 0 0 30px 5px rgba(0, 0, 0, 0.02)';
+const CARD_SHADOW = '0 1px 3px rgba(0, 0, 0, 0.04), 0 0 30px 5px rgba(0, 0, 0, 0.02)'
 
 // v2.0.8l0:滑块自定义样式 —— 未选中段浅灰 / 已选中段与「完成」按钮同色(主题蓝) / 圆点带白描边
 const RANGE_CSS = `
@@ -53,17 +53,17 @@ const RANGE_CSS = `
     width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box;
     background: ${COLOR_PRIMARY}; border: 2px solid #fff;
   }
-`;
+`
 
 // 「统计窗口 / 板块范围 / 每日榜单数量」三个 Seg 统一总宽度(以选项最多的"统计窗口"为基准)
-const SEG_WIDTH = 196;
+const SEG_WIDTH = 196
 
 const SCOPE_LABEL: Record<'all' | SectorType, string> = {
   all: '全部板块',
   industry: '仅行业',
   concept: '仅概念',
   region: '仅地域',
-};
+}
 
 // ---------- 小组件 ----------
 function Chip({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -80,12 +80,11 @@ function Chip({ label, value, color }: { label: string; value: string; color?: s
         fontSize: 12,
         color: '#4E5969',
         whiteSpace: 'nowrap',
-      }}
-    >
+      }}>
       {label}
       <b style={{ color: color || COLOR_TEXT, fontWeight: 600 }}>{value}</b>
     </span>
-  );
+  )
 }
 
 function Seg<T extends string | number>({
@@ -94,11 +93,11 @@ function Seg<T extends string | number>({
   onChange,
   blockWidth,
 }: {
-  value: T;
-  options: { label: string; value: T }[];
-  onChange: (v: T) => void;
+  value: T
+  options: { label: string; value: T }[]
+  onChange: (v: T) => void
   /** v2.0.8l0:指定后按钮等分该总宽度 —— 让"选项个数不同"的 Seg 也能保持总宽一致 */
-  blockWidth?: number;
+  blockWidth?: number
 }) {
   return (
     <div
@@ -110,8 +109,7 @@ function Seg<T extends string | number>({
         gap: 2,
         flexShrink: 0,
         ...(blockWidth ? { width: blockWidth } : null),
-      }}
-    >
+      }}>
       {options.map((o) => (
         <button
           key={String(o.value)}
@@ -128,32 +126,52 @@ function Seg<T extends string | number>({
             boxShadow: value === o.value ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
             transition: 'all .15s',
             ...(blockWidth ? { flex: 1, padding: '4px 4px', whiteSpace: 'nowrap' as const } : null),
-          }}
-        >
+          }}>
           {o.label}
         </button>
       ))}
     </div>
-  );
+  )
 }
 
-function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  desc,
+  children,
+}: {
+  title: string
+  desc?: string
+  children: React.ReactNode
+}) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginBottom: 4 }}>{title}</div>
-      {desc && <div style={{ fontSize: 11, color: '#86909C', marginBottom: 12, lineHeight: 1.6 }}>{desc}</div>}
+      <div style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginBottom: 4 }}>
+        {title}
+      </div>
+      {desc && (
+        <div style={{ fontSize: 11, color: '#86909C', marginBottom: 12, lineHeight: 1.6 }}>
+          {desc}
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
     </div>
-  );
+  )
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, minHeight: 28 }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 14,
+        minHeight: 28,
+      }}>
       <span style={{ fontSize: 12, color: '#4E5969' }}>{label}</span>
       {children}
     </div>
-  );
+  )
 }
 
 /** 全宽竖排字段：标签独占一行、控件区整行铺满 —— 避免"标签右对齐 + 控件换行"造成的错位 */
@@ -163,7 +181,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span style={{ fontSize: 12, color: '#4E5969' }}>{label}</span>
       {children}
     </div>
-  );
+  )
 }
 
 /** V2.0 阶段 5:配置器内的小按钮(方案保存/应用/重命名/删除用) */
@@ -173,10 +191,10 @@ function SmallBtn({
   disabled,
   title,
 }: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  title?: string;
+  children: React.ReactNode
+  onClick: () => void
+  disabled?: boolean
+  title?: string
 }) {
   return (
     <button
@@ -192,11 +210,10 @@ function SmallBtn({
         fontSize: 12,
         cursor: disabled ? 'not-allowed' : 'pointer',
         whiteSpace: 'nowrap',
-      }}
-    >
+      }}>
       {children}
     </button>
-  );
+  )
 }
 
 function Slider({
@@ -207,15 +224,15 @@ function Slider({
   onChange,
   suffix = '%',
 }: {
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (v: number) => void;
-  suffix?: string;
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (v: number) => void
+  suffix?: string
 }) {
   // 已选中比例 → 轨道渐变的断点(未选中段浅灰)
-  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 176 }}>
       <input
@@ -233,7 +250,7 @@ function Slider({
         {suffix}
       </b>
     </div>
-  );
+  )
 }
 
 // ---------- 主组件 ----------
@@ -242,108 +259,115 @@ export function RotationRuleBar({
   onChange,
   dataRange,
 }: {
-  rule: RotationRuleSet;
-  onChange: (r: RotationRuleSet) => void;
-  dataRange?: { first?: string; last?: string; windowDays?: number; sectorCount?: number; suspectCount?: number };
+  rule: RotationRuleSet
+  onChange: (r: RotationRuleSet) => void
+  dataRange?: {
+    first?: string
+    last?: string
+    windowDays?: number
+    sectorCount?: number
+    suspectCount?: number
+  }
 }) {
-  const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   // V2.0 阶段 5：简单 / 高级模式（只影响"显示哪些控件"，不改变任何已存参数值）
-  const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
+  const [mode, setMode] = useState<'simple' | 'advanced'>('simple')
   // 规则方案（§7.5）：仅本设备浏览器内
-  const [presets, setPresets] = useState<RulePreset[]>(() => loadPresets());
-  const [presetSel, setPresetSel] = useState('');
-  const [presetName, setPresetName] = useState('');
-  const [presetMsg, setPresetMsg] = useState('');
-  const patch = (p: Partial<RotationRuleSet>) => onChange({ ...rule, ...p, version: DEFAULT_RULE.version });
+  const [presets, setPresets] = useState<RulePreset[]>(() => loadPresets())
+  const [presetSel, setPresetSel] = useState('')
+  const [presetName, setPresetName] = useState('')
+  const [presetMsg, setPresetMsg] = useState('')
+  const patch = (p: Partial<RotationRuleSet>) =>
+    onChange({ ...rule, ...p, version: DEFAULT_RULE.version })
 
   // 抽屉打开时锁住底层页面滚动（防止滚轮"穿透"到底下的页面）；抽屉内部滚动条不受影响
   useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+      document.body.style.overflow = prev
+    }
+  }, [open])
 
   // §7.6 参数校验：返回可直接展示的中文提示（空数组 = 合法）
-  const issues = validateRule(rule);
-  const invalid = issues.length > 0;
+  const issues = validateRule(rule)
+  const invalid = issues.length > 0
   const flash = (m: string) => {
-    setPresetMsg(m);
-    setTimeout(() => setPresetMsg(''), 2000);
-  };
+    setPresetMsg(m)
+    setTimeout(() => setPresetMsg(''), 2000)
+  }
   const applyPreset = () => {
-    const p = presets.find((x) => x.name === presetSel);
-    if (!p) return;
-    const r = decodePreset(p);
+    const p = presets.find((x) => x.name === presetSel)
+    if (!p) return
+    const r = decodePreset(p)
     if (!r) {
-      flash('该方案已损坏，无法应用');
-      return;
+      flash('该方案已损坏，无法应用')
+      return
     }
     // 版本不一致也允许应用，但按当前版本重新盖章 —— 保证"方案升级不丢用户配置"（审计 R5）
-    onChange({ ...r, version: DEFAULT_RULE.version });
-    flash(p.version === DEFAULT_RULE.version ? '已应用方案' : '已应用（旧版本方案，参数已保留）');
-  };
+    onChange({ ...r, version: DEFAULT_RULE.version })
+    flash(p.version === DEFAULT_RULE.version ? '已应用方案' : '已应用（旧版本方案，参数已保留）')
+  }
   const saveAsPreset = () => {
-    const nm = presetName.trim();
+    const nm = presetName.trim()
     if (!nm) {
-      flash('请先填写方案名称');
-      return;
+      flash('请先填写方案名称')
+      return
     }
     if (invalid) {
-      flash('当前参数有问题，修正后再保存');
-      return;
+      flash('当前参数有问题，修正后再保存')
+      return
     }
-    const next = upsertPreset(presets, nm, rule);
-    setPresets(next);
-    savePresets(next);
-    setPresetSel(nm);
-    setPresetName('');
-    flash(`已保存为「${nm}」（同名会覆盖）`);
-  };
+    const next = upsertPreset(presets, nm, rule)
+    setPresets(next)
+    savePresets(next)
+    setPresetSel(nm)
+    setPresetName('')
+    flash(`已保存为「${nm}」（同名会覆盖）`)
+  }
   const renamePreset = () => {
-    const nm = presetName.trim();
-    const old = presets.find((p) => p.name === presetSel);
+    const nm = presetName.trim()
+    const old = presets.find((p) => p.name === presetSel)
     if (!old || !nm) {
-      flash('请选择方案并填写新名称');
-      return;
+      flash('请选择方案并填写新名称')
+      return
     }
-    const r = decodePreset(old);
-    if (!r) return;
-    const next = upsertPreset(removePreset(presets, old.name), nm, r);
-    setPresets(next);
-    savePresets(next);
-    setPresetSel(nm);
-    setPresetName('');
-    flash(`已重命名为「${nm}」`);
-  };
+    const r = decodePreset(old)
+    if (!r) return
+    const next = upsertPreset(removePreset(presets, old.name), nm, r)
+    setPresets(next)
+    savePresets(next)
+    setPresetSel(nm)
+    setPresetName('')
+    flash(`已重命名为「${nm}」`)
+  }
   const deletePreset = () => {
-    if (!presetSel) return;
-    const next = removePreset(presets, presetSel);
-    setPresets(next);
-    savePresets(next);
-    setPresetSel('');
-    flash('已删除该方案');
-  };
+    if (!presetSel) return
+    const next = removePreset(presets, presetSel)
+    setPresets(next)
+    savePresets(next)
+    setPresetSel('')
+    flash('已删除该方案')
+  }
 
   const riseCond = rule.riseRankEnabled
     ? `进涨幅榜${rule.eventLogic === 'AND' ? ' 且 ' : ' 或 '}≥${rule.riseThreshold}%`
-    : `≥${rule.riseThreshold}%`;
+    : `≥${rule.riseThreshold}%`
   const fallCond = rule.fallRankEnabled
     ? `进跌幅榜${rule.eventLogic === 'AND' ? ' 且 ' : ' 或 '}≤-${rule.fallThreshold}%`
-    : `≤-${rule.fallThreshold}%`;
+    : `≤-${rule.fallThreshold}%`
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(serializeRule(rule));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
+      await navigator.clipboard.writeText(serializeRule(rule))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
     } catch {
-      setCopied(false);
+      setCopied(false)
     }
-  };
+  }
 
   return (
     <>
@@ -359,21 +383,26 @@ export function RotationRuleBar({
           gap: 10,
           flexWrap: 'wrap',
           marginBottom: 16,
-        }}
-      >
-        <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginRight: 2 }}>当前规则</span>
+        }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT, marginRight: 2 }}>
+          当前规则
+        </span>
         <Chip label="窗口" value={`近 ${rule.windowDays} 个交易日`} />
         <Chip label="榜单" value={`TOP ${rule.topN}`} />
         <Chip label="大涨" value={riseCond} color={COLOR_UP} />
         <Chip label="大跌" value={fallCond} color={COLOR_DOWN} />
         <Chip label="范围" value={SCOPE_LABEL[rule.scope]} />
         <Chip label="组合" value={rule.eventLogic === 'AND' ? '同时满足' : '任一满足'} />
-        <Chip label="独立事件冷却" value={rule.cooldownDays === 0 ? '不合并' : `${rule.cooldownDays} 日`} />
+        <Chip
+          label="独立事件冷却"
+          value={rule.cooldownDays === 0 ? '不合并' : `${rule.cooldownDays} 日`}
+        />
         <Chip label="关注间隔" value={`${rule.gapMin}~${rule.gapMax} 个交易日`} />
         <div style={{ flex: 1 }} />
         {dataRange && (
           <span style={{ fontSize: 11, color: '#86909C' }}>
-            数据范围 {dataRange.first} ~ {dataRange.last}（{dataRange.windowDays} 个交易日 · {dataRange.sectorCount} 个板块）
+            数据范围 {dataRange.first} ~ {dataRange.last}（{dataRange.windowDays} 个交易日 ·{' '}
+            {dataRange.sectorCount} 个板块）
             {dataRange.suspectCount ? ` · 已剔除异常值 ${dataRange.suspectCount} 条` : ''}
           </span>
         )}
@@ -388,8 +417,7 @@ export function RotationRuleBar({
             fontSize: 12,
             fontWeight: 600,
             cursor: 'pointer',
-          }}
-        >
+          }}>
           调整规则
         </button>
       </div>
@@ -415,8 +443,7 @@ export function RotationRuleBar({
               boxShadow: '-8px 0 28px rgba(0,0,0,0.10)',
               display: 'flex',
               flexDirection: 'column',
-            }}
-          >
+            }}>
             <div
               style={{
                 padding: '18px 20px',
@@ -424,9 +451,10 @@ export function RotationRuleBar({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-              }}
-            >
-              <span style={{ fontSize: 15, fontWeight: 700, color: COLOR_TEXT }}>轮动规则配置器</span>
+              }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: COLOR_TEXT }}>
+                轮动规则配置器
+              </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {/* V2.0 阶段 5:简单 / 高级分层 —— 只影响显示哪些控件,不改动任何已存参数 */}
                 <Seg
@@ -439,21 +467,43 @@ export function RotationRuleBar({
                 />
                 <button
                   onClick={() => setOpen(false)}
-                  style={{ border: 'none', background: 'transparent', fontSize: 18, color: '#86909C', cursor: 'pointer' }}
-                >
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    fontSize: 18,
+                    color: '#86909C',
+                    cursor: 'pointer',
+                  }}>
                   ×
                 </button>
               </div>
             </div>
 
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, overscrollBehavior: 'contain' }}>
+            <div
+              style={{
+                padding: '20px',
+                overflowY: 'auto',
+                flex: 1,
+                overscrollBehavior: 'contain',
+              }}>
               {/* §7.6 参数校验提示(可读文案;正常情况下应为空) */}
               {invalid && (
-                <div style={{ background: '#FFF2F0', border: '1px solid #FFCCC7', borderRadius: 8, padding: '10px 12px', marginBottom: 18 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#CF1322', marginBottom: 4 }}>当前参数有问题，请先修正：</div>
+                <div
+                  style={{
+                    background: '#FFF2F0',
+                    border: '1px solid #FFCCC7',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    marginBottom: 18,
+                  }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#CF1322', marginBottom: 4 }}>
+                    当前参数有问题，请先修正：
+                  </div>
                   <ul style={{ margin: 0, paddingLeft: 18 }}>
                     {issues.map((it) => (
-                      <li key={it.field} style={{ fontSize: 12, color: '#CF1322', lineHeight: 1.8 }}>
+                      <li
+                        key={it.field}
+                        style={{ fontSize: 12, color: '#CF1322', lineHeight: 1.8 }}>
                         {it.message}
                       </li>
                     ))}
@@ -462,7 +512,9 @@ export function RotationRuleBar({
               )}
 
               {/* §7.5 规则方案(仅本设备) */}
-              <Section title="规则方案" desc="保存在本机浏览器内（不跨设备、不联网）；同名保存会覆盖已有方案">
+              <Section
+                title="规则方案"
+                desc="保存在本机浏览器内（不跨设备、不联网）；同名保存会覆盖已有方案">
                 <Field label="已保存方案">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <select
@@ -479,8 +531,7 @@ export function RotationRuleBar({
                         color: COLOR_TEXT,
                         background: '#fff',
                         outline: 'none',
-                      }}
-                    >
+                      }}>
                       <option value="">{presets.length ? '请选择方案…' : '暂无保存的方案'}</option>
                       {presets.map((p) => (
                         <option key={p.name} value={p.name}>
@@ -513,18 +564,35 @@ export function RotationRuleBar({
                         outline: 'none',
                       }}
                     />
-                    <SmallBtn onClick={saveAsPreset} disabled={invalid} title={invalid ? '当前参数有问题，修正后再保存' : '把当前参数保存为新方案（同名覆盖）'}>
+                    <SmallBtn
+                      onClick={saveAsPreset}
+                      disabled={invalid}
+                      title={
+                        invalid
+                          ? '当前参数有问题，修正后再保存'
+                          : '把当前参数保存为新方案（同名覆盖）'
+                      }>
                       保存当前
                     </SmallBtn>
                   </div>
                   <div style={{ marginTop: 8 }}>
-                    <SmallBtn onClick={renamePreset} disabled={!presetSel || !presetName.trim()} title="把所选方案改名（先在上方输入新名称）">
+                    <SmallBtn
+                      onClick={renamePreset}
+                      disabled={!presetSel || !presetName.trim()}
+                      title="把所选方案改名（先在上方输入新名称）">
                       重命名所选
                     </SmallBtn>
                   </div>
                 </Field>
-                <div style={{ fontSize: 11, color: presetMsg ? COLOR_PRIMARY : '#86909C', lineHeight: 1.7, minHeight: 18 }}>
-                  {presetMsg || `共 ${presets.length} / ${PRESET_LIMIT} 个方案；「复制」= 用新名称「保存当前」，再删除旧方案。`}
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: presetMsg ? COLOR_PRIMARY : '#86909C',
+                    lineHeight: 1.7,
+                    minHeight: 18,
+                  }}>
+                  {presetMsg ||
+                    `共 ${presets.length} / ${PRESET_LIMIT} 个方案；「复制」= 用新名称「保存当前」，再删除旧方案。`}
                 </div>
               </Section>
 
@@ -617,7 +685,8 @@ export function RotationRuleBar({
                       />
                     </Row>
                     <div style={{ fontSize: 11, color: '#86909C', lineHeight: 1.7, marginTop: 2 }}>
-                      未勾选的条件不会参与判断。AND 表示必须同时进榜且达到阈值；OR 表示满足任一已启用条件即可。
+                      未勾选的条件不会参与判断。AND 表示必须同时进榜且达到阈值；OR
+                      表示满足任一已启用条件即可。
                     </div>
                   </>
                 )}
@@ -664,10 +733,14 @@ export function RotationRuleBar({
                     </div>
                   </Section>
 
-                  <Section title="活跃度评分权重（只读）" desc="当前为实验参数，尚未经回测验证；此处只展示，暂不开放修改">
+                  <Section
+                    title="活跃度评分权重（只读）"
+                    desc="当前为实验参数，尚未经回测验证；此处只展示，暂不开放修改">
                     <div style={{ fontSize: 12, color: '#4E5969', lineHeight: 1.9 }}>
-                      强势频率 × {(SCORE_WEIGHTS.f1 * 100).toFixed(0)}% ＋ 近期活跃 × {(SCORE_WEIGHTS.f2 * 100).toFixed(0)}% ＋ 独立周期频率 ×{' '}
-                      {(SCORE_WEIGHTS.f3 * 100).toFixed(0)}% ＋ 相对市场趋势 × {(SCORE_WEIGHTS.f4 * 100).toFixed(0)}%
+                      强势频率 × {(SCORE_WEIGHTS.f1 * 100).toFixed(0)}% ＋ 近期活跃 ×{' '}
+                      {(SCORE_WEIGHTS.f2 * 100).toFixed(0)}% ＋ 独立周期频率 ×{' '}
+                      {(SCORE_WEIGHTS.f3 * 100).toFixed(0)}% ＋ 相对市场趋势 ×{' '}
+                      {(SCORE_WEIGHTS.f4 * 100).toFixed(0)}%
                       <div style={{ fontSize: 11, color: '#86909C', marginTop: 4 }}>
                         各分项先归一化到 0~1，按上述权重加总后 × 100 四舍五入，即为「活跃度评分」。
                       </div>
@@ -686,13 +759,13 @@ export function RotationRuleBar({
                     fontSize: 12,
                     color: '#4E5969',
                     lineHeight: 1.9,
-                  }}
-                >
+                  }}>
                   统计窗口:近 {rule.windowDays} 个交易日；每日榜单:TOP {rule.topN}；
                   <br />
                   大涨:{riseCond}；大跌:{fallCond}；板块范围:{SCOPE_LABEL[rule.scope]}。
                   <br />
-                  关注事件间隔:{rule.gapMin}~{rule.gapMax} 个交易日；独立事件冷却期:{rule.cooldownDays} 个交易日。
+                  关注事件间隔:{rule.gapMin}~{rule.gapMax} 个交易日；独立事件冷却期:
+                  {rule.cooldownDays} 个交易日。
                   <br />
                   规则版本:{rule.version}（指纹 {serializeRule(rule).length} 字符）
                 </div>
@@ -706,8 +779,7 @@ export function RotationRuleBar({
                 display: 'flex',
                 gap: 12,
                 justifyContent: 'flex-end',
-              }}
-            >
+              }}>
               <button
                 onClick={copy}
                 style={{
@@ -718,8 +790,7 @@ export function RotationRuleBar({
                   padding: '7px 14px',
                   fontSize: 12,
                   cursor: 'pointer',
-                }}
-              >
+                }}>
                 {copied ? '已复制 ✓' : '复制当前配置'}
               </button>
               <button
@@ -732,8 +803,7 @@ export function RotationRuleBar({
                   padding: '7px 14px',
                   fontSize: 12,
                   cursor: 'pointer',
-                }}
-              >
+                }}>
                 重置默认
               </button>
               <button
@@ -747,8 +817,7 @@ export function RotationRuleBar({
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
-                }}
-              >
+                }}>
                 完成
               </button>
             </div>
@@ -756,13 +825,13 @@ export function RotationRuleBar({
         </>
       )}
     </>
-  );
+  )
 }
 
 /** 涨跌幅文字色(红涨绿跌,与站点一致) */
 export function pctColor(v: number | null | undefined): string {
-  if (v === null || v === undefined) return COLOR_FLAT;
-  if (v > 0) return COLOR_UP;
-  if (v < 0) return COLOR_DOWN;
-  return COLOR_FLAT;
+  if (v === null || v === undefined) return COLOR_FLAT
+  if (v > 0) return COLOR_UP
+  if (v < 0) return COLOR_DOWN
+  return COLOR_FLAT
 }

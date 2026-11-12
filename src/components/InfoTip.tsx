@@ -3,17 +3,17 @@
 // 差异:icon 由"info(竖线+点)"改为用户要求的"感叹号(圆圈+竖线+点)"
 // 边界:antd Popover 默认 autoAdjustOverflow=true(超出视口自动翻转/移位);
 //       再加 overlayStyle.maxWidth = 视口宽-24px + 内容 width:100% → 窄屏也不溢出屏幕
-import { Popover } from 'antd';
-import type { ReactNode } from 'react';
-import { COLOR_TEXT } from '../utils/format';
+import { Popover } from 'antd'
+import type { ReactNode } from 'react'
+import { COLOR_TEXT } from '../utils/format'
 
 export interface TipItem {
   /** 表头字段名(与表格实际表头一致) */
-  label: string;
+  label: string
   /** 含义 / 计算公式(精简一句话) */
-  desc?: string;
+  desc?: string
   /** 可选:色块颜色。传入后会在名称左侧渲染一个同色小方块(用于热力图图例说明) */
-  color?: string;
+  color?: string
 }
 
 /** 字段名 → 说明。集中维护,保证各表口径措辞一致 */
@@ -117,7 +117,8 @@ export const GLOSSARY: Record<string, string> = {
   低波动频率: '按基准 20 日滚动波动率中位数分档后,低波动档内的强势事件频率',
 
   // —— 近期轮动观察(V2.0 阶段 3 新增) ——
-  '近期轮动观察': '按当前规则与阈值,从窗口内识别"值得继续研究"的板块行为;只陈述过去发生了什么,不预测未来。',
+  近期轮动观察:
+    '按当前规则与阈值,从窗口内识别"值得继续研究"的板块行为;只陈述过去发生了什么,不预测未来。',
   触发依据: '该条观察命中标签的客观条件(全部由真实统计量生成,不含预测性表述)',
   统计窗口: '本次统计使用的交易日范围(近 N 个交易日)',
   最近活跃日期: '窗口内最近一次发生强势或弱势事件的交易日',
@@ -128,7 +129,8 @@ export const GLOSSARY: Record<string, string> = {
   强弱交替: '窗口内强势与弱势事件都较多,行为较反复',
   相对走强: '相对市场基准(沪深300)有明显超额收益;这是相对强度,不等同于绝对上涨',
   实验参数: '尚未经回测验证的启发式阈值/权重,可随产品反馈调整;此处展示用于可解释性,不代表最优值',
-  数据覆盖情况: '该板块有行情的交易日数 ÷ 统计窗口交易日数;<100% 表示存在缺失日,缺失日不计为 0 涨跌幅',
+  数据覆盖情况:
+    '该板块有行情的交易日数 ÷ 统计窗口交易日数;<100% 表示存在缺失日,缺失日不计为 0 涨跌幅',
   近期活跃度: '距最近一次强势事件越近分越高(半衰期 5 个交易日的指数衰减)',
   独立周期频率: '独立活跃周期个数 ÷ 有效交易日数,每 10 个交易日 1 个周期即满分',
   相对市场趋势: '相对基准超额收益映射到 0~1(超额 ±10% 映射为 0~1,基准缺失时取 0.5)',
@@ -140,34 +142,42 @@ export const GLOSSARY: Record<string, string> = {
   最近一次活跃事件: '窗口内最近一次发生的强势或弱势事件(取两者中较近的一次)',
   强势事件次数: '窗口内进入每日涨幅 TOP N 的交易日数(按当前规则判定)',
   弱势事件次数: '窗口内进入每日跌幅 TOP N 的交易日数(按当前规则判定)',
-  更多统计: '次要指标(大涨/大跌事件日、连续天数、独立周期、活跃度、间隔集中度等),展开查看;不删除任何已有指标',
-  相对净值表现: '板块净值 ÷ 基准净值 − 1(比率口径);与「简单超额」(两者累计收益相减)是两种不同口径,本页分别标注',
-  净值曲线口径: '以窗口首个交易日为基点(0%),按每日涨跌幅复利累乘 ∏(1+r);缺失日沿用前值(等价于跳过,不当作 0 收益)',
+  更多统计:
+    '次要指标(大涨/大跌事件日、连续天数、独立周期、活跃度、间隔集中度等),展开查看;不删除任何已有指标',
+  相对净值表现:
+    '板块净值 ÷ 基准净值 − 1(比率口径);与「简单超额」(两者累计收益相减)是两种不同口径,本页分别标注',
+  净值曲线口径:
+    '以窗口首个交易日为基点(0%),按每日涨跌幅复利累乘 ∏(1+r);缺失日沿用前值(等价于跳过,不当作 0 收益)',
   窗口起止: '曲线覆盖的交易日区间(窗口首个交易日 ~ 最后一个交易日)',
   独立事件簇归属: '该事件日所属的独立活跃周期(按冷却期把相邻事件日合并而成);点击时间轴格子即可查看',
   当日净值位置: '该交易日的窗口累计净值(以窗口首日为基点),用于把事件放回收益曲线上对照',
-  同步活跃伙伴: '与本板块在同一交易日都发生强势事件的其它板块;按 Jaccard 重合率排序,样本不足处已标注',
-  走强后的跟随板块: '本板块强势后第 k 个交易日,其它板块也走强的条件频率与实际命中数;均为历史统计关联,非因果',
+  同步活跃伙伴:
+    '与本板块在同一交易日都发生强势事件的其它板块;按 Jaccard 重合率排序,样本不足处已标注',
+  走强后的跟随板块:
+    '本板块强势后第 k 个交易日,其它板块也走强的条件频率与实际命中数;均为历史统计关联,非因果',
   历史行为: 'A 段:窗口内的强势/弱势/大涨/大跌事件次数与频率',
   活跃模式: 'B 段:事件是否连续、是否集中在近期、是否形成多个独立活跃周期与间隔规律',
   收益与风险: 'C 段:窗口复合收益、相对基准表现、最大回撤、波动率与上涨日占比',
   统计局限: 'D 段:有效样本数、覆盖率、间隔样本量、基准可用性 —— 说明结论在什么条件下才可靠',
-  后续观察: 'E 段:可继续跟踪验证的客观条件(例如后续交易日是否再次满足强势事件规则),不含任何未来判断',
+  后续观察:
+    'E 段:可继续跟踪验证的客观条件(例如后续交易日是否再次满足强势事件规则),不含任何未来判断',
 
   // —— 观察清单(V2.0 阶段 6 新增) ——
-  观察清单: '把想继续跟踪的板块收藏起来;每天的强势/弱势次数与收益都用当前规则与最新数据重新计算,清单本身只是"待继续验证的名单"',
-  '仅本设备': '只存在这台设备的浏览器里(localStorage);不联网、不跨设备,换设备或清缓存会丢失',
-  加入以来区间: '从"加入时的数据最新交易日"到当前窗口末的区间;若该日早于当前窗口起点,则截断到窗口起点并给出提示',
+  观察清单:
+    '把想继续跟踪的板块收藏起来;每天的强势/弱势次数与收益都用当前规则与最新数据重新计算,清单本身只是"待继续验证的名单"',
+  仅本设备: '只存在这台设备的浏览器里(localStorage);不联网、不跨设备,换设备或清缓存会丢失',
+  加入以来区间:
+    '从"加入时的数据最新交易日"到当前窗口末的区间;若该日早于当前窗口起点,则截断到窗口起点并给出提示',
   加入于: '点击收藏时本机日期(仅用于展示,不参与任何计算)',
   观察起点: '区间统计实际使用的起始交易日',
-};
+}
 
 /** 由表头字段名生成气泡条目(label 必须能在 GLOSSARY 找到);也支持传入 {label,color} 以附带色块 */
 export function tipItems(labels: Array<string | TipItem>): TipItem[] {
   return labels.map((l) => {
-    if (typeof l === 'string') return { label: l, desc: GLOSSARY[l] || '' };
-    return { ...l, desc: l.desc ?? GLOSSARY[l.label] ?? '' };
-  });
+    if (typeof l === 'string') return { label: l, desc: GLOSSARY[l] || '' }
+    return { ...l, desc: l.desc ?? GLOSSARY[l.label] ?? '' }
+  })
 }
 
 /**
@@ -175,9 +185,18 @@ export function tipItems(labels: Array<string | TipItem>): TipItem[] {
  * @param items  浮层内容(建议用 tipItems(headers) 直接由表头生成)
  * @param title  可选:浮层顶部的一句话总述
  */
-export function InfoTip({ items, title, width = 380 }: { items: TipItem[]; title?: ReactNode; width?: number }) {
+export function InfoTip({
+  items,
+  title,
+  width = 380,
+}: {
+  items: TipItem[]
+  title?: ReactNode
+  width?: number
+}) {
   const content = (
-    <div style={{ width: '100%', maxWidth: width, fontSize: 12, lineHeight: 1.7, color: '#4E5969' }}>
+    <div
+      style={{ width: '100%', maxWidth: width, fontSize: 12, lineHeight: 1.7, color: '#4E5969' }}>
       {title && <div style={{ fontWeight: 600, color: COLOR_TEXT, marginBottom: 8 }}>{title}</div>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {items.map((it) => (
@@ -203,7 +222,7 @@ export function InfoTip({ items, title, width = 380 }: { items: TipItem[]; title
         ))}
       </div>
     </div>
-  );
+  )
   return (
     <Popover
       content={content}
@@ -219,8 +238,7 @@ export function InfoTip({ items, title, width = 380 }: { items: TipItem[]; title
       // 关键 3:内容过高时内部滚动,浮层本身高度上限 340px(或 60vh,取小者)
       overlayInnerStyle={{ maxHeight: 'min(340px, 60vh)', overflowY: 'auto' }}
       mouseEnterDelay={0.12}
-      mouseLeaveDelay={0.06}
-    >
+      mouseLeaveDelay={0.06}>
       <span
         // 用户要"感叹号"icon:圆圈 + 竖线 + 点(区别于 Surgery 的 info 样式)
         style={{
@@ -233,24 +251,38 @@ export function InfoTip({ items, title, width = 380 }: { items: TipItem[]; title
           color: '#C9CDD4',
           cursor: 'pointer',
           flexShrink: 0,
-        }}
-      >
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        }}>
+        <svg
+          width="19"
+          height="19"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round">
           <circle cx="12" cy="12" r="9.5" />
           <line x1="12" y1="7.5" x2="12" y2="13" />
           <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
         </svg>
       </span>
     </Popover>
-  );
+  )
 }
 
 /** 常用的"标题 + 感叹号"组合(标题右侧贴一个 icon) */
-export function TitleWithTip({ text, items, title }: { text: string; items: TipItem[]; title?: ReactNode }) {
+export function TitleWithTip({
+  text,
+  items,
+  title,
+}: {
+  text: string
+  items: TipItem[]
+  title?: ReactNode
+}) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
       {text}
       <InfoTip items={items} title={title} />
     </span>
-  );
+  )
 }

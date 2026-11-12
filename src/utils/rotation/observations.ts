@@ -7,11 +7,11 @@
 // 阈值全部是**实验参数**（默认值见 DEFAULT_OBSERVATION_THRESHOLDS），不是经回测验证的最优参数；
 // 界面必须标注"实验参数"，且允许后续按产品反馈调整。
 
-import type { RotationSector } from './types';
-import type { SectorStats } from './analytics';
+import type { RotationSector } from './types'
+import type { SectorStats } from './analytics'
 
 /** 五类观察标签（任务书 §5.1 A~E） */
-export type ObservationLabel = 'reactivate' | 'pulse' | 'sustained' | 'alternate' | 'relative';
+export type ObservationLabel = 'reactivate' | 'pulse' | 'sustained' | 'alternate' | 'relative'
 
 export const OBSERVATION_LABEL_TEXT: Record<ObservationLabel, string> = {
   reactivate: '沉寂后重新活跃',
@@ -19,7 +19,7 @@ export const OBSERVATION_LABEL_TEXT: Record<ObservationLabel, string> = {
   sustained: '持续活跃',
   alternate: '强弱交替',
   relative: '相对走强',
-};
+}
 
 /**
  * 辨识度优先级：数字越小越"有辨识度"。
@@ -33,40 +33,40 @@ export const OBSERVATION_PRIORITY: Record<ObservationLabel, number> = {
   sustained: 2,
   alternate: 3,
   relative: 4,
-};
+}
 
 /** 观察标签的展示色（A 股语境下避开绿色：绿色=下跌） */
 export const OBSERVATION_COLOR: Record<ObservationLabel, string> = {
   reactivate: '#1890FF', // 蓝：重启
-  pulse: '#FA8C16',      // 橙：脉冲
-  sustained: '#ff4d4f',  // 红：持续强势
-  alternate: '#722ED1',  // 紫：反复
-  relative: '#FAAD14',   // 金：相对强度
-};
+  pulse: '#FA8C16', // 橙：脉冲
+  sustained: '#ff4d4f', // 红：持续强势
+  alternate: '#722ED1', // 紫：反复
+  relative: '#FAAD14', // 金：相对强度
+}
 
 export interface ObservationThresholds {
   /** 生成任何观察所需的最低数据覆盖率（数据不足不下结论） */
-  minCoverage: number;
+  minCoverage: number
   /** 持续活跃：窗口内强势事件次数下限 */
-  sustainedMinStrong: number;
+  sustainedMinStrong: number
   /** 持续活跃：距最近一次强势 ≤ N 个交易日（"近期仍有活动"） */
-  sustainedRecentAgo: number;
+  sustainedRecentAgo: number
   /** 反复脉冲：独立活跃周期个数下限 */
-  pulseMinClusters: number;
+  pulseMinClusters: number
   /** 反复脉冲：周期平均间隔下限（有间隔才叫"脉冲"，否则是"连续"） */
-  pulseMinClusterGap: number;
+  pulseMinClusterGap: number
   /** 沉寂后重新活跃：距最近一次强势 ≤ N 个交易日 */
-  reactivateRecentAgo: number;
+  reactivateRecentAgo: number
   /** 沉寂后重新活跃：此前空档 ≥ N 个交易日 */
-  reactivateGapBefore: number;
+  reactivateGapBefore: number
   /** 强弱交替：强势、弱势各自的下限 */
-  alternateMinEach: number;
+  alternateMinEach: number
   /** 强弱交替：少数一侧 / 多数一侧 的比例下限（两侧都不能太少） */
-  alternateBalance: number;
+  alternateBalance: number
   /** 相对走强：相对基准（简单超额）下限 */
-  relativeExcess: number;
+  relativeExcess: number
   /** 相对走强：覆盖率下限（相对强度结论更依赖数据完整度） */
-  relativeMinCoverage: number;
+  relativeMinCoverage: number
 }
 
 /**
@@ -91,35 +91,35 @@ export const DEFAULT_OBSERVATION_THRESHOLDS: ObservationThresholds = {
   alternateBalance: 0.8,
   relativeExcess: 0.28,
   relativeMinCoverage: 0.9,
-};
+}
 
 /** 判定所需的"事实"——从 SectorStats 抽取出的最小字段集，便于独立构造与测试 */
 export interface ObservationFacts {
-  sector: RotationSector;
-  strongCount: number;
-  weakCount: number;
+  sector: RotationSector
+  strongCount: number
+  weakCount: number
   /** 距窗口最后一个交易日的交易日步长；无事件为 null */
-  lastStrongAgo: number | null;
+  lastStrongAgo: number | null
   /** 最近一次强势事件「之前」的间隔（交易日步长）；不足两个事件为 null */
-  lastGapBefore: number | null;
+  lastGapBefore: number | null
   /** 独立活跃周期个数 */
-  clusterCount: number;
+  clusterCount: number
   /** 周期之间（按簇起始日相减）的平均间隔 */
-  clusterGapAvg: number | null;
+  clusterGapAvg: number | null
   /** 相邻强势事件的平均间隔 */
-  gapStrongAvg: number | null;
+  gapStrongAvg: number | null
   /** 间隔样本是否不足（不足时不给"平均间隔"数字） */
-  gapStrongSampleInsufficient: boolean;
-  cumReturn: number;
-  relStrength: number | null;
-  coverage: number;
-  lastStrongDate: string | null;
-  lastActiveDate: string | null;
+  gapStrongSampleInsufficient: boolean
+  cumReturn: number
+  relStrength: number | null
+  coverage: number
+  lastStrongDate: string | null
+  lastActiveDate: string | null
 }
 
 export interface ObservationMetric {
-  k: string;
-  v: string;
+  k: string
+  v: string
   /**
    * 数值着色口径(仅影响 UI 呈现, 不影响任何统计):
    *  'strong' = 固定红(强势次数, 与正负无关)
@@ -127,28 +127,28 @@ export interface ObservationMetric {
    *  'signed' = 按数值正负(正红/负绿/零灰)
    *  缺省     = 常规文字色
    */
-  tone?: 'strong' | 'weak' | 'signed';
+  tone?: 'strong' | 'weak' | 'signed'
 }
 
 export interface Observation {
-  sector: RotationSector;
-  label: ObservationLabel;
-  labelText: string;
+  sector: RotationSector
+  label: ObservationLabel
+  labelText: string
   /** 核心触发原因（由真实统计量生成的自然语言，不含预测性表述） */
-  reason: string;
+  reason: string
   /** 关键数据（用于卡片底部 chips） */
-  metrics: ObservationMetric[];
-  windowDays: number;
+  metrics: ObservationMetric[]
+  windowDays: number
   /** 最近一次相关事件日期（该标签对应的"相关事件"） */
-  lastEventDate: string | null;
-  coverage: number;
+  lastEventDate: string | null
+  coverage: number
   /** 排序强度（同类标签内越大越靠前） */
-  strength: number;
+  strength: number
 }
 
 /** 从 SectorStats 抽取判定所需事实 */
 export function sectorToFacts(s: SectorStats): ObservationFacts {
-  const n = s.strongDates.length;
+  const n = s.strongDates.length
   return {
     sector: s.sector,
     strongCount: s.strongCount,
@@ -164,15 +164,15 @@ export function sectorToFacts(s: SectorStats): ObservationFacts {
     coverage: s.coverage,
     lastStrongDate: n > 0 ? s.strongDates[n - 1] : null,
     lastActiveDate: s.lastActiveDate,
-  };
+  }
 }
 
 function fix1(x: number): string {
-  return x.toFixed(1);
+  return x.toFixed(1)
 }
 
 function signedPct(x: number, d = 2): string {
-  return `${x > 0 ? '+' : ''}${(x * 100).toFixed(d)}%`;
+  return `${x > 0 ? '+' : ''}${(x * 100).toFixed(d)}%`
 }
 
 /** 关键数据 chips（各标签通用；"相对基准"缺失时显示 —） */
@@ -183,11 +183,14 @@ function metricsOf(f: ObservationFacts): ObservationMetric[] {
     { k: '独立周期', v: `${f.clusterCount} 个` },
     {
       k: '平均间隔',
-      v: f.gapStrongSampleInsufficient || f.gapStrongAvg === null ? '样本少' : `${fix1(f.gapStrongAvg)} 日`,
+      v:
+        f.gapStrongSampleInsufficient || f.gapStrongAvg === null
+          ? '样本少'
+          : `${fix1(f.gapStrongAvg)} 日`,
     },
     { k: '累计收益', v: signedPct(f.cumReturn), tone: 'signed' },
     { k: '相对基准', v: f.relStrength === null ? '—' : signedPct(f.relStrength), tone: 'signed' },
-  ];
+  ]
 }
 
 /**
@@ -201,9 +204,14 @@ export function buildObservationOf(
   t: ObservationThresholds = DEFAULT_OBSERVATION_THRESHOLDS,
 ): Observation | null {
   // 数据不足（覆盖率过低）一律不下结论
-  if (!(f.coverage >= t.minCoverage)) return null;
+  if (!(f.coverage >= t.minCoverage)) return null
 
-  const mk = (label: ObservationLabel, reason: string, strength: number, lastEventDate: string | null): Observation => ({
+  const mk = (
+    label: ObservationLabel,
+    reason: string,
+    strength: number,
+    lastEventDate: string | null,
+  ): Observation => ({
     sector: f.sector,
     label,
     labelText: OBSERVATION_LABEL_TEXT[label],
@@ -213,7 +221,7 @@ export function buildObservationOf(
     lastEventDate,
     coverage: f.coverage,
     strength,
-  });
+  })
 
   // A. 沉寂后重新活跃：近期有强势事件，且此前空档足够长
   if (
@@ -226,7 +234,7 @@ export function buildObservationOf(
       `过去 ${windowDays} 个有效交易日内强势 ${f.strongCount} 次；最近一次在 ${f.lastStrongAgo} 个交易日前，而此前空档达 ${f.lastGapBefore} 个交易日 —— 沉寂一段时间后重新触发强势条件。`,
       f.lastGapBefore ?? 0,
       f.lastStrongDate,
-    );
+    )
   }
 
   // B. 反复脉冲：多个独立活跃周期，且周期之间有明显间隔
@@ -240,7 +248,7 @@ export function buildObservationOf(
       `过去 ${windowDays} 个有效交易日内形成 ${f.clusterCount} 个独立活跃周期，周期平均间隔 ${fix1(f.clusterGapAvg)} 个交易日 —— 多次出现强势事件但彼此间隔明显，未必形成连续趋势。`,
       f.clusterCount * 10 + f.clusterGapAvg,
       f.lastStrongDate,
-    );
+    )
   }
 
   // C. 持续活跃：强势事件次数多，且近期仍有活动
@@ -254,32 +262,36 @@ export function buildObservationOf(
       `过去 ${windowDays} 个有效交易日内强势 ${f.strongCount} 次，最近一次在 ${f.lastStrongAgo} 个交易日前 —— 满足强势条件的频率较高且仍在延续。`,
       f.strongCount,
       f.lastStrongDate,
-    );
+    )
   }
 
   // D. 强弱交替：强势与弱势两侧都较活跃
-  const mn = Math.min(f.strongCount, f.weakCount);
-  const mx = Math.max(f.strongCount, f.weakCount);
+  const mn = Math.min(f.strongCount, f.weakCount)
+  const mx = Math.max(f.strongCount, f.weakCount)
   if (mn >= t.alternateMinEach && mx > 0 && mn / mx >= t.alternateBalance) {
     return mk(
       'alternate',
       `过去 ${windowDays} 个有效交易日内强势 ${f.strongCount} 次、弱势 ${f.weakCount} 次 —— 强弱两侧都较活跃，行为较为反复。`,
       mn,
       f.lastActiveDate,
-    );
+    )
   }
 
   // E. 相对走强：相对基准有明显超额（是相对强度，不代表绝对上涨）
-  if (f.relStrength !== null && f.relStrength >= t.relativeExcess && f.coverage >= t.relativeMinCoverage) {
+  if (
+    f.relStrength !== null &&
+    f.relStrength >= t.relativeExcess &&
+    f.coverage >= t.relativeMinCoverage
+  ) {
     return mk(
       'relative',
       `过去 ${windowDays} 个有效交易日内相对基准（沪深300）超额 ${signedPct(f.relStrength)} —— 这是相对强度，不等同于绝对上涨。`,
       f.relStrength,
       f.lastActiveDate,
-    );
+    )
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -291,18 +303,18 @@ export function buildObservations(
   windowDays: number,
   t: ObservationThresholds = DEFAULT_OBSERVATION_THRESHOLDS,
 ): Observation[] {
-  const out: Observation[] = [];
+  const out: Observation[] = []
   for (const s of stats) {
-    const o = buildObservationOf(sectorToFacts(s), windowDays, t);
-    if (o) out.push(o);
+    const o = buildObservationOf(sectorToFacts(s), windowDays, t)
+    if (o) out.push(o)
   }
   out.sort(
     (a, b) =>
       OBSERVATION_PRIORITY[a.label] - OBSERVATION_PRIORITY[b.label] ||
       b.strength - a.strength ||
       (a.sector.id < b.sector.id ? -1 : a.sector.id > b.sector.id ? 1 : 0),
-  );
-  return out;
+  )
+  return out
 }
 
 /**
@@ -314,21 +326,21 @@ export function buildObservations(
  * 首屏 3 条会全部是该标签，信息量反而下降）。
  */
 export function pickHighlightObservations(obs: Observation[], n: number): Observation[] {
-  const picked: Observation[] = [];
-  const seenLabel = new Set<ObservationLabel>();
+  const picked: Observation[] = []
+  const seenLabel = new Set<ObservationLabel>()
   for (const o of obs) {
-    if (picked.length >= n) break;
-    if (seenLabel.has(o.label)) continue;
-    seenLabel.add(o.label);
-    picked.push(o);
+    if (picked.length >= n) break
+    if (seenLabel.has(o.label)) continue
+    seenLabel.add(o.label)
+    picked.push(o)
   }
   if (picked.length < n) {
-    const pickedIds = new Set(picked.map((o) => o.sector.id));
+    const pickedIds = new Set(picked.map((o) => o.sector.id))
     for (const o of obs) {
-      if (picked.length >= n) break;
-      if (pickedIds.has(o.sector.id)) continue;
-      picked.push(o);
+      if (picked.length >= n) break
+      if (pickedIds.has(o.sector.id)) continue
+      picked.push(o)
     }
   }
-  return picked;
+  return picked
 }

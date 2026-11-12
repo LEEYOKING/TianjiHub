@@ -3,83 +3,109 @@
 // 收益/波动/回撤/相对强度与活跃度评分，并生成确定性模板文本。
 // 纯逻辑，自包含。所有统计均跳过 null（无数据），绝不把 null 当 0。
 
-import type { RotationData, RotationRuleSet, RotationSector } from './types';
-import { toWindowView } from './ruleEngine';
-import type { SectorEventSeries, WindowComputation } from './ruleEngine';
+import type { RotationData, RotationRuleSet, RotationSector } from './types'
+import { toWindowView } from './ruleEngine'
+import type { SectorEventSeries, WindowComputation } from './ruleEngine'
 
 /** 间隔统计（单位为“交易日步长”） */
 export interface GapStats {
-  count: number;                 // 有效间隔数
-  gaps: number[];                // 原始间隔序列 gap_i = d_(i+1) − d_i
+  count: number // 有效间隔数
+  gaps: number[] // 原始间隔序列 gap_i = d_(i+1) − d_i
   /** v2.0.9:空档交易日数 empty_i = gap_i − 1（两事件之间“没有事件”的交易日数）。
    *  与 gaps 是两个不同指标，必须分别命名与展示，不能混用（任务书 §8.3）。 */
-  empties: number[];
-  avg: number | null;
-  avgEmpty: number | null;
-  median: number | null;
-  min: number | null;
-  max: number | null;
-  std: number | null;
-  inRange: number;               // 落在 [gapMin, gapMax] 的次数
-  concentration: number | null;  // inRange/count，count<4 时为 null
-  sampleInsufficient: boolean;   // count < 4
+  empties: number[]
+  avg: number | null
+  avgEmpty: number | null
+  median: number | null
+  min: number | null
+  max: number | null
+  std: number | null
+  inRange: number // 落在 [gapMin, gapMax] 的次数
+  concentration: number | null // inRange/count，count<4 时为 null
+  sampleInsufficient: boolean // count < 4
 }
 
 /** 独立事件簇 */
 export interface EventCluster {
-  startIdx: number; endIdx: number; // 窗口内序号(0-based，相对 days)
-  days: number;                     // 事件日数量
-  maxPct: number; cumReturn: number; // 簇内最大涨幅 / 簇内复合收益(小数)
-  startDate: string; endDate: string;
-  eventDates: string[];
+  startIdx: number
+  endIdx: number // 窗口内序号(0-based，相对 days)
+  days: number // 事件日数量
+  maxPct: number
+  cumReturn: number // 簇内最大涨幅 / 簇内复合收益(小数)
+  startDate: string
+  endDate: string
+  eventDates: string[]
 }
 
 /** 单个板块的完整行为画像 */
 export interface SectorStats {
-  sector: RotationSector;
-  validDays: number; coverage: number;
-  strongCount: number; weakCount: number; largeUpCount: number; largeDownCount: number;
-  strongFreq: number; weakFreq: number;          // 次数/有效日数
-  gapStrong: GapStats; gapWeak: GapStats;        // 事件日口径的间隔
-  clustersStrong: EventCluster[]; clustersWeak: EventCluster[];
-  clusterGapStrong: GapStats; clusterGapWeak: GapStats; // 独立事件簇口径的间隔(用簇起始日相减)
-  currentStrongStreak: number; longestStrongStreak: number;
-  currentWeakStreak: number; longestWeakStreak: number;
-  lastStrongAgo: number | null; lastWeakAgo: number | null; // 距窗口最后一个交易日的交易日数
+  sector: RotationSector
+  validDays: number
+  coverage: number
+  strongCount: number
+  weakCount: number
+  largeUpCount: number
+  largeDownCount: number
+  strongFreq: number
+  weakFreq: number // 次数/有效日数
+  gapStrong: GapStats
+  gapWeak: GapStats // 事件日口径的间隔
+  clustersStrong: EventCluster[]
+  clustersWeak: EventCluster[]
+  clusterGapStrong: GapStats
+  clusterGapWeak: GapStats // 独立事件簇口径的间隔(用簇起始日相减)
+  currentStrongStreak: number
+  longestStrongStreak: number
+  currentWeakStreak: number
+  longestWeakStreak: number
+  lastStrongAgo: number | null
+  lastWeakAgo: number | null // 距窗口最后一个交易日的交易日数
   /** 距最近一次强势「或」弱势事件的交易日步长(取较近者);无任何事件为 null */
-  lastActiveAgo: number | null;
+  lastActiveAgo: number | null
   /** 最近一次活跃事件(强势或弱势)对应的交易日期;无事件为 null */
-  lastActiveDate: string | null;
+  lastActiveDate: string | null
   /** 最近一次强势事件「之前」的那个间隔(交易日步长);不足两个事件时为 null */
-  lastGapBefore: number | null;
-  cumReturn: number;      // 复合收益(小数)
-  upDayRatio: number; avgPct: number; volatility: number;
-  maxDrawdown: number;    // 负数或 0
-  relStrength: number | null;  // 相对基准累计超额(小数)，基准缺失时 null
-  score: number;          // 0~100 活跃度评分
+  lastGapBefore: number | null
+  cumReturn: number // 复合收益(小数)
+  upDayRatio: number
+  avgPct: number
+  volatility: number
+  maxDrawdown: number // 负数或 0
+  relStrength: number | null // 相对基准累计超额(小数)，基准缺失时 null
+  score: number // 0~100 活跃度评分
   /** 活跃度评分的 4 个归一化分项(0~1)，用于界面展示"分项构成与权重"(任务书 §7) */
-  scoreParts: ScoreParts;
-  strongDates: string[]; weakDates: string[];
+  scoreParts: ScoreParts
+  strongDates: string[]
+  weakDates: string[]
 }
 
 /** 活跃度评分的四个分项（均已归一化到 0~1） */
 export interface ScoreParts {
-  f1: number; // 强势频率
-  f2: number; // 近期活跃（半衰期 5 日的指数衰减）
-  f3: number; // 独立事件簇频率
-  f4: number; // 相对市场趋势
+  f1: number // 强势频率
+  f2: number // 近期活跃（半衰期 5 日的指数衰减）
+  f3: number // 独立事件簇频率
+  f4: number // 相对市场趋势
 }
 
 /** 活跃度评分权重（**实验参数**，不是经回测验证的最优权重；界面须如此标注） */
-export const SCORE_WEIGHTS = { f1: 0.35, f2: 0.25, f3: 0.2, f4: 0.2 } as const;
+export const SCORE_WEIGHTS = { f1: 0.35, f2: 0.25, f3: 0.2, f4: 0.2 } as const
 
 /** 空间隔统计 */
 export function emptyGapStats(): GapStats {
   return {
-    count: 0, gaps: [], empties: [], avg: null, avgEmpty: null,
-    median: null, min: null, max: null, std: null,
-    inRange: 0, concentration: null, sampleInsufficient: true,
-  };
+    count: 0,
+    gaps: [],
+    empties: [],
+    avg: null,
+    avgEmpty: null,
+    median: null,
+    min: null,
+    max: null,
+    std: null,
+    inRange: 0,
+    concentration: null,
+    sampleInsufficient: true,
+  }
 }
 
 /**
@@ -89,36 +115,48 @@ export function emptyGapStats(): GapStats {
  * v2.0.9:同时给出 empty_i = gap_i − 1（空档交易日数），与 gap_i 严格区分。
  */
 export function gapStatsOf(gaps: number[], gapMin: number, gapMax: number): GapStats {
-  const count = gaps.length;
-  if (count === 0) return emptyGapStats();
+  const count = gaps.length
+  if (count === 0) return emptyGapStats()
 
-  const sorted = [...gaps].sort((a, b) => a - b);
-  let sum = 0;
-  for (const g of gaps) sum += g;
-  const avg = sum / count;
+  const sorted = [...gaps].sort((a, b) => a - b)
+  let sum = 0
+  for (const g of gaps) sum += g
+  const avg = sum / count
 
-  const empties = gaps.map((g) => g - 1);
-  const avgEmpty = avg - 1;
+  const empties = gaps.map((g) => g - 1)
+  const avgEmpty = avg - 1
 
-  const median = count % 2 === 1
-    ? sorted[(count - 1) / 2]
-    : (sorted[count / 2 - 1] + sorted[count / 2]) / 2;
+  const median =
+    count % 2 === 1 ? sorted[(count - 1) / 2] : (sorted[count / 2 - 1] + sorted[count / 2]) / 2
 
-  const min = sorted[0];
-  const max = sorted[count - 1];
+  const min = sorted[0]
+  const max = sorted[count - 1]
 
-  let variance = 0;
-  for (const g of gaps) variance += (g - avg) ** 2;
-  variance /= count;
-  const std = Math.sqrt(variance);
+  let variance = 0
+  for (const g of gaps) variance += (g - avg) ** 2
+  variance /= count
+  const std = Math.sqrt(variance)
 
-  let inRange = 0;
-  for (const g of gaps) if (g >= gapMin && g <= gapMax) inRange++;
+  let inRange = 0
+  for (const g of gaps) if (g >= gapMin && g <= gapMax) inRange++
 
-  const sampleInsufficient = count < 4;
-  const concentration = sampleInsufficient ? null : inRange / count;
+  const sampleInsufficient = count < 4
+  const concentration = sampleInsufficient ? null : inRange / count
 
-  return { count, gaps: [...gaps], empties, avg, avgEmpty, median, min, max, std, inRange, concentration, sampleInsufficient };
+  return {
+    count,
+    gaps: [...gaps],
+    empties,
+    avg,
+    avgEmpty,
+    median,
+    min,
+    max,
+    std,
+    inRange,
+    concentration,
+    sampleInsufficient,
+  }
 }
 
 /**
@@ -127,14 +165,14 @@ export function gapStatsOf(gaps: number[], gapMin: number, gapMax: number): GapS
  * 净值序列必须与"收益曲线"同源（任务书 §8.7），故详情页曲线与统计摘要都走这里。
  */
 export function maxDrawdownOf(nav: number[]): number {
-  let peak = nav.length > 0 ? nav[0] : 1;
-  let mdd = 0;
+  let peak = nav.length > 0 ? nav[0] : 1
+  let mdd = 0
   for (const v of nav) {
-    if (v > peak) peak = v;
-    const dd = peak > 0 ? v / peak - 1 : 0;
-    if (dd < mdd) mdd = dd;
+    if (v > peak) peak = v
+    const dd = peak > 0 ? v / peak - 1 : 0
+    if (dd < mdd) mdd = dd
   }
-  return mdd;
+  return mdd
 }
 
 /**
@@ -147,125 +185,133 @@ export function analyzeSector(
   rule: RotationRuleSet,
   comp: WindowComputation,
 ): SectorStats {
-  const total = data.dates.length;
-  const win = Math.max(0, Math.min(Math.floor(rule.windowDays), total));
-  const start = total - win;
+  const total = data.dates.length
+  const win = Math.max(0, Math.min(Math.floor(rule.windowDays), total))
+  const start = total - win
 
-  const days = series.days;
-  const pct = series.pctInWindow;
-  const events = series.events;
+  const days = series.days
+  const pct = series.pctInWindow
+  const events = series.events
 
   // 全局下标 → 序列位置 映射（供连续天数 / 事件簇回溯）
-  const posByGlobal = new Map<number, number>();
-  for (let k = 0; k < days.length; k++) posByGlobal.set(days[k], k);
+  const posByGlobal = new Map<number, number>()
+  for (let k = 0; k < days.length; k++) posByGlobal.set(days[k], k)
 
   // 有效涨跌幅（跳过 null / NaN）
-  const valid: number[] = [];
+  const valid: number[] = []
   for (let k = 0; k < pct.length; k++) {
-    const v = pct[k];
-    if (isNum(v)) valid.push(v);
+    const v = pct[k]
+    if (isNum(v)) valid.push(v)
   }
-  const validDays = valid.length;
-  const coverage = win > 0 ? validDays / win : 0;
+  const validDays = valid.length
+  const coverage = win > 0 ? validDays / win : 0
 
   // ---- 事件计数与事件日(全局下标) ----
-  const strongGlobals: number[] = [];
-  const weakGlobals: number[] = [];
-  let largeUpCount = 0;
-  let largeDownCount = 0;
+  const strongGlobals: number[] = []
+  const weakGlobals: number[] = []
+  let largeUpCount = 0
+  let largeDownCount = 0
   for (let k = 0; k < days.length; k++) {
-    const e = events[k];
-    if (!e) continue;
-    if (e.largeUp) largeUpCount++;
-    if (e.largeDown) largeDownCount++;
-    if (e.strong) strongGlobals.push(days[k]);
-    if (e.weak) weakGlobals.push(days[k]);
+    const e = events[k]
+    if (!e) continue
+    if (e.largeUp) largeUpCount++
+    if (e.largeDown) largeDownCount++
+    if (e.strong) strongGlobals.push(days[k])
+    if (e.weak) weakGlobals.push(days[k])
   }
-  const strongCount = strongGlobals.length;
-  const weakCount = weakGlobals.length;
-  const strongDates = strongGlobals.map((g) => data.dates[g]);
-  const weakDates = weakGlobals.map((g) => data.dates[g]);
+  const strongCount = strongGlobals.length
+  const weakCount = weakGlobals.length
+  const strongDates = strongGlobals.map((g) => data.dates[g])
+  const weakDates = weakGlobals.map((g) => data.dates[g])
   // 最近一次强势事件「之前」的间隔：最后两个强势事件日的全局下标差（<2 个事件为 null）
-  const lastGapBefore = strongCount >= 2 ? strongGlobals[strongCount - 1] - strongGlobals[strongCount - 2] : null;
-  const strongFreq = validDays > 0 ? strongCount / validDays : 0;
-  const weakFreq = validDays > 0 ? weakCount / validDays : 0;
+  const lastGapBefore =
+    strongCount >= 2 ? strongGlobals[strongCount - 1] - strongGlobals[strongCount - 2] : null
+  const strongFreq = validDays > 0 ? strongCount / validDays : 0
+  const weakFreq = validDays > 0 ? weakCount / validDays : 0
 
   // ---- 间隔统计（口径：相邻事件日的全局下标差 = 交易日步长，Δ=1 表示相隔 1 步）----
-  const gapStrong = gapStatsOf(diff(strongGlobals), rule.gapMin, rule.gapMax);
-  const gapWeak = gapStatsOf(diff(weakGlobals), rule.gapMin, rule.gapMax);
+  const gapStrong = gapStatsOf(diff(strongGlobals), rule.gapMin, rule.gapMax)
+  const gapWeak = gapStatsOf(diff(weakGlobals), rule.gapMin, rule.gapMax)
 
   // ---- 独立事件簇（按冷却期合并）；簇间间隔用“簇起始日”相减 ----
-  const strongGroups = groupByCooldown(strongGlobals, rule.cooldownDays);
-  const weakGroups = groupByCooldown(weakGlobals, rule.cooldownDays);
-  const clustersStrong = strongGroups.map((g) => buildCluster(g, pct, posByGlobal, data.dates));
-  const clustersWeak = weakGroups.map((g) => buildCluster(g, pct, posByGlobal, data.dates));
-  const clusterGapStrong = gapStatsOf(diff(strongGroups.map((g) => g[0])), rule.gapMin, rule.gapMax);
-  const clusterGapWeak = gapStatsOf(diff(weakGroups.map((g) => g[0])), rule.gapMin, rule.gapMax);
+  const strongGroups = groupByCooldown(strongGlobals, rule.cooldownDays)
+  const weakGroups = groupByCooldown(weakGlobals, rule.cooldownDays)
+  const clustersStrong = strongGroups.map((g) => buildCluster(g, pct, posByGlobal, data.dates))
+  const clustersWeak = weakGroups.map((g) => buildCluster(g, pct, posByGlobal, data.dates))
+  const clusterGapStrong = gapStatsOf(diff(strongGroups.map((g) => g[0])), rule.gapMin, rule.gapMax)
+  const clusterGapWeak = gapStatsOf(diff(weakGroups.map((g) => g[0])), rule.gapMin, rule.gapMax)
 
   // ---- 连续强势 / 弱势（无数据跳过：不算连续也不中断）----
-  const strongStreak = streakInfo(events, posByGlobal, start, total, 'strong');
-  const weakStreak = streakInfo(events, posByGlobal, start, total, 'weak');
+  const strongStreak = streakInfo(events, posByGlobal, start, total, 'strong')
+  const weakStreak = streakInfo(events, posByGlobal, start, total, 'weak')
 
   // ---- 复合收益：∏(1+r)-1，缺失日跳过 ----
-  let cum = 1;
-  for (const p of valid) cum *= 1 + p / 100;
-  const cumReturn = cum - 1;
+  let cum = 1
+  for (const p of valid) cum *= 1 + p / 100
+  const cumReturn = cum - 1
 
-  const avgPct = validDays > 0 ? valid.reduce((s, x) => s + x, 0) / validDays : 0;
-  let upDays = 0;
-  for (const p of valid) if (p > 0) upDays++;
-  const upDayRatio = validDays > 0 ? upDays / validDays : 0;
+  const avgPct = validDays > 0 ? valid.reduce((s, x) => s + x, 0) / validDays : 0
+  let upDays = 0
+  for (const p of valid) if (p > 0) upDays++
+  const upDayRatio = validDays > 0 ? upDays / validDays : 0
 
   // 波动率 = 涨跌幅的总体标准差
-  let variance = 0;
-  for (const p of valid) variance += (p - avgPct) ** 2;
-  variance = validDays > 0 ? variance / validDays : 0;
-  const volatility = Math.sqrt(variance);
+  let variance = 0
+  for (const p of valid) variance += (p - avgPct) ** 2
+  variance = validDays > 0 ? variance / validDays : 0
+  const volatility = Math.sqrt(variance)
 
   // 最大回撤：基于窗口内净值序列（跳过缺失日）；与详情页曲线同源，单一实现见 maxDrawdownOf
-  let v = 1;
-  const navValid: number[] = [];
+  let v = 1
+  const navValid: number[] = []
   for (const p of valid) {
-    v *= 1 + p / 100;
-    navValid.push(v);
+    v *= 1 + p / 100
+    navValid.push(v)
   }
-  const maxDrawdown = maxDrawdownOf(navValid);
+  const maxDrawdown = maxDrawdownOf(navValid)
 
   // ---- 相对基准：只取「两者都有数据的共同有效日」分别复合，单一实现见 relativeToBench ----
-  const rel = relativeToBench(data, comp, series);
-  const relStrength: number | null = rel.commonDays > 0 ? rel.simple : null;
+  const rel = relativeToBench(data, comp, series)
+  const relStrength: number | null = rel.commonDays > 0 ? rel.simple : null
 
   // ---- 最近一次活跃事件（强势或弱势中较近者） ----
-  const agos: number[] = [];
-  if (strongStreak.ago !== null) agos.push(strongStreak.ago);
-  if (weakStreak.ago !== null) agos.push(weakStreak.ago);
-  const lastActiveAgo = agos.length > 0 ? Math.min(...agos) : null;
-  const lastActiveDate = lastActiveAgo === null ? null : data.dates[total - 1 - lastActiveAgo];
+  const agos: number[] = []
+  if (strongStreak.ago !== null) agos.push(strongStreak.ago)
+  if (weakStreak.ago !== null) agos.push(weakStreak.ago)
+  const lastActiveAgo = agos.length > 0 ? Math.min(...agos) : null
+  const lastActiveDate = lastActiveAgo === null ? null : data.dates[total - 1 - lastActiveAgo]
 
   // ---- 活跃度评分 0~100 ----
   // 权重：强势频率 35% + 近期活跃度 25% + 独立簇频率 20% + 相对市场趋势 20%，各分项先归一化到 0~1。
   // （权重由 SCORE_WEIGHTS 统一维护，界面按"实验参数"标注）
   // 近期活跃度用指数衰减 R=exp(-λΔ)，λ=ln2/5(半衰期 5 个交易日)，Δ=距最近一次强势事件的交易日数。
-  const f1 = clamp01(strongFreq / 0.2);                     // 20% 交易日强势即满分
-  const f2 = strongStreak.ago === null ? 0 : Math.exp(-(Math.LN2 / 5) * strongStreak.ago);
-  const f3 = clamp01((clustersStrong.length / Math.max(1, validDays)) / 0.1); // 每 10 个交易日 1 簇即满分
-  const f4 = relStrength === null ? 0.5 : clamp01(0.5 + relStrength / 0.2);    // 超额 ±10% 映射到 0~1
-  const scoreParts: ScoreParts = { f1, f2, f3, f4 };
+  const f1 = clamp01(strongFreq / 0.2) // 20% 交易日强势即满分
+  const f2 = strongStreak.ago === null ? 0 : Math.exp(-(Math.LN2 / 5) * strongStreak.ago)
+  const f3 = clamp01(clustersStrong.length / Math.max(1, validDays) / 0.1) // 每 10 个交易日 1 簇即满分
+  const f4 = relStrength === null ? 0.5 : clamp01(0.5 + relStrength / 0.2) // 超额 ±10% 映射到 0~1
+  const scoreParts: ScoreParts = { f1, f2, f3, f4 }
   const score = Math.round(
     clamp01(
       SCORE_WEIGHTS.f1 * f1 + SCORE_WEIGHTS.f2 * f2 + SCORE_WEIGHTS.f3 * f3 + SCORE_WEIGHTS.f4 * f4,
     ) * 100,
-  );
+  )
 
   return {
     sector: series.sector,
     validDays,
     coverage,
-    strongCount, weakCount, largeUpCount, largeDownCount,
-    strongFreq, weakFreq,
-    gapStrong, gapWeak,
-    clustersStrong, clustersWeak,
-    clusterGapStrong, clusterGapWeak,
+    strongCount,
+    weakCount,
+    largeUpCount,
+    largeDownCount,
+    strongFreq,
+    weakFreq,
+    gapStrong,
+    gapWeak,
+    clustersStrong,
+    clustersWeak,
+    clusterGapStrong,
+    clusterGapWeak,
     currentStrongStreak: strongStreak.current,
     longestStrongStreak: strongStreak.longest,
     currentWeakStreak: weakStreak.current,
@@ -276,18 +322,25 @@ export function analyzeSector(
     lastActiveDate,
     lastGapBefore,
     cumReturn,
-    upDayRatio, avgPct, volatility,
+    upDayRatio,
+    avgPct,
+    volatility,
     maxDrawdown,
     relStrength,
     score,
     scoreParts,
-    strongDates, weakDates,
-  };
+    strongDates,
+    weakDates,
+  }
 }
 
 /** 批量分析：comp.series 已经过 scope 过滤，这里直接逐个分析 */
-export function analyzeAll(data: RotationData, rule: RotationRuleSet, comp: WindowComputation): SectorStats[] {
-  return comp.series.map((s) => analyzeSector(s, data, rule, comp));
+export function analyzeAll(
+  data: RotationData,
+  rule: RotationRuleSet,
+  comp: WindowComputation,
+): SectorStats[] {
+  return comp.series.map((s) => analyzeSector(s, data, rule, comp))
 }
 
 // ===================== 相对基准（两种口径，单一实现） =====================
@@ -306,21 +359,21 @@ export function relativeToBench(
   /** 从窗口第几列开始算（默认 0 = 整个窗口）；观察清单的"自加入以来"会传一个更晚的起点 */
   fromWi = 0,
 ): { simple: number | null; netValue: number | null; commonDays: number } {
-  let s = 1;
-  let b = 1;
-  let common = 0;
-  const view = toWindowView(comp, series);
-  const start = Math.max(0, Math.min(Math.floor(fromWi), view.windowLen));
+  let s = 1
+  let b = 1
+  let common = 0
+  const view = toWindowView(comp, series)
+  const start = Math.max(0, Math.min(Math.floor(fromWi), view.windowLen))
   for (let i = start; i < view.windowLen; i++) {
-    const p = view.pctAt[i];
-    const bm = data.bench[comp.indices[i]];
-    if (!isNum(p) || !isNum(bm)) continue;
-    s *= 1 + p / 100;
-    b *= 1 + bm / 100;
-    common++;
+    const p = view.pctAt[i]
+    const bm = data.bench[comp.indices[i]]
+    if (!isNum(p) || !isNum(bm)) continue
+    s *= 1 + p / 100
+    b *= 1 + bm / 100
+    common++
   }
-  if (common === 0) return { simple: null, netValue: null, commonDays: 0 };
-  return { simple: (s - 1) - (b - 1), netValue: b > 0 ? s / b - 1 : null, commonDays: common };
+  if (common === 0) return { simple: null, netValue: null, commonDays: 0 }
+  return { simple: s - 1 - (b - 1), netValue: b > 0 ? s / b - 1 : null, commonDays: common }
 }
 
 // ===================== 观察清单的「自加入以来」区间统计（V2.0 阶段 6） =====================
@@ -333,15 +386,15 @@ export function relativeToBench(
  *       （界面据此提示"已超出当前窗口，按最早可用日计算"）。
  */
 export interface SinceStats {
-  fromWi: number;              // 窗口内起始列（含）
-  fromDate: string;            // 实际使用的起始交易日
-  truncated: boolean;          // 是否被截断到窗口起点
-  days: number;                // 区间内该板块的有效交易日数
-  cumReturn: number | null;    // 区间复合收益（无有效日 → null）
-  strongCount: number;
-  weakCount: number;
-  rel: number | null;          // 区间简单超额（无共同有效日 → null）
-  lastEventDate: string | null;
+  fromWi: number // 窗口内起始列（含）
+  fromDate: string // 实际使用的起始交易日
+  truncated: boolean // 是否被截断到窗口起点
+  days: number // 区间内该板块的有效交易日数
+  cumReturn: number | null // 区间复合收益（无有效日 → null）
+  strongCount: number
+  weakCount: number
+  rel: number | null // 区间简单超额（无共同有效日 → null）
+  lastEventDate: string | null
 }
 
 export function sinceStatsOf(
@@ -350,31 +403,34 @@ export function sinceStatsOf(
   series: SectorEventSeries,
   basisDate: string,
 ): SinceStats {
-  const view = toWindowView(comp, series);
-  const n = view.windowLen;
-  const windowStart = comp.indices.length > 0 ? comp.indices[0] : 0;
-  const gi = basisDate ? data.dates.indexOf(basisDate) : -1;
-  const truncated = !(gi >= windowStart && gi <= (comp.indices.length > 0 ? comp.indices[comp.indices.length - 1] : -1));
-  const fromWi = truncated ? 0 : Math.max(0, Math.min(gi - windowStart, Math.max(0, n - 1)));
+  const view = toWindowView(comp, series)
+  const n = view.windowLen
+  const windowStart = comp.indices.length > 0 ? comp.indices[0] : 0
+  const gi = basisDate ? data.dates.indexOf(basisDate) : -1
+  const truncated = !(
+    gi >= windowStart &&
+    gi <= (comp.indices.length > 0 ? comp.indices[comp.indices.length - 1] : -1)
+  )
+  const fromWi = truncated ? 0 : Math.max(0, Math.min(gi - windowStart, Math.max(0, n - 1)))
 
-  let cum = 1;
-  let days = 0;
-  let strongCount = 0;
-  let weakCount = 0;
-  let lastEventDate: string | null = null;
+  let cum = 1
+  let days = 0
+  let strongCount = 0
+  let weakCount = 0
+  let lastEventDate: string | null = null
   for (let i = fromWi; i < n; i++) {
-    const p = view.pctAt[i];
+    const p = view.pctAt[i]
     if (isNum(p)) {
-      cum *= 1 + p / 100;
-      days++;
+      cum *= 1 + p / 100
+      days++
     }
-    const ev = view.eventAt[i];
-    if (ev?.strong) strongCount++;
-    if (ev?.weak) weakCount++;
-    if (ev && (ev.strong || ev.weak)) lastEventDate = comp.dates[i];
+    const ev = view.eventAt[i]
+    if (ev?.strong) strongCount++
+    if (ev?.weak) weakCount++
+    if (ev && (ev.strong || ev.weak)) lastEventDate = comp.dates[i]
   }
 
-  const rel = relativeToBench(data, comp, series, fromWi);
+  const rel = relativeToBench(data, comp, series, fromWi)
   return {
     fromWi,
     fromDate: comp.dates[fromWi] ?? '',
@@ -385,7 +441,7 @@ export function sinceStatsOf(
     weakCount,
     rel: rel.commonDays > 0 ? rel.simple : null,
     lastEventDate,
-  };
+  }
 }
 
 // ===================== 窗口净值序列（单一实现，v2.0.9 新增） =====================
@@ -399,46 +455,50 @@ export function sinceStatsOf(
  *  · maxDrawdown === analyzeSector().maxDrawdown（同一个 maxDrawdownOf）。
  */
 export interface NavSeries {
-  dates: string[];
-  navSector: number[];
-  navBench: number[];
-  sectorValid: boolean[];
-  benchValid: boolean[];
-  cumReturn: number;
-  maxDrawdown: number;
-  validSectorDays: number;
-  validBenchDays: number;
+  dates: string[]
+  navSector: number[]
+  navBench: number[]
+  sectorValid: boolean[]
+  benchValid: boolean[]
+  cumReturn: number
+  maxDrawdown: number
+  validSectorDays: number
+  validBenchDays: number
   /** 基准在窗口内完全没有行情时为 false → UI 必须隐藏基准线，不得伪造 */
-  benchAvailable: boolean;
+  benchAvailable: boolean
 }
 
-export function buildNavSeries(data: RotationData, comp: WindowComputation, series: SectorEventSeries): NavSeries {
-  const view = toWindowView(comp, series);
-  const n = view.windowLen;
-  const navSector: number[] = new Array(n);
-  const navBench: number[] = new Array(n);
-  const sectorValid: boolean[] = new Array(n);
-  const benchValid: boolean[] = new Array(n);
+export function buildNavSeries(
+  data: RotationData,
+  comp: WindowComputation,
+  series: SectorEventSeries,
+): NavSeries {
+  const view = toWindowView(comp, series)
+  const n = view.windowLen
+  const navSector: number[] = new Array(n)
+  const navBench: number[] = new Array(n)
+  const sectorValid: boolean[] = new Array(n)
+  const benchValid: boolean[] = new Array(n)
 
-  let sv = 1;
-  let bv = 1;
-  let validSectorDays = 0;
-  let validBenchDays = 0;
+  let sv = 1
+  let bv = 1
+  let validSectorDays = 0
+  let validBenchDays = 0
   for (let i = 0; i < n; i++) {
-    const p = view.pctAt[i];
-    sectorValid[i] = isNum(p);
+    const p = view.pctAt[i]
+    sectorValid[i] = isNum(p)
     if (isNum(p)) {
-      sv *= 1 + p / 100;
-      validSectorDays++;
+      sv *= 1 + p / 100
+      validSectorDays++
     }
-    const b = data.bench[comp.indices[i]];
-    benchValid[i] = isNum(b);
+    const b = data.bench[comp.indices[i]]
+    benchValid[i] = isNum(b)
     if (isNum(b)) {
-      bv *= 1 + b / 100;
-      validBenchDays++;
+      bv *= 1 + b / 100
+      validBenchDays++
     }
-    navSector[i] = sv;
-    navBench[i] = bv;
+    navSector[i] = sv
+    navBench[i] = bv
   }
 
   return {
@@ -452,7 +512,7 @@ export function buildNavSeries(data: RotationData, comp: WindowComputation, seri
     validSectorDays,
     validBenchDays,
     benchAvailable: validBenchDays > 0,
-  };
+  }
 }
 
 // ===================== 行为特征分析（五段式，任务书 §6.5） =====================
@@ -464,11 +524,11 @@ export function buildNavSeries(data: RotationData, comp: WindowComputation, seri
  * 不出现"即将启动""必然反弹""资金必然回流"这类结论（任务书 §6.5 明令禁止）。
  */
 export interface BehaviorSummary {
-  history: string[];
-  activity: string[];
-  returnRisk: string[];
-  limits: string[];
-  nextSteps: string[];
+  history: string[]
+  activity: string[]
+  returnRisk: string[]
+  limits: string[]
+  nextSteps: string[]
 }
 
 export function summarizeBehavior(
@@ -476,45 +536,46 @@ export function summarizeBehavior(
   rule: RotationRuleSet,
   opts: { benchAvailable: boolean; benchmark?: string },
 ): BehaviorSummary {
-  const win = Math.max(1, Math.floor(rule.windowDays));
-  const pct1 = (x: number) => `${(x * 100).toFixed(1)}%`;
-  const pct2 = (x: number) => `${(x * 100).toFixed(2)}%`;
-  const benchName = opts.benchmark || '基准指数';
+  const win = Math.max(1, Math.floor(rule.windowDays))
+  const pct1 = (x: number) => `${(x * 100).toFixed(1)}%`
+  const pct2 = (x: number) => `${(x * 100).toFixed(2)}%`
+  const benchName = opts.benchmark || '基准指数'
 
   // —— A. 历史行为 ——
   const history: string[] = [
     `过去 ${win} 个有效交易日内（该板块有数据 ${stats.validDays} 天）：强势事件 ${stats.strongCount} 次、弱势事件 ${stats.weakCount} 次；其中大涨事件 ${stats.largeUpCount} 次、大跌事件 ${stats.largeDownCount} 次。`,
     `强势事件频率 ${pct1(stats.strongFreq)}、弱势事件频率 ${pct1(stats.weakFreq)}（分母为该板块的有效交易日数，不是窗口长度）。`,
-  ];
+  ]
 
   // —— B. 活跃模式 ——
-  const activity: string[] = [];
+  const activity: string[] = []
   if (stats.strongCount === 0) {
-    activity.push('窗口内未出现强势事件，暂不构成强势活跃形态。');
+    activity.push('窗口内未出现强势事件，暂不构成强势活跃形态。')
   } else {
-    const cdText = rule.cooldownDays > 0 ? `（冷却期 ${rule.cooldownDays} 个交易日）` : '（未设冷却期合并）';
+    const cdText =
+      rule.cooldownDays > 0 ? `（冷却期 ${rule.cooldownDays} 个交易日）` : '（未设冷却期合并）'
     activity.push(
       stats.clustersStrong.length > 1
         ? `强势事件分散在 ${stats.clustersStrong.length} 个独立活跃周期中${cdText}。`
         : `强势事件集中在 1 个活跃周期内${cdText}。`,
-    );
+    )
     activity.push(
       stats.currentStrongStreak > 0
         ? `自最后一个交易日往前连续强势 ${stats.currentStrongStreak} 天；窗口内最长连续 ${stats.longestStrongStreak} 天。`
         : `当前不处于连续强势；窗口内最长连续 ${stats.longestStrongStreak} 天。`,
-    );
+    )
     activity.push(
       stats.lastStrongAgo === null
         ? '窗口内没有可定位的强势事件日。'
         : stats.lastStrongAgo === 0
           ? '最近一次强势事件就发生在窗口的最后一个交易日。'
           : `最近一次强势事件在 ${stats.lastStrongAgo} 个交易日前。`,
-    );
+    )
     activity.push(
       stats.gapStrong.sampleInsufficient
         ? `相邻强势事件仅 ${stats.gapStrong.count} 个间隔样本，不足以判断间隔规律。`
         : `相邻强势事件平均间隔 ${stats.gapStrong.avg!.toFixed(1)} 个交易日（中位 ${stats.gapStrong.median!.toFixed(1)} 个交易日）。`,
-    );
+    )
   }
 
   // —— C. 收益与风险 ——
@@ -524,7 +585,7 @@ export function summarizeBehavior(
       ? '相对基准超额：基准在窗口内不可用，无法计算（未做任何替代估算）。'
       : `相对 ${benchName} 超额 ${pct2(stats.relStrength)}（简单超额口径：板块累计收益 − 基准累计收益）。`,
     `最大回撤 ${pct2(stats.maxDrawdown)}（窗口净值自峰值回落的最大幅度）；波动率 ${pct2(stats.volatility)}，上涨日占比 ${pct1(stats.upDayRatio)}。`,
-  ];
+  ]
 
   // —— D. 统计局限 ——
   const limits: string[] = [
@@ -534,13 +595,14 @@ export function summarizeBehavior(
       ? '基准在窗口内有可用行情，相对表现为真实计算结果。'
       : '基准在窗口内缺失，本页相对表现模块整体不可用（不伪造基准曲线）。',
     '以上均为对历史数据的统计描述；样本有限时结论的稳定性会下降。',
-  ];
+  ]
 
   // —— E. 后续观察（只给"可继续验证的条件"，不预测） ——
-  const riseSide = rule.riseRankEnabled ? `进入涨幅 TOP ${rule.topN}` : '';
-  const riseAbs = rule.riseThreshold > 0 ? `涨幅 ≥ ${rule.riseThreshold}%` : '';
-  const joinWord = rule.eventLogic === 'AND' ? ' 且' : ' 或';
-  const ruleText = [riseSide, riseAbs].filter(Boolean).join(joinWord) || '（当前规则未启用强势条件）';
+  const riseSide = rule.riseRankEnabled ? `进入涨幅 TOP ${rule.topN}` : ''
+  const riseAbs = rule.riseThreshold > 0 ? `涨幅 ≥ ${rule.riseThreshold}%` : ''
+  const joinWord = rule.eventLogic === 'AND' ? ' 且' : ' 或'
+  const ruleText =
+    [riseSide, riseAbs].filter(Boolean).join(joinWord) || '（当前规则未启用强势条件）'
   const nextSteps: string[] = [
     `可继续跟踪的客观条件：接下来的交易日是否再次满足强势事件规则（${ruleText}）。`,
     rule.cooldownDays > 0
@@ -548,52 +610,63 @@ export function summarizeBehavior(
       : '当前冷却期为 0（不合并），每个强势事件日各自构成一个独立周期。',
     `可与历史对照的比较项：本次强势事件间隔是否落在关注区间 ${rule.gapMin}~${rule.gapMax} 个交易日；相对基准超额是否仍为正。`,
     '上述均为「可继续验证的条件」，不是对未来的判断，也不构成买卖建议。',
-  ];
+  ]
 
-  return { history, activity, returnRisk, limits, nextSteps };
+  return { history, activity, returnRisk, limits, nextSteps }
 }
 
 /** 生成全市场汇总文本（确定性） */
-export function describeOverall(stats: SectorStats[], data: RotationData, rule: RotationRuleSet): string[] {
-  const win = Math.max(0, Math.min(Math.floor(rule.windowDays), data.dates.length));
-  const lines: string[] = [];
-  lines.push(`共分析 ${stats.length} 个板块（窗口 ${win} 个交易日，TOP ${rule.topN}，组合方式 ${rule.eventLogic}）。`);
+export function describeOverall(
+  stats: SectorStats[],
+  data: RotationData,
+  rule: RotationRuleSet,
+): string[] {
+  const win = Math.max(0, Math.min(Math.floor(rule.windowDays), data.dates.length))
+  const lines: string[] = []
+  lines.push(
+    `共分析 ${stats.length} 个板块（窗口 ${win} 个交易日，TOP ${rule.topN}，组合方式 ${rule.eventLogic}）。`,
+  )
 
-  let strong = 0;
-  let weak = 0;
-  let clusters = 0;
+  let strong = 0
+  let weak = 0
+  let clusters = 0
   for (const s of stats) {
-    strong += s.strongCount;
-    weak += s.weakCount;
-    clusters += s.clustersStrong.length;
+    strong += s.strongCount
+    weak += s.weakCount
+    clusters += s.clustersStrong.length
   }
-  lines.push(`窗口内合计：强势事件 ${strong} 次，弱势事件 ${weak} 次，独立强势簇 ${clusters} 个。`);
+  lines.push(`窗口内合计：强势事件 ${strong} 次，弱势事件 ${weak} 次，独立强势簇 ${clusters} 个。`)
 
   const top = [...stats]
-    .sort((a, b) => (b.score - a.score) || (a.sector.id < b.sector.id ? -1 : a.sector.id > b.sector.id ? 1 : 0))
-    .slice(0, 3);
+    .sort(
+      (a, b) =>
+        b.score - a.score || (a.sector.id < b.sector.id ? -1 : a.sector.id > b.sector.id ? 1 : 0),
+    )
+    .slice(0, 3)
   if (top.length > 0) {
-    lines.push(`活跃度前三：${top.map((s) => `${s.sector.name}(${s.score})`).join('、')}。`);
+    lines.push(`活跃度前三：${top.map((s) => `${s.sector.name}(${s.score})`).join('、')}。`)
   }
-  lines.push(`统计口径：窗口 ${win} 个交易日，TOP ${rule.topN}，大涨阈值 +${rule.riseThreshold}%，组合方式 ${rule.eventLogic}。`);
-  return lines;
+  lines.push(
+    `统计口径：窗口 ${win} 个交易日，TOP ${rule.topN}，大涨阈值 +${rule.riseThreshold}%，组合方式 ${rule.eventLogic}。`,
+  )
+  return lines
 }
 
 // ===================== 内部工具 =====================
 
 function isNum(v: number | null | undefined): v is number {
-  return typeof v === 'number' && Number.isFinite(v);
+  return typeof v === 'number' && Number.isFinite(v)
 }
 
 function clamp01(x: number): number {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
+  return x < 0 ? 0 : x > 1 ? 1 : x
 }
 
 /** 相邻元素差（要求输入升序） */
 function diff(arr: number[]): number[] {
-  const out: number[] = [];
-  for (let i = 1; i < arr.length; i++) out.push(arr[i] - arr[i - 1]);
-  return out;
+  const out: number[] = []
+  for (let i = 1; i < arr.length; i++) out.push(arr[i] - arr[i - 1])
+  return out
 }
 
 /**
@@ -602,15 +675,18 @@ function diff(arr: number[]): number[] {
  * 注意：相邻事件日间距即为集群内的步长差。
  */
 function groupByCooldown(globals: number[], cooldownDays: number): number[][] {
-  if (globals.length === 0) return [];
-  const groups: number[][] = [];
-  let cur: number[] = [globals[0]];
+  if (globals.length === 0) return []
+  const groups: number[][] = []
+  let cur: number[] = [globals[0]]
   for (let i = 1; i < globals.length; i++) {
-    if (globals[i] - globals[i - 1] <= cooldownDays) cur.push(globals[i]);
-    else { groups.push(cur); cur = [globals[i]]; }
+    if (globals[i] - globals[i - 1] <= cooldownDays) cur.push(globals[i])
+    else {
+      groups.push(cur)
+      cur = [globals[i]]
+    }
   }
-  groups.push(cur);
-  return groups;
+  groups.push(cur)
+  return groups
 }
 
 /** 由事件的全局下标簇构建事件簇对象 */
@@ -620,27 +696,27 @@ function buildCluster(
   posByGlobal: Map<number, number>,
   dates: string[],
 ): EventCluster {
-  const startGlobal = g[0];
-  const endGlobal = g[g.length - 1];
-  const startIdx = posByGlobal.get(startGlobal) ?? 0;
-  const endIdx = posByGlobal.get(endGlobal) ?? 0;
+  const startGlobal = g[0]
+  const endGlobal = g[g.length - 1]
+  const startIdx = posByGlobal.get(startGlobal) ?? 0
+  const endIdx = posByGlobal.get(endGlobal) ?? 0
 
   // 簇内复合收益：从簇起始日到结束日的区间收益（跳过缺失日）
-  let cum = 1;
+  let cum = 1
   for (let d = startGlobal; d <= endGlobal; d++) {
-    const pos = posByGlobal.get(d);
-    if (pos === undefined) continue;
-    const p = pct[pos];
-    if (isNum(p)) cum *= 1 + p / 100;
+    const pos = posByGlobal.get(d)
+    if (pos === undefined) continue
+    const p = pct[pos]
+    if (isNum(p)) cum *= 1 + p / 100
   }
 
   // 簇内最大涨幅：成员事件日中的最大 pct
-  let maxPct = -Infinity;
+  let maxPct = -Infinity
   for (const d of g) {
-    const pos = posByGlobal.get(d);
-    if (pos === undefined) continue;
-    const p = pct[pos];
-    if (isNum(p) && p > maxPct) maxPct = p;
+    const pos = posByGlobal.get(d)
+    if (pos === undefined) continue
+    const p = pct[pos]
+    if (isNum(p) && p > maxPct) maxPct = p
   }
 
   return {
@@ -652,7 +728,7 @@ function buildCluster(
     startDate: dates[startGlobal],
     endDate: dates[endGlobal],
     eventDates: g.map((d) => dates[d]),
-  };
+  }
 }
 
 /**
@@ -663,47 +739,50 @@ function buildCluster(
  *  - 当日有数据但未命中 → 中断。
  */
 function streakInfo(
-  events: (unknown)[],
+  events: unknown[],
   posByGlobal: Map<number, number>,
   start: number,
   total: number,
   key: 'strong' | 'weak',
 ): { current: number; longest: number; ago: number | null } {
   const hit = (pos: number): boolean => {
-    const e = events[pos] as Record<string, unknown> | null;
-    return !!e && e[key] === true;
-  };
+    const e = events[pos] as Record<string, unknown> | null
+    return !!e && e[key] === true
+  }
 
   // 当前连续（从末尾往前）
-  let current = 0;
+  let current = 0
   for (let d = total - 1; d >= start; d--) {
-    const pos = posByGlobal.get(d);
-    if (pos === undefined) continue;
-    if (hit(pos)) current++;
-    else break;
+    const pos = posByGlobal.get(d)
+    if (pos === undefined) continue
+    if (hit(pos)) current++
+    else break
   }
 
   // 窗口内最长连续（无数据跳过不中断）
-  let longest = 0;
-  let run = 0;
+  let longest = 0
+  let run = 0
   for (let d = start; d < total; d++) {
-    const pos = posByGlobal.get(d);
-    if (pos === undefined) continue;
+    const pos = posByGlobal.get(d)
+    if (pos === undefined) continue
     if (hit(pos)) {
-      run++;
-      if (run > longest) longest = run;
+      run++
+      if (run > longest) longest = run
     } else {
-      run = 0;
+      run = 0
     }
   }
 
   // 距窗口最后一个交易日的交易日步长
-  let ago: number | null = null;
+  let ago: number | null = null
   for (let d = total - 1; d >= start; d--) {
-    const pos = posByGlobal.get(d);
-    if (pos === undefined) continue;
-    if (hit(pos)) { ago = total - 1 - d; break; }
+    const pos = posByGlobal.get(d)
+    if (pos === undefined) continue
+    if (hit(pos)) {
+      ago = total - 1 - d
+      break
+    }
   }
 
-  return { current, longest, ago };
+  return { current, longest, ago }
 }
