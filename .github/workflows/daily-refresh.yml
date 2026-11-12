@@ -97,7 +97,7 @@ jobs:
         run: |
           export NO_PROXY="*" no_proxy="*"
           set +e
-          python3 scripts/fetch_rotation_ths.py --days 120
+          python3 scripts/fetch_rotation_ths.py --days 130
           rc=$?
           # 把退出码传给收尾的「数据新鲜度校验」:4=数据源整体不可达(重试无意义)→ 只告警不判红
           echo "ROT_RC=$rc" >> "$GITHUB_ENV"

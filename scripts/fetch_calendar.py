@@ -287,20 +287,27 @@ def market_summary(data: dict, date: str) -> dict:
     }
 
 
-def update_index(out_root: str, date: str, entry: dict) -> None:
+def update_index(out_root: str, date: str, entry: dict, trade_dates: list[str] | None = None) -> None:
     path = index_path(out_root)
     idx = load_json(path, None) or {'meta': {'schema': 'calendar-index-v1'}, 'days': []}
     days = [d for d in idx.get('days') or [] if d.get('date') != date]
     days.append(entry)
     days.sort(key=lambda d: d.get('date') or '')
     idx['days'] = days
-    idx['meta'] = {
+    meta = {
         'schema': 'calendar-index-v1',
         'generatedAt': datetime.now(CST).strftime('%Y-%m-%d %H:%M:%S'),
         'firstDate': days[0]['date'] if days else None,
         'lastDate': days[-1]['date'] if days else None,
         'days': len(days),
     }
+    # 交易日清单：前端用它区分「节假日休市」和「归档缺失」——
+    # 有归档区间内、工作日、但不在清单里的日子才是真正的休市
+    if trade_dates is not None:
+        meta['tradeDates'] = sorted(set(trade_dates))
+    elif (idx.get('meta') or {}).get('tradeDates'):
+        meta['tradeDates'] = idx['meta']['tradeDates']
+    idx['meta'] = meta
     atomic_write(path, idx)
 
 
@@ -334,7 +341,7 @@ def build_one(date: str, rot: dict, data: dict, out_root: str) -> tuple[int, str
              'topUp': sec['up'][:TOP_SUMMARY],
              'topDown': sec['down'][:TOP_SUMMARY],
              'hasStocks': bool(day['stocks'])}
-    update_index(out_root, date, entry)
+    update_index(out_root, date, entry, trade_dates=rot.get('dates'))
     return EXIT_OK, f'{date} 板块 {len(sec["up"])}+{len(sec["down"])} 条'
 
 
@@ -415,7 +422,7 @@ def main() -> int:
         'topUp': day['sectors']['up'][:TOP_SUMMARY],
         'topDown': day['sectors']['down'][:TOP_SUMMARY],
         'hasStocks': True,
-    })
+    }, trade_dates=rot.get('dates'))
 
     print(f'✓ 写入 {os.path.join(out_root, date + ".json")}')
     print(f'  板块 {len(day["sectors"]["up"])}+{len(day["sectors"]["down"])} 条'

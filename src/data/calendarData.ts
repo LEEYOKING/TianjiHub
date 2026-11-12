@@ -40,7 +40,15 @@ export interface CalendarIndexDay extends CalendarSummary {
 }
 
 export interface CalendarIndex {
-  meta: { schema: string; generatedAt: string; firstDate: string; lastDate: string; days: number };
+  meta: {
+    schema: string;
+    generatedAt: string;
+    firstDate: string;
+    lastDate: string;
+    days: number;
+    /** 归档窗口内的全部交易日；用于区分「节假日休市」与「归档缺失」 */
+    tradeDates?: string[];
+  };
   days: CalendarIndexDay[];
 }
 

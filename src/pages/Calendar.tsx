@@ -335,6 +335,14 @@ export default function Calendar() {
 
   const cells = y != null && m != null ? buildCells(y, m) : [];
   const latest = index?.meta.lastDate || '';
+  const earliest = index?.meta.firstDate || '';
+  // 交易日清单：有归档窗口内、工作日、但不在清单里 = 真休市（节假日）
+  const tradeSet = useMemo(() => new Set(index?.meta.tradeDates || []), [index]);
+  const hasTradeList = !!index?.meta.tradeDates?.length;
+
+  // 最旧月份：不允许再往前翻（数据保留，只在交互上拦截）
+  const minYM = earliest ? { y: Number(earliest.slice(0, 4)), m: Number(earliest.slice(5, 7)) } : null;
+  const atMinMonth = !!(y != null && m != null && minYM && y * 12 + m <= minYM.y * 12 + minYM.m);
 
   // 主线识别：只用 index.json 的每日 TOP5，进入页面即可算，不额外拉数据
   // 窗口取 20 个交易日 —— 实测 10 日窗内没有任何板块能进榜 3 次（板块轮动极快），
@@ -411,8 +419,17 @@ export default function Calendar() {
         background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '10px 14px', marginBottom: 14,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => shift(-1)} aria-label="上个月"
-            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969', fontSize: 15 }}>‹</button>
+          <span title={atMinMonth ? '仅支持查询6个月内数据' : '上个月'} style={{ display: 'inline-flex' }}>
+            <button
+              onClick={() => { if (!atMinMonth) shift(-1); }}
+              disabled={atMinMonth}
+              aria-label="上个月"
+              style={{
+                width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
+                cursor: atMinMonth ? 'not-allowed' : 'pointer', color: '#4E5969', fontSize: 15,
+                opacity: atMinMonth ? 0.35 : 1,
+              }}>‹</button>
+          </span>
           <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT, minWidth: 108, textAlign: 'center' }}>
             {y != null && m != null ? `${y} 年 ${m} 月` : '—'}
           </span>
@@ -479,11 +496,23 @@ export default function Calendar() {
               const hs = heatStyle(info);
               const wd = weekdayOf(y!, m!, d);
               const weekend = wd >= 5;
+              // 休市 = 无归档 且（不在交易日清单里 且 不晚于最后归档日）
+              // 节假日与周末同样处理；清单缺失时退化为「只认周末」
+              const closed = !info && (hasTradeList
+                ? (!tradeSet.has(ds) && ds <= latest)
+                : weekend);
+              const closedLabel = weekend ? '周末休市' : '节假日休市';
               return (
                 <button
                   key={ds}
                   onClick={() => { if (info) pickDate(ds); }}
-                  title={info ? `${ds} · 点击查看当日榜单` : `${ds} · ${weekend ? '周末休市' : '未归档（假日或早于归档起点）'}`}
+                  title={
+                    info
+                      ? `${ds} · 点击查看当日榜单`
+                      : closed
+                        ? `${ds} · ${closedLabel}`
+                        : `${ds} · 未归档（待补跑或晚于最后归档日）`
+                  }
                   style={{
                     textAlign: 'left', cursor: info ? 'pointer' : 'default',
                     minHeight: isMobile ? 52 : 86,
@@ -517,7 +546,7 @@ export default function Calendar() {
 
                   {!info && (
                     <div style={{ fontSize: 10, color: '#C9CDD4', marginTop: 6 }}>
-                      {weekend ? '休市' : ''}
+                      {closed ? '休市' : ''}
                     </div>
                   )}
 
@@ -562,7 +591,7 @@ export default function Calendar() {
               <i style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(14,205,112,0.26)', display: 'inline-block' }} />跌多
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <i style={{ width: 12, height: 12, borderRadius: 3, background: '#FAFBFC', border: '1px solid #EDEFF2', display: 'inline-block' }} />未归档（含周末/节假日）
+              <i style={{ width: 12, height: 12, borderRadius: 3, background: '#FAFBFC', border: '1px solid #EDEFF2', display: 'inline-block' }} />休市 / 未归档
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <i style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }} />有事件标注
