@@ -194,12 +194,38 @@ def check_margin_freshness(target: str, dates: list[str]) -> list[str]:
     return []
 
 
-def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], str, bool]:
-    """返回 (行情主体问题, 轮动归档问题, 目标交易日, 交易日历是否可信)。
+def check_calendar_freshness(target: str, dates: list[str]) -> list[str]:
+    """日历回溯（public/calendar/index.json）的末点日期检查。
 
-    两组问题的区分只用于**措辞与补跑判定**，两者现在都会让 job 变红（见 gate）：
+    日历归档由 fetch_calendar.py 每日写一天，个股榜没有历史接口、只能逐日累积，
+    所以这里盯的是 index.json 的 lastDate —— 它不前进 = 当日归档没写成，
+    日历上会缺一天，而 data.json / rotation.json 都是新鲜的，光看它们发现不了。
+
+    容忍度：允许落后 1 个交易日（该步骤在轮动之后跑，且带 continue-on-error；
+    首日一次性回补后，正常每个交易日都应 +1）。落后 ≥2 个交易日计入硬问题。
+    """
+    j = load_json("public/calendar/index.json")
+    if j is None:
+        return ["public/calendar/index.json 缺失（日历回溯归档从未生成）"]
+    last = str((j.get("meta") or {}).get("lastDate") or "")
+    if not dates:
+        return []   # 交易日历不可用时无法判断"落后几个交易日"
+    earlier = [d for d in dates if d < target]
+    allowed = earlier[-1] if earlier else target
+    if not last or last < allowed:
+        return [
+            f"日历回溯归档停留在 {last or '未知'}，落后超过 1 个交易日（至少应到 {allowed}）"
+        ]
+    return []
+
+
+def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], list[str], str, bool]:
+    """返回 (行情主体问题, 轮动归档问题, 日历归档问题, 目标交易日, 交易日历是否可信)。
+
+    三组问题的区分只用于**措辞与补跑判定**，除「步骤明确未跑/数据源不可达」外都会让 job 变红：
       · 第一组 = data.json（行情主体）。它断供就意味着整个站点数据停摆。
-      · 第二组 = rotation.json（轮动归档）。依赖东财 push2his，海外 IP 极易被风控。
+      · 第二组 = rotation.json（轮动归档）。依赖同花顺板块日线，海外 IP 可能不可达。
+      · 第三组 = public/calendar（日历归档）。依赖轮动 + 当日全市场快照。
     历史：2026-10-15 曾按用户要求把轮动归档降级为"只警告"；2026-10-19 事故后用户改判为
     **硬失败** —— 因为该步骤在提交之后，变红不阻断流程，而"只警告"等于"看不见"
     （continue-on-error 还会把该步的结论抹成 success，run 全绿，数据却没更新）。
@@ -210,7 +236,8 @@ def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[s
     soft = check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
     hard += check_rotation_shape()   # 板块数塌缩=数据损坏,计入硬问题(见其 docstring)
     hard += check_margin_freshness(target, dates)   # 融资流向断供(2026-11-10 事故)
-    return hard, soft, target, strict
+    cal = check_calendar_freshness(target, dates)   # 日历回溯归档缺日
+    return hard, soft, cal, target, strict
 
 
 # ---------------- 模式：--plan ----------------
@@ -225,8 +252,8 @@ def emit(mode: str, reason: str, now: datetime.datetime, target: str) -> None:
 
 def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) -> tuple[str, str]:
     """决定本次运行做什么。返回 (mode, 说明)。"""
-    hard, soft, target, _strict = inspect(now, dates)
-    stale = bool(hard or soft)   # 轮动数据过期同样值得补跑一次（judge 用，与"是否让 job 变红"无关）
+    hard, soft, cal, target, _strict = inspect(now, dates)
+    stale = bool(hard or soft or cal)   # 日历缺日同样值得补跑一次（judge 用，与"是否让 job 变红"无关）
     trading = is_trading_today(now, dates)
     hhmm = now.strftime("%H:%M")
 
@@ -269,56 +296,70 @@ def _summary(lines: list[str]) -> None:
 
 
 def gate(now: datetime.datetime, dates: list[str]) -> int:
-    hard, soft, target, strict = inspect(now, dates)
+    hard, soft, cal, target, strict = inspect(now, dates)
     # 轮动步骤的退出码(由 workflow 写进 GITHUB_ENV):
-    #   4      = 东财 push2/push2his 整体不可达(外部风控,重试无意义)
-    #   notrun = 本档根本不跑轮动(如 08:30 融资补抓档),不该由它背"归档过期"的锅
-    #   空     = 轮动步骤跑了但没写退出码(超时/被杀) —— 需要人看,仍判红
+    #   4      = 数据源整体不可达(外部风控/断网,重试无意义)
+    #   notrun = 本档根本不跑该步骤(如 08:30 融资补抓档),不该由它背"归档过期"的锅
+    #   空     = 步骤跑了但没写退出码(超时/被杀) —— 需要人看,仍判红
     # 2026-10-27 实测:push2 全域名 0.2s 被 RST,而 quote.eastmoney.com / datacenter-web 均 200,
     #   本机与 GitHub Runner 出口 IP 同时如此 —— 属对方对该 IP 的行情接口风控。
     # 此前轮动过期一律判红 → 连续 6 个交易日每个 cron 档都红,红灯失去信息量,
     #   真出问题时反而不容易注意到。故 4 / notrun 降级为告警 + Job Summary,
     #   覆盖不足(1)、增量不适用后全量也失败(3)、超时(空)仍判红 —— 那才是需要人看的问题。
+    # 日历归档沿用同一套降级规则(CAL_RC)。
     rot_rc = os.environ.get("ROT_RC", "")
     rot_external = rot_rc in ("4", "notrun")
-    if not hard and not soft:
+    cal_rc = os.environ.get("CAL_RC", "")
+    cal_external = cal_rc in ("4", "notrun")
+
+    if not hard and not soft and not cal:
         print(f"✅ 数据新鲜度校验通过（目标交易日 {target}）")
         return 0
     if not strict:
         # 交易日历不可靠时只告警，不误判成失败（例如节假日遇 akshare 风控）
         print("::warning::无法获取可靠交易日历，以下仅为提示，不判定失败：")
-        for p in soft + hard:
+        for p in soft + cal + hard:
             print(f"  - {p}")
         return 0
+
     # 2026-10-19 修订(用户确认)：轮动归档未更新从"警告"升级为"失败"（避免"run 全绿但数据没动"的静默断供）。
-    # 2026-10-27 修订：仅当轮动步骤确认为"数据源不可达"(ROT_RC=4)或"本档未跑轮动"(notrun)时
+    # 2026-10-27 修订：仅当该步骤确认为"数据源不可达"(rc=4)或"本档未跑"(notrun)时
     # 降级为告警，其余情况保持硬失败。
+    blocking = bool(hard)
     for p in soft:
         if rot_external:
             why = "数据源不可达" if rot_rc == "4" else "本档未尝试轮动"
             print(f"::warning::轮动归档未更新（{why}，本次不判失败）：{p}")
         else:
             print(f"::error::轮动归档未更新（不阻断已完成的提交，但本次 run 判为失败）：{p}")
-    if not hard and rot_external:
+            blocking = True
+    for p in cal:
+        if cal_external:
+            why = "全市场快照不可达" if cal_rc == "4" else "本档未尝试日历归档"
+            print(f"::warning::日历回溯归档未更新（{why}，本次不判失败）：{p}")
+        else:
+            print(f"::error::日历回溯归档未更新（不阻断已完成的提交，但本次 run 判为失败）：{p}")
+            blocking = True
+
+    if not blocking:
         if rot_rc == "4":
             _summary([
                 "### ⚠ 板块轮动归档未更新（本次不判失败）",
                 "",
                 *[f"- {p}" for p in soft],
                 "",
-                "**原因**：东财 push2/push2his 对当前出口 IP 拒绝连接（RemoteDisconnected）——"
-                "同一时刻 `quote.eastmoney.com` / `datacenter-web.eastmoney.com` 均正常，属对方对"
-                "该 IP 的行情接口风控，不是代码缺陷，重试不会自行恢复。",
+                "**原因**：数据源对当前出口 IP 拒绝连接 ——"
+                "属对方对海外 IP 的行情接口风控，不是代码缺陷，重试不会自行恢复。",
                 "",
                 "**处理**：换一个未被风控的网络（如手机热点）在国内网络下跑 `./refresh_data.sh` 补齐。",
             ])
         return 0
-    if not hard:
-        print("::error::数据新鲜度校验未通过：行情主体已是最新，问题出在轮动归档（见上）")
-        return 1
-    print("::error::数据新鲜度校验未通过（明细见下；不阻断已完成的提交，但本次 run 判为失败）：")
-    for p in hard:
-        print(f"::error::{p}")
+    if hard:
+        print("::error::数据新鲜度校验未通过（明细见下；不阻断已完成的提交，但本次 run 判为失败）：")
+        for p in hard:
+            print(f"::error::{p}")
+    else:
+        print("::error::数据新鲜度校验未通过：行情主体已是最新，问题出在归档（见上）")
     return 1
 
 

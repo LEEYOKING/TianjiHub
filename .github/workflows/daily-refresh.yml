@@ -72,6 +72,10 @@ jobs:
         if: steps.plan.outputs.mode != 'postclose' || vars.ROTATION_ENABLED == 'false'
         run: echo "ROT_RC=notrun" >> "$GITHUB_ENV"
 
+      - name: 标记日历未尝试
+        if: steps.plan.outputs.mode != 'postclose'
+        run: echo "CAL_RC=notrun" >> "$GITHUB_ENV"
+
       - name: 拉取手术台数据(封成比评分/亏钱传导/北向)
         if: steps.plan.outputs.mode == 'postclose'
         run: |
@@ -102,6 +106,25 @@ jobs:
           fi
           exit $rc
 
+      # 日历回溯归档(public/calendar) —— 必须放在行情与轮动之后:
+      #   板块榜取自 rotation.json,个股榜/涨跌家数取自当日全市场快照与 data.json。
+      #   个股榜没有历史接口,只能逐日累积(首个版本已用 --backfill 回补 120 天板块榜);
+      #   continue-on-error 同轮动,结论由收尾 gate 判(退出码 4 = 快照不可达,只告警)。
+      - name: 生成日历回溯归档（每日三张榜）
+        if: steps.plan.outputs.mode == 'postclose'
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          export NO_PROXY="*" no_proxy="*"
+          set +e
+          python3 scripts/fetch_calendar.py
+          rc=$?
+          echo "CAL_RC=$rc" >> "$GITHUB_ENV"
+          if [ $rc -eq 4 ]; then
+            echo "::warning::日历归档：全市场快照不可达 → 本次跳过，不判为失败"
+          fi
+          exit $rc
+
       - name: 提交并推送
         # 早晨补抓档不设交易日门槛(假期工作日也要提交);其余档由 plan 的 mode 决定
         if: steps.plan.outputs.mode != 'skip'
@@ -111,6 +134,8 @@ jobs:
           git add public/data.json public/surgery.json public/prescan.json
           # 板块轮动归档(存在才 add,避免脚本失败时报错)
           [ -f public/rotation.json ] && git add public/rotation.json || true
+          # 日历回溯归档(按日分片 + index.json)
+          [ -d public/calendar ] && git add public/calendar || true
           if git diff --cached --quiet; then
             echo "无数据变化,跳过提交"
             exit 0
@@ -136,4 +161,5 @@ jobs:
         if: always() && steps.plan.outputs.mode != 'skip'
         env:
           ROT_RC: ${{ env.ROT_RC }}
+          CAL_RC: ${{ env.CAL_RC }}
         run: python3 scripts/check_freshness.py --gate

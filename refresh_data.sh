@@ -73,11 +73,29 @@ else
   echo "  ! 轮动归档未完成(退出码 $ROT_RC:覆盖不足,脚本拒绝写残缺文件),本次跳过,不影响主数据"
 fi
 
+# 2.7 日历回溯归档(public/calendar) — 依赖 data.json 与 rotation.json,必须放在两者之后
+#   板块榜取自 rotation.json;个股榜/涨跌家数取自当日全市场快照(个股榜无历史接口,只能逐日累积)。
+#   退出码 4 = 快照不可达,不阻断主流程;当日缺档由云端补跑档重试。
+echo "[2.7/4] 生成日历回溯归档(板块/个股三张榜)..."
+set +e
+NO_PROXY="*" no_proxy="*" "$PYBIN" scripts/fetch_calendar.py
+CAL_RC=$?
+set -e
+if [ "$CAL_RC" -eq 0 ]; then
+  echo "  ✓ public/calendar 已更新"
+elif [ "$CAL_RC" -eq 4 ]; then
+  echo "  ! 全市场快照不可达，本次跳过日历归档，不影响主数据"
+else
+  echo "  ! 日历归档未完成(退出码 $CAL_RC)，本次跳过，不影响主数据"
+fi
+
 # 3. 提交
 echo "[3/4] 提交数据..."
 git add public/data.json public/surgery.json public/prescan.json scripts/fetch_real_data.py
 # 板块轮动归档(存在才 add,避免脚本失败时报错)
 [ -f public/rotation.json ] && git add public/rotation.json || true
+# 日历回溯归档(按日分片 + index.json)
+[ -d public/calendar ] && git add public/calendar || true
 if git diff --cached --quiet; then
   echo "  ! 无数据变化，跳过提交"
 else
