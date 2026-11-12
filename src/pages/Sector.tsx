@@ -1,17 +1,18 @@
-import { useMemo, useState } from 'react'
-import ReactECharts from 'echarts-for-react'
-import { PageHeader, Card } from './Overview'
-import { COLOR_UP, COLOR_DOWN, COLOR_TEXT, COLOR_FLAT } from '../utils/format'
-import type { ReportData } from '../data/loader'
-import type { SectorItem } from '../types'
-import { useLive } from '../App'
+import { useMemo, useState } from 'react';
+import ReactECharts from 'echarts-for-react';
+import { PageHeader, Card } from './Overview';
+import { COLOR_UP, COLOR_DOWN, COLOR_TEXT, COLOR_FLAT } from '../utils/format';
+import type { ReportData } from '../data/loader';
+import type { SectorItem } from '../types';
+import { useLive } from '../App';
 
 export default function Sector({ data }: { data: ReportData }) {
   // data 已经是 App.tsx 合并 live 后的 mergedData,直接用
-  const sectors = data.sectors
-  const concepts = data.conceptSectors || []
-  const regions = data.regionSectors || []
-  const idx = data.marketOverview
+  const sectors = data.sectors;
+  // 用 useMemo 固定引用：`|| []` 每次渲染都会生成新数组，会让下游 useMemo 永远重算
+  const concepts = useMemo(() => data.conceptSectors || [], [data.conceptSectors]);
+  const regions = useMemo(() => data.regionSectors || [], [data.regionSectors]);
+  const idx = data.marketOverview;
 
   // 涨幅前 10 / 跌幅前 10
   // v2.0.7v:涨幅前 10 — 过滤负数 + 次级键(成交额 / 涨停数)
@@ -27,7 +28,7 @@ export default function Sector({ data }: { data: ReportData }) {
         )
         .slice(0, 10),
     [sectors],
-  )
+  );
   // v2.0.7v:跌幅前 10 — 过滤非负数 + 次级键(成交额 / 跌停数)
   const topLose = useMemo(
     () =>
@@ -41,7 +42,7 @@ export default function Sector({ data }: { data: ReportData }) {
         )
         .slice(0, 10),
     [sectors],
-  )
+  );
 
   // 用户 #7-#10 反馈:行业/概念/地域 TOP15 = 全市场该日期内涨幅最高 15 个(过滤负数)
   // 全市场涨幅 TOP15(行业):涨幅 > 0 中排前 15
@@ -52,7 +53,7 @@ export default function Sector({ data }: { data: ReportData }) {
         .sort((a, b) => b.changePercent - a.changePercent)
         .slice(0, 15),
     [sectors],
-  )
+  );
   // 用户 #8 反馈:全市场净流入 TOP15 = 净流入金额最高 15 个(过滤负值)
   const sectorTopNetIn = useMemo(
     () =>
@@ -61,7 +62,7 @@ export default function Sector({ data }: { data: ReportData }) {
         .sort((a, b) => (b.netInflow || 0) - (a.netInflow || 0))
         .slice(0, 15),
     [sectors],
-  )
+  );
   // 用户 #9 反馈:概念 TOP15 = 全市场该日期涨幅最高 15 个(过滤负数)
   const conceptTopGain = useMemo(
     () =>
@@ -70,7 +71,7 @@ export default function Sector({ data }: { data: ReportData }) {
         .sort((a, b) => b.changePercent - a.changePercent)
         .slice(0, 15),
     [concepts],
-  )
+  );
   // 用户 #10 反馈:地域 TOP15 = 全市场该日期涨幅最高 15 个(过滤负数)
   const regionTopGain = useMemo(
     () =>
@@ -79,7 +80,7 @@ export default function Sector({ data }: { data: ReportData }) {
         .sort((a, b) => b.changePercent - a.changePercent)
         .slice(0, 15),
     [regions],
-  )
+  );
 
   return (
     <div>
@@ -154,7 +155,7 @@ export default function Sector({ data }: { data: ReportData }) {
         />
       </div>
     </div>
-  )
+  );
 }
 
 // 响应式:前 2 个图表 + 2 个表格均宽度自适应不溢出
@@ -179,7 +180,7 @@ const responsiveStyle = `
     .sector-charts-grid, .sector-tables-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
     .sector-chart-card { min-height: 280px !important; }
   }
-`
+`;
 
 // ====== 空状态(复用 ChangeDistributionCard 的居中灰字样式,支持主文案 + 副文案) ======
 function EmptyState({ text, sub, height = 240 }: { text: string; sub?: string; height?: number }) {
@@ -196,7 +197,7 @@ function EmptyState({ text, sub, height = 240 }: { text: string; sub?: string; h
       <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af' }}>{text}</div>
       {sub && <div style={{ fontSize: 12, color: '#B0B6C0' }}>{sub}</div>}
     </div>
-  )
+  );
 }
 
 // ====== 横向条形图卡(左对齐 + 右侧数值 + 圆角) ======
@@ -208,18 +209,18 @@ function BarChartCard({
   emptyText = '暂无数据',
   emptySub,
 }: {
-  title: string
-  items: (SectorItem & { idx: number; sign: number })[]
-  maxAbs: number
-  type: 'gain' | 'lose'
-  emptyText?: string
-  emptySub?: string
+  title: string;
+  items: (SectorItem & { idx: number; sign: number })[];
+  maxAbs: number;
+  type: 'gain' | 'lose';
+  emptyText?: string;
+  emptySub?: string;
 }) {
-  const labels = items.map((it) => it.name).reverse()
-  const absValues = items.map((it) => Math.abs(it.changePercent)).reverse()
-  const rawValues = items.map((it) => it.changePercent).reverse()
+  const labels = items.map((it) => it.name).reverse();
+  const absValues = items.map((it) => Math.abs(it.changePercent)).reverse();
+  const rawValues = items.map((it) => it.changePercent).reverse();
   // 真正的 maxAbs(从 absValues 算)— 用户 #7 反馈:最后 1 个坐标只保留 1 位小数
-  const realMax = Math.max(maxAbs, ...absValues) * 1.1
+  const realMax = Math.max(maxAbs, ...absValues) * 1.1;
 
   const option = useMemo(() => {
     return {
@@ -238,12 +239,12 @@ function BarChartCard({
         padding: [8, 12],
         textStyle: { color: COLOR_TEXT, fontSize: 12 },
         formatter: (params: any) => {
-          const p = params[0]
-          const v = p.data.rawValue
-          const c = v > 0 ? COLOR_UP : v < 0 ? COLOR_DOWN : COLOR_FLAT
-          const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};opacity:0.6;margin-right:6px;vertical-align:middle;"></span>`
-          const sign = v >= 0 ? '+' : ''
-          return `<div style="font-weight:600;color:#111827;font-size:13px;margin-bottom:4px;">${p.name}</div><div style="font-weight:600;color:${c};font-size:13px;">${dot}${sign}${v.toFixed(2)}%</div>`
+          const p = params[0];
+          const v = p.data.rawValue;
+          const c = v > 0 ? COLOR_UP : v < 0 ? COLOR_DOWN : COLOR_FLAT;
+          const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};opacity:0.6;margin-right:6px;vertical-align:middle;"></span>`;
+          const sign = v >= 0 ? '+' : '';
+          return `<div style="font-weight:600;color:#111827;font-size:13px;margin-bottom:4px;">${p.name}</div><div style="font-weight:600;color:${c};font-size:13px;">${dot}${sign}${v.toFixed(2)}%</div>`;
         },
       },
       xAxis: {
@@ -269,10 +270,10 @@ function BarChartCard({
           type: 'bar',
           data: absValues.map((abs, i) => {
             // 用户 #2 反馈:A 股红涨绿跌 — 涨幅用渐变红,跌幅用渐变绿
-            const isUp = rawValues[i] >= 0
+            const isUp = rawValues[i] >= 0;
             // 涨幅:浅红 → 深红 ; 跌幅:浅绿 → 深绿
-            const colorTop = isUp ? '#ff4d4f' : '#0ecd70'
-            const colorBottom = isUp ? 'rgba(255, 77, 79, 0.15)' : 'rgba(14, 205, 112, 0.15)'
+            const colorTop = isUp ? '#ff4d4f' : '#0ecd70';
+            const colorBottom = isUp ? 'rgba(255, 77, 79, 0.15)' : 'rgba(14, 205, 112, 0.15)';
             return {
               value: abs,
               rawValue: rawValues[i],
@@ -291,7 +292,7 @@ function BarChartCard({
                 },
                 borderRadius: [0, 4, 4, 0],
               },
-            }
+            };
           }),
           // 用户 #11 反馈:柱宽度 18(原 14,× 1.3)
           barWidth: 18,
@@ -299,18 +300,18 @@ function BarChartCard({
             show: true,
             position: 'right',
             formatter: (p: any) => {
-              const v = p.data.rawValue
-              const sign = v >= 0 ? '+' : ''
+              const v = p.data.rawValue;
+              const sign = v >= 0 ? '+' : '';
               // v2.0.7v:label 用 2 位,如有更精细的 pctRaw 显示 4 位
-              const raw = p.data.rawPct
+              const raw = p.data.rawPct;
               if (
                 raw != null &&
                 Math.abs(raw) >= 0.0001 &&
                 Math.round(raw * 100) / 100 !== Math.round(v * 100) / 100
               ) {
-                return `${sign}${v.toFixed(2)}% (${sign}${raw.toFixed(4)}%)`
+                return `${sign}${v.toFixed(2)}% (${sign}${raw.toFixed(4)}%)`;
               }
-              return sign + v.toFixed(2) + '%'
+              return sign + v.toFixed(2) + '%';
             },
             color: COLOR_TEXT,
             fontSize: 11,
@@ -318,8 +319,8 @@ function BarChartCard({
           },
         },
       ],
-    }
-  }, [labels, absValues, rawValues, realMax])
+    };
+  }, [labels, absValues, rawValues, realMax]);
 
   return (
     <Card title={title}>
@@ -330,7 +331,7 @@ function BarChartCard({
         <ReactECharts option={option} style={{ height: 360, width: '100%' }} notMerge lazyUpdate />
       )}
     </Card>
-  )
+  );
 }
 
 // ====== 详细表卡(支持涨跌幅升降序 + 表格样式 + 首列居中 + 列名不换行) ======
@@ -342,34 +343,34 @@ function DetailTableCard({
   emptyText = '暂无数据',
   emptySub,
 }: {
-  title: string
-  data: SectorItem[]
-  defaultSort?: 'desc' | 'asc' | 'netInflow' | 'turnover'
-  showNetInflow?: boolean
-  emptyText?: string
-  emptySub?: string
+  title: string;
+  data: SectorItem[];
+  defaultSort?: 'desc' | 'asc' | 'netInflow' | 'turnover';
+  showNetInflow?: boolean;
+  emptyText?: string;
+  emptySub?: string;
 }) {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc' | 'netInflow' | 'turnover'>(
     defaultSort === 'turnover' ? 'turnover' : defaultSort,
-  )
+  );
 
   const sorted = useMemo(() => {
-    const arr = [...data]
-    if (sortOrder === 'desc') arr.sort((a, b) => b.changePercent - a.changePercent)
-    else if (sortOrder === 'asc') arr.sort((a, b) => a.changePercent - b.changePercent)
-    else if (sortOrder === 'netInflow') arr.sort((a, b) => (b.netInflow || 0) - (a.netInflow || 0))
-    else arr.sort((a, b) => b.totalTurnover - a.totalTurnover)
-    return arr
-  }, [data, sortOrder])
+    const arr = [...data];
+    if (sortOrder === 'desc') arr.sort((a, b) => b.changePercent - a.changePercent);
+    else if (sortOrder === 'asc') arr.sort((a, b) => a.changePercent - b.changePercent);
+    else if (sortOrder === 'netInflow') arr.sort((a, b) => (b.netInflow || 0) - (a.netInflow || 0));
+    else arr.sort((a, b) => b.totalTurnover - a.totalTurnover);
+    return arr;
+  }, [data, sortOrder]);
 
   const cycleSort = () => {
     setSortOrder((cur) => {
-      if (cur === 'desc') return 'asc'
-      if (cur === 'asc') return showNetInflow ? 'netInflow' : 'turnover'
-      if (cur === 'netInflow') return 'turnover'
-      return 'desc'
-    })
-  }
+      if (cur === 'desc') return 'asc';
+      if (cur === 'asc') return showNetInflow ? 'netInflow' : 'turnover';
+      if (cur === 'netInflow') return 'turnover';
+      return 'desc';
+    });
+  };
 
   const sortLabel =
     sortOrder === 'desc'
@@ -378,7 +379,7 @@ function DetailTableCard({
         ? '涨跌幅 ↑'
         : sortOrder === 'netInflow'
           ? '净流入'
-          : '成交额'
+          : '成交额';
 
   // 表头/单元格 公共样式(用户 #11 反馈:列名不换行 / 字号 14px 加粗黑色居中)
   const headStyle: React.CSSProperties = {
@@ -390,7 +391,7 @@ function DetailTableCard({
     fontWeight: 700,
     borderBottom: '1px solid #E5E6EB',
     whiteSpace: 'nowrap', // 用户 #11 反馈:列名不换行
-  }
+  };
   const cellStyle: React.CSSProperties = {
     padding: '10px 8px',
     textAlign: 'center',
@@ -399,7 +400,7 @@ function DetailTableCard({
     fontWeight: 700,
     borderTop: '1px solid #F0F0F0',
     whiteSpace: 'nowrap',
-  }
+  };
 
   // 渲染"板块名称"列 — 用户 #12 反馈:首列单元格居中
   const renderNameCell = (s: SectorItem) => (
@@ -414,7 +415,7 @@ function DetailTableCard({
       }}>
       {s.name}
     </td>
-  )
+  );
 
   return (
     <Card
@@ -503,11 +504,11 @@ function DetailTableCard({
               </tr>
             )}
             {sorted.map((s) => {
-              const pct = s.changePercent
-              const limitCount = s.limitUpCount ?? 0
+              const pct = s.changePercent;
+              const limitCount = s.limitUpCount ?? 0;
               const limitPct =
-                s.stockCount > 0 ? ((limitCount / s.stockCount) * 100).toFixed(1) : '0.0'
-              const topStocks = s.topStocks && s.topStocks.length > 0 ? s.topStocks : ['-', '-']
+                s.stockCount > 0 ? ((limitCount / s.stockCount) * 100).toFixed(1) : '0.0';
+              const topStocks = s.topStocks && s.topStocks.length > 0 ? s.topStocks : ['-', '-'];
               return (
                 <tr key={s.name}>
                   {renderNameCell(s)}
@@ -571,11 +572,11 @@ function DetailTableCard({
                     )}
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
       </div>
     </Card>
-  )
+  );
 }
