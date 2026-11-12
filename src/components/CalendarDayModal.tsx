@@ -28,7 +28,7 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 
 function SummaryBar({ s }: { s: CalendarSummary }) {
   if (s.up == null && s.turnover == null) {
-    return <div style={{ fontSize: 12, color: '#86909C' }}>该日未归档大盘摘要（仅板块榜有历史）</div>;
+    return <div style={{ fontSize: 12, color: '#86909C' }}>该日未归档大盘摘要（仅2026-11-11往后的日期才有完整历史数据）</div>;
   }
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 16 }}>
