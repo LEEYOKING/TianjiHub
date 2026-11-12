@@ -20,8 +20,8 @@ const fmtPct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div>
-      <div style={{ fontSize: 11, color: '#86909C', marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: color || COLOR_TEXT, lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color: color || COLOR_TEXT, lineHeight: 1.1, letterSpacing: '-0.01em' }}>{value}</div>
+      <div style={{ fontSize: 11, color: '#86909C', marginTop: 4 }}>{label}</div>
     </div>
   );
 }
