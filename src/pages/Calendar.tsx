@@ -426,7 +426,7 @@ export default function Calendar() {
               aria-label="上个月"
               style={{
                 width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
-                cursor: atMinMonth ? 'not-allowed' : 'pointer', color: '#4E5969', fontSize: 15,
+                cursor: atMinMonth ? 'default' : 'pointer', color: '#4E5969', fontSize: 15,
                 opacity: atMinMonth ? 0.35 : 1,
               }}>‹</button>
           </span>
@@ -484,10 +484,10 @@ export default function Calendar() {
                   key={w}
                   style={{
                     textAlign: 'center',
-                    padding: isMobile ? '7px 0' : '9px 0',
+                    padding: isMobile ? '11px 0' : '14px 0',
                     fontSize: 12,
                     fontWeight: 600,
-                    color: i >= 5 ? '#A9AEB8' : '#4E5969',
+                    color: '#4E5969',
                     background: '#FAFBFC',
                     borderRight: i < 6 ? '1px solid #EDEFF2' : 'none',
                     borderBottom: '1px solid #E5E7EB',
@@ -503,7 +503,7 @@ export default function Calendar() {
                 if (d == null) {
                   // 月初空位：保留格线，让网格连续
                   return <div key={`b${i}`} style={{
-                    background: '#FCFCFD',
+                    background: '#FAFBFC',
                     borderRight: i % 7 !== 6 ? '1px solid #F2F3F5' : 'none',
                     borderBottom: '1px solid #F2F3F5',
                   }} />;

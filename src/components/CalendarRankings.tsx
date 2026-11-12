@@ -1,7 +1,7 @@
 // 日历回溯 · 周榜 / 月榜
-// 数据源：rotation.json（417 板块 × 120 交易日）；区间累计收益按复利计算，
+// 数据源：rotation.json（417 板块 × 130 交易日）；区间累计收益按复利计算，
 // 日均成交额 < 5 亿的迷你板块不参与排名（与每日归档门槛一致）。
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useRotationData } from '../data/rotationData';
 import { buildBuckets, rankSectorsInPeriod, type PeriodRankRow } from '../utils/calendar/period';
 import { COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
@@ -102,6 +102,13 @@ export default function CalendarRankings({ kind }: { kind: 'week' | 'month' }) {
 
   const top = ranked.slice(0, 15);
   const bottom = ranked.slice(-15).reverse();
+  const atFirst = idx == null || idx <= 0;
+  const atLast = idx == null || idx >= buckets.length - 1;
+  const arrowStyle = (disabled: boolean): CSSProperties => ({
+    width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff',
+    cursor: disabled ? 'default' : 'pointer', color: '#4E5969', fontSize: 15,
+    opacity: disabled ? 0.35 : 1,
+  });
 
   return (
     <div>
@@ -110,13 +117,13 @@ export default function CalendarRankings({ kind }: { kind: 'week' | 'month' }) {
         background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '10px 14px', marginBottom: 14,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => setIdx((v) => (v != null && v > 0 ? v - 1 : v))} aria-label="上一期"
-            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969', fontSize: 15 }}>‹</button>
+          <button onClick={() => setIdx((v) => (v != null && v > 0 ? v - 1 : v))} disabled={atFirst} aria-label="上一期"
+            style={arrowStyle(atFirst)}>‹</button>
           <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT, minWidth: 150, textAlign: 'center' }}>
             {kind === 'week' ? `${bucket.label} 周` : bucket.label}
           </span>
-          <button onClick={() => setIdx((v) => (v != null && v < buckets.length - 1 ? v + 1 : v))} aria-label="下一期"
-            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969', fontSize: 15 }}>›</button>
+          <button onClick={() => setIdx((v) => (v != null && v < buckets.length - 1 ? v + 1 : v))} disabled={atLast} aria-label="下一期"
+            style={arrowStyle(atLast)}>›</button>
           <button onClick={() => setIdx(buckets.length - 1)}
             style={{ marginLeft: 4, padding: '4px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', color: '#4E5969' }}>
             最新
