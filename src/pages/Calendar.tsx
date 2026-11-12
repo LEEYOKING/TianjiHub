@@ -228,7 +228,7 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
   ];
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div>
       {err && <div style={{ color: '#E60012', fontSize: 13, marginBottom: 10 }}>加载失败：{err}</div>}
       {!da || !db ? (
         <div style={{ fontSize: 13, color: '#86909C', padding: '16px 0' }}>加载中…</div>
@@ -440,7 +440,7 @@ export default function Calendar() {
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
-          padding: '20px 14px 10px',
+          padding: '20px 14px',
         }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span title={atMinMonth ? '仅支持查询6个月内数据' : '上个月'} style={{ display: 'inline-flex' }}>
@@ -533,7 +533,7 @@ export default function Calendar() {
                     fontSize: 12,
                     fontWeight: 600,
                     color: '#4E5969',
-                    background: '#FAFBFC',
+                    background: '#fff',
                     borderRight: i < 6 ? '1px solid #EDEFF2' : 'none',
                     borderBottom: '1px solid #E5E7EB',
                   }}
@@ -657,7 +657,7 @@ export default function Calendar() {
             </div>
           </div>
 
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 18, paddingLeft: 3 }}>
 
           {/* 图例 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 11, color: '#86909C' }}>
