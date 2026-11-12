@@ -19,7 +19,7 @@ const fmtPct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div style={{ minWidth: 74 }}>
+    <div>
       <div style={{ fontSize: 11, color: '#86909C', marginBottom: 3 }}>{label}</div>
       <div style={{ fontSize: 16, fontWeight: 700, color: color || COLOR_TEXT, lineHeight: 1.1 }}>{value}</div>
     </div>
@@ -31,7 +31,7 @@ function SummaryBar({ s }: { s: CalendarSummary }) {
     return <div style={{ fontSize: 12, color: '#86909C' }}>该日未归档大盘摘要（仅板块榜有历史）</div>;
   }
   return (
-    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 16 }}>
       <Stat label="上涨" value={String(s.up ?? '-')} color={COLOR_UP} />
       <Stat label="下跌" value={String(s.down ?? '-')} color={COLOR_DOWN} />
       <Stat label="涨停" value={String(s.limitUp ?? '-')} color={COLOR_UP} />
@@ -42,8 +42,9 @@ function SummaryBar({ s }: { s: CalendarSummary }) {
   );
 }
 
-const NUM_TD: React.CSSProperties = { padding: '7px 8px', fontSize: 13, textAlign: 'right', whiteSpace: 'nowrap' };
-const HEAD_TD: React.CSSProperties = { padding: '7px 8px', fontSize: 12, color: '#86909C', fontWeight: 500, textAlign: 'right', whiteSpace: 'nowrap' };
+// 除最左两列（名次 / 名称）外，数值列统一居中对齐
+const NUM_TD: React.CSSProperties = { padding: '7px 8px', fontSize: 13, textAlign: 'center', whiteSpace: 'nowrap' };
+const HEAD_TD: React.CSSProperties = { padding: '7px 8px', fontSize: 12, color: '#86909C', fontWeight: 500, textAlign: 'center', whiteSpace: 'nowrap' };
 
 function SectorTable({ rows, tone }: { rows: CalendarSector[]; tone: 'up' | 'down' }) {
   if (!rows.length) return <div style={{ fontSize: 12, color: '#86909C', padding: '12px 0' }}>无数据</div>;
