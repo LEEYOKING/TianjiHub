@@ -237,7 +237,7 @@ export default function CalendarDayModal({ date, onClose, onPrev, onNext }: Prop
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '12px 14px', marginTop: 12 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>事件标注</span>
-                <span style={{ fontSize: 11, color: '#C9CDD4' }}>本机记录（localStorage），不影响统计口径</span>
+                <span style={{ fontSize: 11, color: '#C9CDD4' }}>标注为本机记录，不影响统计口径，清除缓存后会一并删除</span>
               </div>
 
               {myEvents.length > 0 && (
