@@ -534,8 +534,9 @@ export default function Calendar() {
                           : `${ds} · 未归档（待补跑或晚于最后归档日）`
                     }
                     style={{
-                      textAlign: 'left', cursor: info ? 'pointer' : 'default',
-                      minHeight: isMobile ? 64 : 100,
+                      position: 'relative',
+                      textAlign: 'center', cursor: info ? 'pointer' : 'default',
+                      minHeight: isMobile ? 70 : 104,
                       borderRadius: 0,
                       border: 'none',
                       borderRight: i % 7 !== 6 ? '1px solid #F2F3F5' : 'none',
@@ -543,24 +544,21 @@ export default function Calendar() {
                       boxShadow: selected ? 'inset 0 0 0 2px #111827' : 'none',
                       // 周末与节假日统一用同一种「无数据」底色（#FAFBFC），只靠格内「休市」文案区分
                       background: info ? hs.background : '#FAFBFC',
-                      padding: isMobile ? '6px 7px 8px' : '9px 11px 10px',
+                      padding: isMobile ? '6px 5px 8px' : '8px 8px 10px',
                       font: 'inherit',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       transition: 'background .12s ease',
                     }}
                   >
-                    {/* 第一要素：日期数字，加大加粗，始终左上对齐 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span style={{
-                        fontSize: isMobile ? 17 : 21,
-                        fontWeight: 700,
-                        lineHeight: 1,
-                        letterSpacing: '-0.02em',
-                        color: info ? '#111827' : closed ? '#B4B9C1' : '#C9CDD4',
-                      }}>{d}</span>
+                    {/* 角标：事件圆点 / 对比 A-B，绝对定位，不干扰日期居中 */}
+                    <div style={{ position: 'absolute', top: isMobile ? 5 : 7, right: isMobile ? 5 : 7, display: 'flex', alignItems: 'center', gap: 4 }}>
                       {eventDates.has(ds) && (
                         <i
                           title="该日有事件标注"
-                          style={{ width: 5, height: 5, borderRadius: '50%', background: '#F5A623', display: 'inline-block', marginTop: 2 }}
+                          style={{ width: 5, height: 5, borderRadius: '50%', background: '#F5A623', display: 'inline-block' }}
                         />
                       )}
                       {selected && (
@@ -571,33 +569,39 @@ export default function Calendar() {
                       )}
                     </div>
 
+                    {/* 第一要素：日期数字居中，加大加粗 */}
+                    <span style={{
+                      fontSize: isMobile ? 19 : 25,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      letterSpacing: '-0.02em',
+                      color: info ? '#111827' : closed ? '#B4B9C1' : '#C9CDD4',
+                    }}>{d}</span>
+
                     {!info && closed && (
-                      <div style={{ fontSize: 10, color: '#B4B9C1', marginTop: 6 }}>休市</div>
+                      <div style={{ fontSize: 10, color: '#B4B9C1', marginTop: 7 }}>休市</div>
                     )}
 
                     {info && (
                       <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                          {info.limitUp != null && (
-                            <span style={{ fontSize: 10, color: COLOR_UP, background: 'rgba(255,77,79,0.10)', borderRadius: 4, padding: '0 4px', lineHeight: '15px' }}>
-                              涨停 {info.limitUp}
-                            </span>
-                          )}
-                          {info.limitDown != null && info.limitDown > 0 && (
-                            <span style={{ fontSize: 10, color: COLOR_DOWN, background: 'rgba(14,205,112,0.10)', borderRadius: 4, padding: '0 4px', lineHeight: '15px' }}>
-                              跌停 {info.limitDown}
-                            </span>
-                          )}
-                          {info.up != null && !isMobile && (
-                            <span style={{ fontSize: 10, color: '#86909C' }}>{info.up}↑ {info.down}↓</span>
-                          )}
-                        </div>
-                        {info.topUp?.[0] && !isMobile && (
+                        {info.topUp?.[0] && (
                           <div style={{
-                            marginTop: 6, fontSize: 11, color: COLOR_TEXT, display: 'flex', justifyContent: 'space-between', gap: 4,
+                            marginTop: 7, display: 'flex', alignItems: 'baseline', justifyContent: 'center',
+                            gap: 3, maxWidth: '100%', lineHeight: 1.2,
                           }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.topUp[0].name}</span>
-                            <span style={{ color: COLOR_UP, fontWeight: 600, flexShrink: 0 }}>{fmtPct(info.topUp[0].pct)}</span>
+                            <span style={{
+                              fontSize: 11, color: '#4E5969', maxWidth: isMobile ? 48 : 74,
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>{info.topUp[0].name}</span>
+                            <span style={{ fontSize: 11, color: COLOR_UP, fontWeight: 600, flexShrink: 0 }}>
+                              {fmtPct(info.topUp[0].pct)}
+                            </span>
+                          </div>
+                        )}
+                        {!isMobile && (
+                          <div style={{ marginTop: 4, fontSize: 10, color: '#86909C' }}>
+                            {info.limitUp != null ? `涨停 ${info.limitUp}` : ''}
+                            {info.up != null ? `${info.limitUp != null ? ' · ' : ''}${info.up}↑ ${info.down}↓` : ''}
                           </div>
                         )}
                       </>
