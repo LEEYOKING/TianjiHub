@@ -14,6 +14,8 @@ const FirstBoard = lazy(() => import('./pages/FirstBoard'));
 // v2.0.8ks:板块轮动 — 原「轮动档案 / 轮动时间轴」两页已合并为单页 /rotation
 const Rotation = lazy(() => import('./pages/Rotation'));
 const RotationDetail = lazy(() => import('./pages/RotationDetail'));
+// 日历回溯（每日板块/个股榜单归档）
+const Calendar = lazy(() => import('./pages/Calendar'));
 import { loadReportData, getCNTodayYMD, isPostCloseSnapshot, saveLiveSnapshot, loadLiveSnapshot, type ReportData } from './data/loader';
 import { useLiveData, mergeLiveData, type LiveSnapshot } from './hooks/useLiveData';
 
@@ -183,6 +185,7 @@ export default function App() {
               <Route path="/rotation" element={<Rotation />} />
               <Route path="/rotation/timeline" element={<Navigate to="/rotation" replace />} />
               <Route path="/rotation/sector/:id" element={<RotationDetail />} />
+              <Route path="/calendar" element={<Calendar />} />
             </Routes>
           </Suspense>
         </Layout>

@@ -19,6 +19,8 @@ const Icons = {
   Flame: <Icon d="M8.5 14.5A2.5 2.5 0 0 0 11 17a5 5 0 0 0 5-5c0-.83-.17-1.61-.46-2.33-.66 1.04-1.74 1.83-3.04 2.13-.5.11-.97-.34-.86-.84.41-1.79-.32-3.04-1.27-4.06C9.62 6.04 8.5 4.5 8.5 3 5.5 4 3 7 3 10a8 8 0 0 0 5.5 7.5" />,
   // v2.0.8kt:板块轮动图标 — 参照用户提供的「逆向旋转」四箭头循环图,改为站点 stroke 风格的双弧+箭头闭环
   Rotate: <Icon d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5" />,
+  // 日历回溯：月历卡片（顶部两枚装订孔 + 中间分隔线）
+  Calendar: <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />,
   Scan: <Icon d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10" />,
   Chart: <Icon d="M3 3v18h18M7 12l3-3 4 4 5-5" />,
   Grid: <Icon d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />,
@@ -121,6 +123,8 @@ export default function Layout({ data, children }: Props) {
     { key: '/sector', label: '板块涨跌', icon: Icons.Grid, count: 0 },
     // v2.0.8ks:【板块轮动档案】— 原「轮动档案 + 轮动时间轴」两页已合并为单页
     { key: '/rotation', label: '板块轮动档案', icon: Icons.Rotate, count: 0 },
+    // 日历回溯（每日板块/个股榜单归档 + 日期对比）
+    { key: '/calendar', label: '日历回溯', icon: Icons.Calendar, count: 0 },
     { key: '/limit-up', label: '连板天梯', icon: Icons.Ladder, count: counts.limitUp },
     { key: '/limit-down', label: '跌停梯队', icon: Icons.Down, count: counts.limitDown },
     { key: '/breakout', label: '放量突破', icon: Icons.UpArrow, count: counts.breakout },
