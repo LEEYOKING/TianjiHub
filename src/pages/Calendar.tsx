@@ -185,9 +185,22 @@ function DiffCard({ title, a, b, amountUnit, aDate, bDate }: {
   const { added, dropped } = useMemo(() => diffKeys(a, b, (x) => x.key), [a, b]);
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '10px 12px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, minHeight: 24 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: COLOR_TEXT }}>{title}</span>
-        <span style={{ fontSize: 11, color: '#86909C' }}>左 {aDate} ｜ 右 {bDate}</span>
+        {/* A 组用灰底（掉出色）、B 组用红底（新进色），与对比表格配色一致 */}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#86909C' }}>
+          <span>左(A)</span>
+          <span style={{
+            background: 'rgba(134,144,156,0.12)', color: '#4E5969',
+            borderRadius: 5, padding: '2px 6px', fontVariantNumeric: 'tabular-nums',
+          }}>{aDate}</span>
+          <span style={{ margin: '0 1px' }}>｜</span>
+          <span>右(B)</span>
+          <span style={{
+            background: 'rgba(255,77,79,0.10)', color: '#C4232A',
+            borderRadius: 5, padding: '2px 6px', fontVariantNumeric: 'tabular-nums',
+          }}>{bDate}</span>
+        </span>
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
         <DiffColumn rows={a} added={added} dropped={dropped} amountUnit={amountUnit} />
@@ -488,9 +501,9 @@ export default function Calendar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {compareOn && (
             <span style={{ fontSize: 12, color: '#86909C' }}>
-              {cmpA ? `A：${cmpA}` : '点击选择基准日 A'}
-              {cmpA && !cmpB ? ' → 再点一天作为 B' : ''}
-              {cmpB ? `　B：${cmpB}` : ''}
+              {cmpA ? `【 A：${cmpA} 】` : '点击选择基准日 A'}
+              {cmpA && !cmpB ? '　→ 再点一天作为 B' : ''}
+              {cmpB ? `　VS【 B：${cmpB} 】` : ''}
             </span>
           )}
           <button
