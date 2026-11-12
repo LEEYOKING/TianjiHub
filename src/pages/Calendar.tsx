@@ -441,12 +441,14 @@ export default function Calendar() {
         <>
       <MainlineCard rows={mainlines} windowDays={MAINLINE_WINDOW} />
 
-      {/* 工具栏 + 日历网格 + 图例：视觉上拼成一张大卡片（上/中/下三段共用边框） */}
+      {/* 大卡片：头部工具栏 / 对比结果 / 日历网格 / 图例 同处一张卡片 */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
-        padding: '10px 14px', border: '1px solid #E5E7EB', borderBottom: 'none',
-        borderRadius: '14px 14px 0 0', background: '#fff',
+        background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, overflow: 'hidden',
       }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
+          padding: '10px 14px', borderBottom: '1px solid #EDEFF2',
+        }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span title={atMinMonth ? '仅支持查询6个月内数据' : '上个月'} style={{ display: 'inline-flex' }}>
             <button
@@ -519,13 +521,15 @@ export default function Calendar() {
       {error && <div style={{ padding: 24, color: '#E60012', fontSize: 13 }}>日历数据加载失败：{error}</div>}
 
       {!!cmpA && !!cmpB && (
-        <ComparePanel a={cmpA} b={cmpB} />
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid #EDEFF2', background: '#FCFCFD' }}>
+          <ComparePanel a={cmpA} b={cmpB} />
+        </div>
       )}
 
       {!loading && !error && (
-        <div>
-          {/* Mac 日历式：整块网格 + 细分隔线，表头与日期同处一个容器 */}
-          <div style={{ background: '#fff', borderLeft: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', borderTop: '1px solid #EDEFF2' }}>
+        <div style={{ padding: '12px 14px' }}>
+          {/* 日历网格：大卡片内部的独立小卡片，四周留白 */}
+          <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
               {WEEKDAYS.map((w, i) => (
                 <div
@@ -661,8 +665,7 @@ export default function Calendar() {
           </div>
 
           <div style={{
-            padding: '9px 14px', border: '1px solid #E5E7EB', borderTop: '1px solid #EDEFF2',
-            borderRadius: '0 0 14px 14px', background: '#fff',
+            marginTop: 12, paddingTop: 10, borderTop: '1px solid #F2F3F5',
           }}>
 
           {/* 图例 */}
@@ -702,6 +705,7 @@ export default function Calendar() {
         </div>
         </div>
       )}
+      </div>
 
       {openDate && (
         <CalendarDayModal
