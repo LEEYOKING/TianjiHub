@@ -9,18 +9,18 @@
 //
 // 埋点：无需额外代码 —— index.html 引入的 Xhoper SDK 会 patch History，
 //       路由切换自动上报 page_view（path=/calendar，title 取 document.title），与其它页面一致。
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PageHeader } from './Overview'
-import CalendarDayModal from '../components/CalendarDayModal'
-import CalendarRankings from '../components/CalendarRankings'
-import { useCalendarEvents } from '../data/calendarEvents'
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { PageHeader } from './Overview';
+import CalendarDayModal from '../components/CalendarDayModal';
+import CalendarRankings from '../components/CalendarRankings';
+import { useCalendarEvents } from '../data/calendarEvents';
 import {
   findMainlines,
   FEATURE_LABEL,
   type MainlineFeature,
   type MainlineRow,
-} from '../utils/calendar/period'
-import { useIsMobile } from '../hooks/useIsMobile'
+} from '../utils/calendar/period';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   dashToSlash,
   diffKeys,
@@ -30,47 +30,35 @@ import {
   type CalendarIndexDay,
   type CalendarSector,
   type CalendarStock,
-} from '../data/calendarData'
-import { COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format'
+} from '../data/calendarData';
+import { COLOR_DOWN, COLOR_FLAT, COLOR_TEXT, COLOR_UP } from '../utils/format';
 
-const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
-const pctColor = (v: number) => (v > 0 ? COLOR_UP : v < 0 ? COLOR_DOWN : COLOR_FLAT)
-const fmtPct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(2)}%`
-const pad2 = (n: number) => String(n).padStart(2, '0')
+const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
+const pctColor = (v: number) => (v > 0 ? COLOR_UP : v < 0 ? COLOR_DOWN : COLOR_FLAT);
+const fmtPct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(2)}%`;
+const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /** 生成某月的格子：周一~周日 7 列，非交易日由调用方置灰 */
 function buildCells(year: number, month: number): (number | null)[] {
-  const firstWd = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7 // 周一=0
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
-  const cells: (number | null)[] = []
-  for (let i = 0; i < firstWd; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-  return cells
+  const firstWd = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7; // 周一=0
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstWd; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  return cells;
 }
 
 /** 该日是周几（周一=0 … 周日=6） */
 function weekdayOf(year: number, month: number, day: number): number {
-  return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7
+  return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
 }
 
-/** 格子的热力底色：涨多红、跌多绿；无摘要（历史仅板块榜）为中性 */
-function heatStyle(d?: CalendarIndexDay): React.CSSProperties {
-  if (!d || d.up == null || d.down == null) return { background: '#FFFFFF', borderColor: '#EDEFF2' }
-  const total = d.up + d.down
-  if (!total) return { background: '#FFFFFF', borderColor: '#EDEFF2' }
-  const r = d.up / total
-  if (r >= 0.5) {
-    const k = Math.min(1, (r - 0.5) / 0.5)
-    return {
-      background: `rgba(255,77,79,${(0.06 + 0.34 * k).toFixed(3)})`,
-      borderColor: 'rgba(255,77,79,0.22)',
-    }
-  }
-  const k = Math.min(1, (0.5 - r) / 0.5)
-  return {
-    background: `rgba(14,205,112,${(0.06 + 0.3 * k).toFixed(3)})`,
-    borderColor: 'rgba(14,205,112,0.22)',
-  }
+/** 涨跌方向：用于格子左上角的小色块（红=涨多，绿=跌多，null=无摘要） */
+function heatTone(d?: CalendarIndexDay): 'up' | 'down' | null {
+  if (!d || d.up == null || d.down == null) return null;
+  const total = d.up + d.down;
+  if (!total) return null;
+  return d.up / total >= 0.5 ? 'up' : 'down';
 }
 
 // ---------------- 主线识别 ----------------
@@ -80,10 +68,10 @@ const FEATURE_STYLE: Record<MainlineFeature, { color: string; bg: string }> = {
   streak: { color: '#1264C0', bg: 'rgba(24,144,255,0.12)' },
   new: { color: '#C4232A', bg: 'rgba(255,77,79,0.12)' },
   evergreen: { color: '#0E8A4F', bg: 'rgba(14,205,112,0.12)' },
-}
+};
 
 function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: number }) {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
   if (!rows.length) {
     return (
       <div
@@ -99,7 +87,7 @@ function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: n
           近 {windowDays} 个交易日暂无板块反复进入涨幅榜前五 —— 市场处于快速轮动、无明确主线状态。
         </div>
       </div>
-    )
+    );
   }
   return (
     <div
@@ -216,17 +204,17 @@ function MainlineCard({ rows, windowDays }: { rows: MainlineRow[]; windowDays: n
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // ---------------- 对比：榜单并排 diff ----------------
-type DiffRow = { key: string; name: string; pct: number; amount: number }
+type DiffRow = { key: string; name: string; pct: number; amount: number };
 
 function toSectorRows(rows: CalendarSector[]): DiffRow[] {
-  return rows.map((r) => ({ key: r.id, name: r.name, pct: r.pct, amount: r.amt }))
+  return rows.map((r) => ({ key: r.id, name: r.name, pct: r.pct, amount: r.amt }));
 }
 function toStockRows(rows: CalendarStock[]): DiffRow[] {
-  return rows.map((r) => ({ key: r.code, name: r.name, pct: r.pct, amount: r.amount }))
+  return rows.map((r) => ({ key: r.code, name: r.name, pct: r.pct, amount: r.amount }));
 }
 
 function DiffColumn({
@@ -235,10 +223,10 @@ function DiffColumn({
   dropped,
   amountUnit,
 }: {
-  rows: DiffRow[]
-  added: Set<string>
-  dropped: Set<string>
-  amountUnit: string
+  rows: DiffRow[];
+  added: Set<string>;
+  dropped: Set<string>;
+  amountUnit: string;
 }) {
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
@@ -294,7 +282,7 @@ function DiffColumn({
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 function DiffCard({
@@ -305,14 +293,14 @@ function DiffCard({
   aDate,
   bDate,
 }: {
-  title: string
-  a: DiffRow[]
-  b: DiffRow[]
-  amountUnit: string
-  aDate: string
-  bDate: string
+  title: string;
+  a: DiffRow[];
+  b: DiffRow[];
+  amountUnit: string;
+  aDate: string;
+  bDate: string;
 }) {
-  const { added, dropped } = useMemo(() => diffKeys(a, b, (x) => x.key), [a, b])
+  const { added, dropped } = useMemo(() => diffKeys(a, b, (x) => x.key), [a, b]);
   return (
     <div
       style={{
@@ -371,36 +359,36 @@ function DiffCard({
         <DiffColumn rows={b} added={added} dropped={dropped} amountUnit={amountUnit} />
       </div>
     </div>
-  )
+  );
 }
 
 function ComparePanel({ a, b }: { a: string; b: string }) {
-  const isMobile = useIsMobile()
-  const [da, setDa] = useState<CalendarDay | null>(null)
-  const [db, setDb] = useState<CalendarDay | null>(null)
-  const [err, setErr] = useState<string | null>(null)
+  const isMobile = useIsMobile();
+  const [da, setDa] = useState<CalendarDay | null>(null);
+  const [db, setDb] = useState<CalendarDay | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    let alive = true
-    setErr(null)
+    let alive = true;
+    setErr(null);
     Promise.all([loadCalendarDay(a), loadCalendarDay(b)])
       .then(([x, y]) => {
-        if (!alive) return
-        setDa(x)
-        setDb(y)
+        if (!alive) return;
+        setDa(x);
+        setDb(y);
       })
-      .catch((e) => alive && setErr(String(e?.message || e)))
+      .catch((e) => alive && setErr(String(e?.message || e)));
     return () => {
-      alive = false
-    }
-  }, [a, b])
+      alive = false;
+    };
+  }, [a, b]);
 
   const statRows: {
-    label: string
-    va?: number
-    vb?: number
-    unit?: string
-    colorOf?: (v: number) => string
+    label: string;
+    va?: number;
+    vb?: number;
+    unit?: string;
+    colorOf?: (v: number) => string;
   }[] = [
     { label: '上涨家数', va: da?.summary.up, vb: db?.summary.up, colorOf: () => COLOR_UP },
     { label: '下跌家数', va: da?.summary.down, vb: db?.summary.down, colorOf: () => COLOR_DOWN },
@@ -412,7 +400,7 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
       colorOf: () => COLOR_DOWN,
     },
     { label: '总成交额', va: da?.summary.turnover, vb: db?.summary.turnover, unit: '亿' },
-  ]
+  ];
 
   return (
     <div>
@@ -477,7 +465,7 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
               </thead>
               <tbody>
                 {statRows.map((r) => {
-                  const diff = r.va != null && r.vb != null ? r.vb - r.va : undefined
+                  const diff = r.va != null && r.vb != null ? r.vb - r.va : undefined;
                   return (
                     <tr key={r.label} style={{ borderTop: '1px solid #F2F3F5' }}>
                       <td style={{ fontSize: 13, color: COLOR_TEXT, padding: '7px 8px' }}>
@@ -520,7 +508,7 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
                           : `${diff > 0 ? '+' : ''}${Math.round(diff * 100) / 100}${r.unit || ''}`}
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -576,110 +564,112 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
         </>
       )}
     </div>
-  )
+  );
 }
 
 // ---------------- 页面 ----------------
 export default function Calendar() {
-  const { index, loading, error } = useCalendarIndex()
-  const isMobile = useIsMobile()
-  const [y, setY] = useState<number | null>(null)
-  const [m, setM] = useState<number | null>(null)
-  const [view, setView] = useState<'calendar' | 'week' | 'month'>('calendar')
-  const [openDate, setOpenDate] = useState<string | null>(null)
-  const [compareOn, setCompareOn] = useState(false)
-  const [cmpA, setCmpA] = useState<string | null>(null)
-  const [cmpB, setCmpB] = useState<string | null>(null)
+  const { index, loading, error } = useCalendarIndex();
+  const isMobile = useIsMobile();
+  const [y, setY] = useState<number | null>(null);
+  const [m, setM] = useState<number | null>(null);
+  const [view, setView] = useState<'calendar' | 'week' | 'month'>('calendar');
+  const [openDate, setOpenDate] = useState<string | null>(null);
+  const [compareOn, setCompareOn] = useState(false);
+  const [cmpA, setCmpA] = useState<string | null>(null);
+  const [cmpB, setCmpB] = useState<string | null>(null);
 
   const dayMap = useMemo(() => {
-    const map = new Map<string, CalendarIndexDay>()
-    ;(index?.days || []).forEach((d) => map.set(d.date, d))
-    return map
-  }, [index])
+    const map = new Map<string, CalendarIndexDay>();
+    (index?.days || []).forEach((d) => map.set(d.date, d));
+    return map;
+  }, [index]);
 
   // 默认展示最新交易日月
   useEffect(() => {
-    if (y != null || !index?.meta.lastDate) return
-    setY(Number(index.meta.lastDate.slice(0, 4)))
-    setM(Number(index.meta.lastDate.slice(5, 7)))
-  }, [index, y])
+    if (y != null || !index?.meta.lastDate) return;
+    setY(Number(index.meta.lastDate.slice(0, 4)));
+    setM(Number(index.meta.lastDate.slice(5, 7)));
+  }, [index, y]);
 
   const shift = (delta: number) => {
-    if (y == null || m == null) return
-    const t = y * 12 + (m - 1) + delta
-    setY(Math.floor(t / 12))
-    setM((t % 12) + 1)
-  }
+    if (y == null || m == null) return;
+    const t = y * 12 + (m - 1) + delta;
+    setY(Math.floor(t / 12));
+    setM((t % 12) + 1);
+  };
 
   const pickDate = useCallback(
     (date: string) => {
       if (!compareOn) {
-        setOpenDate(date)
-        return
+        setOpenDate(date);
+        return;
       }
       if (!cmpA) {
-        setCmpA(date)
-        setCmpB(null)
+        setCmpA(date);
+        setCmpB(null);
       } else if (!cmpB && date !== cmpA) {
-        setCmpB(date)
+        setCmpB(date);
       } else if (!cmpB) {
-        setCmpB(null)
+        setCmpB(null);
       } else {
         // 已有一对 → 滚动：A 取旧 B，B 取新点
-        setCmpA(cmpB)
-        setCmpB(date)
+        setCmpA(cmpB);
+        setCmpB(date);
       }
     },
     [compareOn, cmpA, cmpB],
-  )
+  );
 
   const exitCompare = () => {
-    setCompareOn(false)
-    setCmpA(null)
-    setCmpB(null)
-  }
+    setCompareOn(false);
+    setCmpA(null);
+    setCmpB(null);
+  };
 
-  const cells = y != null && m != null ? buildCells(y, m) : []
-  const latest = index?.meta.lastDate || ''
-  const earliest = index?.meta.firstDate || ''
+  const cells = y != null && m != null ? buildCells(y, m) : [];
+  const latest = index?.meta.lastDate || '';
+  const earliest = index?.meta.firstDate || '';
   // 交易日清单：有归档窗口内、工作日、但不在清单里 = 真休市（节假日）
-  const tradeSet = useMemo(() => new Set(index?.meta.tradeDates || []), [index])
-  const hasTradeList = !!index?.meta.tradeDates?.length
+  const tradeSet = useMemo(() => new Set(index?.meta.tradeDates || []), [index]);
+  const hasTradeList = !!index?.meta.tradeDates?.length;
 
   // 当前月份的交易天数：优先用真实交易日清单，缺失时退回已归档天数
   const monthTradeCount = useMemo(() => {
-    if (y == null || m == null) return 0
-    const prefix = `${y}-${pad2(m)}`
-    const src = hasTradeList ? index?.meta.tradeDates || [] : (index?.days || []).map((d) => d.date)
-    return src.filter((d) => d.startsWith(prefix)).length
-  }, [index, y, m, hasTradeList])
+    if (y == null || m == null) return 0;
+    const prefix = `${y}-${pad2(m)}`;
+    const src = hasTradeList
+      ? index?.meta.tradeDates || []
+      : (index?.days || []).map((d) => d.date);
+    return src.filter((d) => d.startsWith(prefix)).length;
+  }, [index, y, m, hasTradeList]);
 
   // 最旧月份：不允许再往前翻（数据保留，只在交互上拦截）
   const minYM = earliest
     ? { y: Number(earliest.slice(0, 4)), m: Number(earliest.slice(5, 7)) }
-    : null
-  const atMinMonth = !!(y != null && m != null && minYM && y * 12 + m <= minYM.y * 12 + minYM.m)
+    : null;
+  const atMinMonth = !!(y != null && m != null && minYM && y * 12 + m <= minYM.y * 12 + minYM.m);
   // 最晚只到「当前自然月」与「最后归档月」中较早的那个，不允许翻到未来
-  const now = new Date()
-  const monthOf = (s: string) => Number(s.slice(0, 4)) * 12 + Number(s.slice(5, 7))
+  const now = new Date();
+  const monthOf = (s: string) => Number(s.slice(0, 4)) * 12 + Number(s.slice(5, 7));
   const maxMonth = Math.min(
     monthOf(latest || '') || now.getFullYear() * 12 + now.getMonth() + 1,
     now.getFullYear() * 12 + now.getMonth() + 1,
-  )
-  const atMaxMonth = !!(y != null && m != null && y * 12 + m >= maxMonth)
+  );
+  const atMaxMonth = !!(y != null && m != null && y * 12 + m >= maxMonth);
 
   // 主线识别：只用 index.json 的每日 TOP5，进入页面即可算，不额外拉数据
   // 窗口取 20 个交易日 —— 实测 10 日窗内没有任何板块能进榜 3 次（板块轮动极快），
   // 20 日窗口才能稳定识别出「反复走强」的方向
-  const MAINLINE_WINDOW = 20
+  const MAINLINE_WINDOW = 20;
   const mainlines = useMemo(
     () => findMainlines(index?.days || [], MAINLINE_WINDOW, 3).slice(0, 8),
     [index],
-  )
+  );
 
   // 事件标注（localStorage）
-  const events = useCalendarEvents()
-  const eventDates = useMemo(() => new Set(events.map((e) => e.date)), [events])
+  const events = useCalendarEvents();
+  const eventDates = useMemo(() => new Set(events.map((e) => e.date)), [events]);
   const monthEvents = useMemo(
     () =>
       y != null && m != null
@@ -688,15 +678,15 @@ export default function Calendar() {
             .sort((a, b) => a.date.localeCompare(b.date))
         : [],
     [events, y, m],
-  )
+  );
 
   // 弹窗内 ← → 翻页：在已归档日期序列里前后移动
-  const dayList = index?.days || []
-  const openIdx = openDate ? dayList.findIndex((d) => d.date === openDate) : -1
+  const dayList = index?.days || [];
+  const openIdx = openDate ? dayList.findIndex((d) => d.date === openDate) : -1;
   const stepOpen = (delta: number) => {
-    const j = openIdx + delta
-    if (openIdx >= 0 && j >= 0 && j < dayList.length) setOpenDate(dayList[j].date)
-  }
+    const j = openIdx + delta;
+    if (openIdx >= 0 && j >= 0 && j < dayList.length) setOpenDate(dayList[j].date);
+  };
 
   return (
     <div>
@@ -729,8 +719,8 @@ export default function Calendar() {
           <button
             key={t.k}
             onClick={() => {
-              setView(t.k)
-              if (t.k !== 'calendar') exitCompare()
+              setView(t.k);
+              if (t.k !== 'calendar') exitCompare();
             }}
             style={{
               padding: '6px 16px',
@@ -775,7 +765,7 @@ export default function Calendar() {
                   style={{ display: 'inline-flex' }}>
                   <button
                     onClick={() => {
-                      if (!atMinMonth) shift(-1)
+                      if (!atMinMonth) shift(-1);
                     }}
                     disabled={atMinMonth}
                     aria-label="上个月"
@@ -814,7 +804,7 @@ export default function Calendar() {
                   style={{ display: 'inline-flex' }}>
                   <button
                     onClick={() => {
-                      if (!atMaxMonth) shift(1)
+                      if (!atMaxMonth) shift(1);
                     }}
                     disabled={atMaxMonth}
                     aria-label="下个月"
@@ -834,13 +824,13 @@ export default function Calendar() {
                 </span>
                 <button
                   onClick={() => {
-                    const todayMonth = now.getFullYear() * 12 + now.getMonth() + 1
+                    const todayMonth = now.getFullYear() * 12 + now.getMonth() + 1;
                     const t = Math.min(
                       Math.max(todayMonth, minYM ? minYM.y * 12 + minYM.m : todayMonth),
                       maxMonth || todayMonth,
-                    )
-                    setY(Math.floor((t - 1) / 12))
-                    setM(((t - 1) % 12) + 1)
+                    );
+                    setY(Math.floor((t - 1) / 12));
+                    setM(((t - 1) % 12) + 1);
                   }}
                   style={{
                     marginLeft: 4,
@@ -867,12 +857,12 @@ export default function Calendar() {
                 )}
                 <button
                   onClick={() => {
-                    if (compareOn) exitCompare()
+                    if (compareOn) exitCompare();
                     else {
-                      setCompareOn(true)
-                      setCmpA(null)
-                      setCmpB(null)
-                      setOpenDate(null)
+                      setCompareOn(true);
+                      setCmpA(null);
+                      setCmpB(null);
+                      setOpenDate(null);
                     }
                   }}
                   style={{
@@ -948,26 +938,26 @@ export default function Calendar() {
                               borderBottom: '1px solid #F2F3F5',
                             }}
                           />
-                        )
+                        );
                       }
-                      const ds = `${y}-${pad2(m!)}-${pad2(d)}`
-                      const info = dayMap.get(ds)
-                      const isA = cmpA === ds
-                      const isB = cmpB === ds
-                      const selected = isA || isB
-                      const hs = heatStyle(info)
-                      const wd = weekdayOf(y!, m!, d)
-                      const weekend = wd >= 5
+                      const ds = `${y}-${pad2(m!)}-${pad2(d)}`;
+                      const info = dayMap.get(ds);
+                      const isA = cmpA === ds;
+                      const isB = cmpB === ds;
+                      const selected = isA || isB;
+                      const tone = heatTone(info);
+                      const wd = weekdayOf(y!, m!, d);
+                      const weekend = wd >= 5;
                       // 休市 = 无归档 且（不在交易日清单里 且 不晚于最后归档日）
                       // 节假日与周末同样处理；清单缺失时退化为「只认周末」
                       const closed =
-                        !info && (hasTradeList ? !tradeSet.has(ds) && ds <= latest : weekend)
-                      const closedLabel = weekend ? '周末休市' : '节假日休市'
+                        !info && (hasTradeList ? !tradeSet.has(ds) && ds <= latest : weekend);
+                      const closedLabel = weekend ? '周末休市' : '节假日休市';
                       return (
                         <button
                           key={ds}
                           onClick={() => {
-                            if (info) pickDate(ds)
+                            if (info) pickDate(ds);
                           }}
                           title={
                             info
@@ -986,8 +976,8 @@ export default function Calendar() {
                             borderRight: i % 7 !== 6 ? '1px solid #F2F3F5' : 'none',
                             borderBottom: '1px solid #F2F3F5',
                             boxShadow: selected ? 'inset 0 0 0 2px #111827' : 'none',
-                            // 周末与节假日统一用同一种「无数据」底色（#FAFBFC），只靠格内「休市」文案区分
-                            background: info ? hs.background : '#FAFBFC',
+                            // 交易日统一白底，涨跌方向由左上角小色块表示；非交易日仍用 #FAFBFC
+                            background: info ? '#FFFFFF' : '#FAFBFC',
                             padding: isMobile ? '6px 5px 8px' : '8px 8px 10px',
                             font: 'inherit',
                             display: 'flex',
@@ -996,6 +986,23 @@ export default function Calendar() {
                             justifyContent: 'center',
                             transition: 'background .12s ease',
                           }}>
+                          {/* 涨跌方向小色块：左上角圆角方块，红=涨多、绿=跌多 */}
+                          {tone && (
+                            <i
+                              title={tone === 'up' ? '当日涨多' : '当日跌多'}
+                              style={{
+                                position: 'absolute',
+                                top: isMobile ? 6 : 8,
+                                left: isMobile ? 6 : 8,
+                                width: isMobile ? 6 : 7,
+                                height: isMobile ? 6 : 7,
+                                borderRadius: 2,
+                                background: tone === 'up' ? COLOR_UP : COLOR_DOWN,
+                                opacity: 0.85,
+                                display: 'inline-block',
+                              }}
+                            />
+                          )}
                           {/* 角标：事件圆点 / 对比 A-B，绝对定位，不干扰日期居中 */}
                           <div
                             style={{
@@ -1096,7 +1103,7 @@ export default function Calendar() {
                             </>
                           )}
                         </button>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -1115,10 +1122,11 @@ export default function Calendar() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <i
                         style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 3,
-                          background: 'rgba(255,77,79,0.30)',
+                          width: 8,
+                          height: 8,
+                          borderRadius: 2,
+                          background: COLOR_UP,
+                          opacity: 0.85,
                           display: 'inline-block',
                         }}
                       />
@@ -1127,10 +1135,11 @@ export default function Calendar() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <i
                         style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 3,
-                          background: 'rgba(14,205,112,0.26)',
+                          width: 8,
+                          height: 8,
+                          borderRadius: 2,
+                          background: COLOR_DOWN,
+                          opacity: 0.85,
                           display: 'inline-block',
                         }}
                       />
@@ -1210,5 +1219,5 @@ export default function Calendar() {
         <CalendarRankings kind={view} />
       )}
     </div>
-  )
+  );
 }
