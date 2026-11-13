@@ -403,6 +403,34 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
     { label: '总成交额', va: da?.summary.turnover, vb: db?.summary.turnover, unit: '亿' },
   ];
 
+  // 任一方数据不齐 → 对应卡片整块不展示（如 11-01 缺摘要与个股榜）
+  const hasFullSummary = (d: CalendarDay | null) => {
+    const s = d?.summary;
+    return (
+      !!s &&
+      s.up != null &&
+      s.down != null &&
+      s.limitUp != null &&
+      s.limitDown != null &&
+      s.turnover != null
+    );
+  };
+  const showSummary = hasFullSummary(da) && hasFullSummary(db);
+
+  const pair = (pick: (d: CalendarDay) => DiffRow[] | undefined) => {
+    if (!da || !db) return null;
+    const ra = pick(da);
+    const rb = pick(db);
+    if (!ra?.length || !rb?.length) return null;
+    return { a: ra, b: rb };
+  };
+
+  const sectorUp = pair((d) => toSectorRows(d.sectors.up));
+  const sectorDown = pair((d) => toSectorRows(d.sectors.down));
+  const stockUp = pair((d) => (d.stocks ? toStockRows(d.stocks.up) : undefined));
+  const stockDown = pair((d) => (d.stocks ? toStockRows(d.stocks.down) : undefined));
+  const stockVolume = pair((d) => (d.stocks ? toStockRows(d.stocks.volume) : undefined));
+
   return (
     <div>
       {err && (
@@ -412,154 +440,166 @@ function ComparePanel({ a, b }: { a: string; b: string }) {
         <div style={{ fontSize: 13, color: '#86909C', padding: '16px 0' }}>加载中…</div>
       ) : (
         <>
-          <div
-            style={{
-              background: '#fff',
-              border: '1px solid #E5E7EB',
-              borderRadius: 12,
-              padding: '10px 14px',
-              marginBottom: 12,
-              overflowX: 'auto',
-            }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420 }}>
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      fontSize: 12,
-                      color: '#86909C',
-                      fontWeight: 500,
-                      padding: '6px 8px',
-                    }}></th>
-                  <th
-                    style={{
-                      textAlign: 'right',
-                      fontSize: 12,
-                      color: '#86909C',
-                      fontWeight: 500,
-                      padding: '6px 8px',
-                    }}>
-                    {a}
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'right',
-                      fontSize: 12,
-                      color: '#86909C',
-                      fontWeight: 500,
-                      padding: '6px 8px',
-                    }}>
-                    {b}
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'right',
-                      fontSize: 12,
-                      color: '#86909C',
-                      fontWeight: 500,
-                      padding: '6px 8px',
-                    }}>
-                    变化
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {statRows.map((r) => {
-                  const diff = r.va != null && r.vb != null ? r.vb - r.va : undefined;
-                  return (
-                    <tr key={r.label} style={{ borderTop: '1px solid #F2F3F5' }}>
-                      <td style={{ fontSize: 13, color: COLOR_TEXT, padding: '7px 8px' }}>
-                        {r.label}
-                      </td>
-                      <td
-                        style={{
-                          fontSize: 13,
-                          textAlign: 'right',
-                          padding: '7px 8px',
-                          color: r.colorOf ? r.colorOf(r.va || 0) : COLOR_TEXT,
-                        }}>
-                        {r.va != null ? `${r.va}${r.unit || ''}` : '-'}
-                      </td>
-                      <td
-                        style={{
-                          fontSize: 13,
-                          textAlign: 'right',
-                          padding: '7px 8px',
-                          color: r.colorOf ? r.colorOf(r.vb || 0) : COLOR_TEXT,
-                        }}>
-                        {r.vb != null ? `${r.vb}${r.unit || ''}` : '-'}
-                      </td>
-                      <td
-                        style={{
-                          fontSize: 13,
-                          textAlign: 'right',
-                          padding: '7px 8px',
-                          color:
-                            diff == null
-                              ? '#C9CDD4'
-                              : diff > 0
-                                ? COLOR_UP
-                                : diff < 0
-                                  ? COLOR_DOWN
-                                  : COLOR_FLAT,
-                        }}>
-                        {diff == null
-                          ? '-'
-                          : `${diff > 0 ? '+' : ''}${Math.round(diff * 100) / 100}${r.unit || ''}`}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
+          {/* 第 1 行：摘要对比 + 个股成交额；其余为板块/个股涨跌幅对比 */}
           <div
             style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-            <DiffCard
-              title="板块涨幅 TOP10"
-              a={toSectorRows(da.sectors.up)}
-              b={toSectorRows(db.sectors.up)}
-              amountUnit="亿"
-              aDate={a}
-              bDate={b}
-            />
-            <DiffCard
-              title="板块跌幅 TOP10"
-              a={toSectorRows(da.sectors.down)}
-              b={toSectorRows(db.sectors.down)}
-              amountUnit="亿"
-              aDate={a}
-              bDate={b}
-            />
-            {da.stocks && db.stocks && (
-              <>
-                <DiffCard
-                  title="个股涨幅 TOP10"
-                  a={toStockRows(da.stocks.up)}
-                  b={toStockRows(db.stocks.up)}
-                  amountUnit="亿"
-                  aDate={a}
-                  bDate={b}
-                />
-                <DiffCard
-                  title="个股跌幅 TOP10"
-                  a={toStockRows(da.stocks.down)}
-                  b={toStockRows(db.stocks.down)}
-                  amountUnit="亿"
-                  aDate={a}
-                  bDate={b}
-                />
-                <DiffCard
-                  title="个股成交额 TOP10"
-                  a={toStockRows(da.stocks.volume)}
-                  b={toStockRows(db.stocks.volume)}
-                  amountUnit="亿"
-                  aDate={a}
-                  bDate={b}
-                />
-              </>
+            {showSummary && (
+              <div
+                style={{
+                  background: '#fff',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  overflowX: 'auto',
+                }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420 }}>
+                  <thead>
+                    <tr>
+                      <th
+                        style={{
+                          textAlign: 'left',
+                          fontSize: 12,
+                          color: '#86909C',
+                          fontWeight: 500,
+                          padding: '6px 8px',
+                        }}></th>
+                      <th
+                        style={{
+                          textAlign: 'right',
+                          fontSize: 12,
+                          color: '#86909C',
+                          fontWeight: 500,
+                          padding: '6px 8px',
+                        }}>
+                        {a}
+                      </th>
+                      <th
+                        style={{
+                          textAlign: 'right',
+                          fontSize: 12,
+                          color: '#86909C',
+                          fontWeight: 500,
+                          padding: '6px 8px',
+                        }}>
+                        {b}
+                      </th>
+                      <th
+                        style={{
+                          textAlign: 'right',
+                          fontSize: 12,
+                          color: '#86909C',
+                          fontWeight: 500,
+                          padding: '6px 8px',
+                        }}>
+                        变化
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {statRows.map((r) => {
+                      const diff = r.va != null && r.vb != null ? r.vb - r.va : undefined;
+                      return (
+                        <tr key={r.label} style={{ borderTop: '1px solid #F2F3F5' }}>
+                          <td style={{ fontSize: 13, color: COLOR_TEXT, padding: '7px 8px' }}>
+                            {r.label}
+                          </td>
+                          <td
+                            style={{
+                              fontSize: 13,
+                              textAlign: 'right',
+                              padding: '7px 8px',
+                              color: r.colorOf ? r.colorOf(r.va || 0) : COLOR_TEXT,
+                            }}>
+                            {r.va != null ? `${r.va}${r.unit || ''}` : '-'}
+                          </td>
+                          <td
+                            style={{
+                              fontSize: 13,
+                              textAlign: 'right',
+                              padding: '7px 8px',
+                              color: r.colorOf ? r.colorOf(r.vb || 0) : COLOR_TEXT,
+                            }}>
+                            {r.vb != null ? `${r.vb}${r.unit || ''}` : '-'}
+                          </td>
+                          <td
+                            style={{
+                              fontSize: 13,
+                              textAlign: 'right',
+                              padding: '7px 8px',
+                              color:
+                                diff == null
+                                  ? '#C9CDD4'
+                                  : diff > 0
+                                    ? COLOR_UP
+                                    : diff < 0
+                                      ? COLOR_DOWN
+                                      : COLOR_FLAT,
+                            }}>
+                            {diff == null
+                              ? '-'
+                              : `${diff > 0 ? '+' : ''}${Math.round(diff * 100) / 100}${r.unit || ''}`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {stockVolume && (
+              <DiffCard
+                title="个股成交额 TOP10"
+                a={stockVolume.a}
+                b={stockVolume.b}
+                amountUnit="亿"
+                aDate={a}
+                bDate={b}
+              />
+            )}
+
+            {sectorUp && (
+              <DiffCard
+                title="板块涨幅 TOP10"
+                a={sectorUp.a}
+                b={sectorUp.b}
+                amountUnit="亿"
+                aDate={a}
+                bDate={b}
+              />
+            )}
+
+            {sectorDown && (
+              <DiffCard
+                title="板块跌幅 TOP10"
+                a={sectorDown.a}
+                b={sectorDown.b}
+                amountUnit="亿"
+                aDate={a}
+                bDate={b}
+              />
+            )}
+
+            {stockUp && (
+              <DiffCard
+                title="个股涨幅 TOP10"
+                a={stockUp.a}
+                b={stockUp.b}
+                amountUnit="亿"
+                aDate={a}
+                bDate={b}
+              />
+            )}
+
+            {stockDown && (
+              <DiffCard
+                title="个股跌幅 TOP10"
+                a={stockDown.a}
+                b={stockDown.b}
+                amountUnit="亿"
+                aDate={a}
+                bDate={b}
+              />
             )}
           </div>
         </>
