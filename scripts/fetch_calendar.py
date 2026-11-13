@@ -401,6 +401,16 @@ def main() -> int:
 
     existing = load_json(day_path(out_root, date), {}) or {}
     summary = market_summary(data, date)
+
+    # 快照只代表「最新的一个收盘交易日」：若目标日期不是 rotation 里的最新交易日
+    # （常见于 data.json 的 tradeDate 尚未滚动、而快照已是新收盘），把新快照写进来
+    # 会让前后两天的个股榜变成同一份数据 —— 此时保留原有个股榜。
+    latest_trade = (rot.get('dates') or [None])[-1]
+    date_is_latest = date == latest_trade
+    if not date_is_latest:
+        print(
+            f'  ! {date} 不是最新交易日（最新 {latest_trade}）→ 本次快照不写入个股榜，保留原数据'
+        )
     day = {
         'meta': {
             'schema': 'calendar-day-v1',
@@ -412,7 +422,7 @@ def main() -> int:
             'stockFilter': '剔除 ST / 停牌 / 涨跌幅 > 21%（首日·次新）',
         },
         'sectors': sec if (sec['up'] or sec['down']) else existing.get('sectors') or sec,
-        'stocks': stocks,
+        'stocks': stocks if date_is_latest else existing.get('stocks'),
         'summary': summary or existing.get('summary') or {},
     }
     atomic_write(day_path(out_root, date), day)
@@ -421,7 +431,7 @@ def main() -> int:
         'date': date, **day['summary'],
         'topUp': day['sectors']['up'][:TOP_SUMMARY],
         'topDown': day['sectors']['down'][:TOP_SUMMARY],
-        'hasStocks': True,
+        'hasStocks': bool(day['stocks']),
     }, trade_dates=rot.get('dates'))
 
     print(f'✓ 写入 {os.path.join(out_root, date + ".json")}')
