@@ -212,7 +212,7 @@ export default function CalendarRankings({ kind }: { kind: 'week' | 'month' }) {
               minWidth: 150,
               textAlign: 'center',
             }}>
-            {kind === 'week' ? `${bucket.label} 周` : bucket.label}
+            {bucket.label}
           </span>
           <button
             onClick={() => setIdx((v) => (v != null && v < buckets.length - 1 ? v + 1 : v))}
