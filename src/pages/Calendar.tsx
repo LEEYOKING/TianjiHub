@@ -1001,9 +1001,9 @@ export default function Calendar() {
                                 position: 'absolute',
                                 top: isMobile ? 6 : 8,
                                 left: isMobile ? 6 : 8,
-                                width: isMobile ? 12 : 16,
-                                height: isMobile ? 12 : 16,
-                                borderRadius: 5,
+                                width: isMobile ? 10 : 12,
+                                height: isMobile ? 10 : 12,
+                                borderRadius: 3,
                                 background:
                                   tone === 'up'
                                     ? COLOR_UP
