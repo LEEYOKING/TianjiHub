@@ -53,12 +53,13 @@ function weekdayOf(year: number, month: number, day: number): number {
   return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
 }
 
-/** 涨跌方向：用于格子左上角的小色块（红=涨多，绿=跌多，null=无摘要） */
-function heatTone(d?: CalendarIndexDay): 'up' | 'down' | null {
+/** 涨跌方向：用于格子左上角的小色块（红=涨多，绿=跌多，灰=持平，null=无摘要） */
+function heatTone(d?: CalendarIndexDay): 'up' | 'down' | 'flat' | null {
   if (!d || d.up == null || d.down == null) return null;
   const total = d.up + d.down;
   if (!total) return null;
-  return d.up / total >= 0.5 ? 'up' : 'down';
+  if (d.up === d.down) return 'flat';
+  return d.up > d.down ? 'up' : 'down';
 }
 
 // ---------------- 主线识别 ----------------
@@ -986,18 +987,29 @@ export default function Calendar() {
                             justifyContent: 'center',
                             transition: 'background .12s ease',
                           }}>
-                          {/* 涨跌方向小色块：左上角圆角方块，红=涨多、绿=跌多 */}
+                          {/* 涨跌方向小色块：左上角圆角方块，红=涨多、绿=跌多、灰=持平 */}
                           {tone && (
                             <i
-                              title={tone === 'up' ? '当日涨多' : '当日跌多'}
+                              title={
+                                tone === 'up'
+                                  ? '当日涨多'
+                                  : tone === 'down'
+                                    ? '当日跌多'
+                                    : '当日涨跌持平'
+                              }
                               style={{
                                 position: 'absolute',
                                 top: isMobile ? 6 : 8,
                                 left: isMobile ? 6 : 8,
-                                width: isMobile ? 6 : 7,
-                                height: isMobile ? 6 : 7,
-                                borderRadius: 2,
-                                background: tone === 'up' ? COLOR_UP : COLOR_DOWN,
+                                width: isMobile ? 12 : 16,
+                                height: isMobile ? 12 : 16,
+                                borderRadius: 5,
+                                background:
+                                  tone === 'up'
+                                    ? COLOR_UP
+                                    : tone === 'down'
+                                      ? COLOR_DOWN
+                                      : COLOR_FLAT,
                                 opacity: 0.85,
                                 display: 'inline-block',
                               }}
@@ -1094,10 +1106,15 @@ export default function Calendar() {
                               )}
                               {!isMobile && (
                                 <div style={{ marginTop: 4, fontSize: 11, color: '#86909C' }}>
-                                  {info.limitUp != null ? `涨停 ${info.limitUp}` : ''}
-                                  {info.up != null
-                                    ? `${info.limitUp != null ? ' · ' : ''}${info.up}↑ ${info.down}↓`
-                                    : ''}
+                                  {info.limitUp != null && <span>{`涨停 ${info.limitUp}`}</span>}
+                                  {info.up != null && info.down != null && (
+                                    <>
+                                      {info.limitUp != null && <span> · </span>}
+                                      <span style={{ color: COLOR_UP }}>{`${info.up}↑`}</span>
+                                      <span> </span>
+                                      <span style={{ color: COLOR_DOWN }}>{`${info.down}↓`}</span>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </>
