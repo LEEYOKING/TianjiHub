@@ -35,17 +35,38 @@ export function buildBuckets(dates: string[], kind: 'week' | 'month'): PeriodBuc
       label = `${key.slice(0, 4)}年${Number(key.slice(5, 7))}月`
     } else {
       key = mondayOf(d)
-      label = `${key.slice(5)} ~ ${d.slice(5)}`
+      label = weekLabel(key, d)
     }
     const hit = map.get(key)
     if (!hit) {
       map.set(key, { key, label, from: d, to: d })
     } else {
       hit.to = d
-      if (kind === 'week') hit.label = `${hit.from.slice(5)} ~ ${d.slice(5)}`
+      if (kind === 'week') hit.label = weekLabel(hit.from, d)
     }
   }
   return Array.from(map.values()).sort((a, b) => a.from.localeCompare(b.from))
+}
+
+/** 展示用短日期：2026-11-09 → 11.09 */
+function mmdd(date: string): string {
+  return `${date.slice(5, 7)}.${date.slice(8, 10)}`
+}
+
+/** 周榜标题：`46周（11.09 ~ 11.13）`，周序号为 ISO 周（周一为一周起点） */
+function weekLabel(from: string, to: string): string {
+  return `${isoWeek(from)}周（${mmdd(from)} ~ ${mmdd(to)}）`
+}
+
+/** ISO 8601 周序号：以「所在周的周四」归年，1 月 4 日必在第 1 周 */
+export function isoWeek(date: string): number {
+  const d = new Date(`${date}T00:00:00Z`)
+  const wd = (d.getUTCDay() + 6) % 7 // 周一=0
+  d.setUTCDate(d.getUTCDate() - wd + 3) // 挪到本周周四
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4))
+  const fwd = (firstThursday.getUTCDay() + 6) % 7
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - fwd + 3)
+  return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000))
 }
 
 /** 取某日所在周的周一（YYYY-MM-DD，按 UTC 计算，与 A 股交易日一致） */
