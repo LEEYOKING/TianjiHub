@@ -53,9 +53,9 @@ function mmdd(date: string): string {
   return `${date.slice(5, 7)}.${date.slice(8, 10)}`
 }
 
-/** 周榜标题：`46周（11.09 ~ 11.13）`，周序号为 ISO 周（周一为一周起点） */
+/** 周榜标题：`46周  11.09~11.12`，周序号为 ISO 周（周一为一周起点） */
 function weekLabel(from: string, to: string): string {
-  return `${isoWeek(from)}周（${mmdd(from)} ~ ${mmdd(to)}）`
+  return `${isoWeek(from)}周  ${mmdd(from)}~${mmdd(to)}`
 }
 
 /** ISO 8601 周序号：以「所在周的周四」归年，1 月 4 日必在第 1 周 */
