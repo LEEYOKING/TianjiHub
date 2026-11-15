@@ -223,12 +223,16 @@ function DiffColumn({
   added,
   dropped,
   amountUnit,
+  tone,
 }: {
   rows: DiffRow[];
   added: Set<string>;
   dropped: Set<string>;
   amountUnit: string;
+  /** 列底色：左列（A）灰、右列（B）红，与板块涨跌幅卡保持一致 */
+  tone: 'a' | 'b';
 }) {
+  const columnBg = tone === 'a' ? 'rgba(134,144,156,0.07)' : 'rgba(255,77,79,0.07)';
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
       {rows.length === 0 && (
@@ -246,11 +250,7 @@ function DiffColumn({
             columnGap: 6,
             padding: '5px 6px',
             borderRadius: 6,
-            background: added.has(r.key)
-              ? 'rgba(255,77,79,0.07)'
-              : dropped.has(r.key)
-                ? 'rgba(134,144,156,0.07)'
-                : 'transparent',
+            background: columnBg,
           }}>
           <span style={{ fontSize: 11, color: '#C9CDD4', textAlign: 'left' }}>{i + 1}</span>
           <span
@@ -355,9 +355,9 @@ function DiffCard({
         </span>
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
-        <DiffColumn rows={a} added={added} dropped={dropped} amountUnit={amountUnit} />
+        <DiffColumn rows={a} added={added} dropped={dropped} amountUnit={amountUnit} tone="a" />
         <div style={{ width: 1, background: '#F2F3F5' }} />
-        <DiffColumn rows={b} added={added} dropped={dropped} amountUnit={amountUnit} />
+        <DiffColumn rows={b} added={added} dropped={dropped} amountUnit={amountUnit} tone="b" />
       </div>
     </div>
   );
