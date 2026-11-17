@@ -32,6 +32,13 @@ if TODAY.weekday() >= 5:
     import sys
     sys.exit(0)
 
+# 2026-11-17 事故:09:12 盘前跑时,盘前行情接口返回「现价=昨收、成交额 0」,
+# 而且 tradeDate 会被标成今天(20261117)。盘前/盘中一律不跑,15:05 之后再来。
+if (9, 0) <= (TODAY.hour, TODAY.minute) < (15, 5):
+    print(f"⏸  现在是盘前/交易时段({TODAY.strftime('%H:%M')}),行情快照无效 → 15:05 后再跑")
+    import sys
+    sys.exit(0)
+
 def safe_float(v, default=0):
     try:
         if v is None or v == '' or (isinstance(v, float) and str(v) == 'nan'):

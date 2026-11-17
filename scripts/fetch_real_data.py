@@ -68,11 +68,12 @@ TRADE_DATE_SLASH = f"{TRADE_DATE_DASH[2:4]}/{TRADE_DATE_DASH[5:7]}/{TRADE_DATE_D
 #   (tradeDate=今天、generatedAt=10:31、成交额只有半天的 7958 亿、涨跌 407:5145),
 #   前端看到 tradeDate 是今天便当作"今日收盘",连盘后兜底都不会触发,于是整晚显示上午数据。
 #   口径与 check_freshness.py 的盘中保护、fetch_rotation.py 的 CLOSE_READY 保持一致。
-if TODAY.weekday() < 5 and (9, 30) <= (TODAY.hour, TODAY.minute) < (15, 5):
+if TODAY.weekday() < 5 and (9, 0) <= (TODAY.hour, TODAY.minute) < (15, 5):
     raise SystemExit(
-        '✗ 现在是交易时段(09:30~15:05),拒绝运行。\n'
-        '  盘中拉到的是未收盘快照(成交额/涨跌家数都不完整),写成 data.json 会被当成收盘数据。\n'
-        '  请在 15:05 之后重跑。'
+        '✗ 现在是盘前/交易时段(09:00~15:05),拒绝运行。\n'
+        '  盘前行情接口已把快照重置为「现价=昨收、涨跌幅 0、成交额 0」,盘中则是未收盘快照,\n'
+        '  两者写成 data.json 都会被当成上一交易日收盘数据(2026-11-17 09:12 事故:全站涨跌分布\n'
+        '  5579 家全落在 0 档、板块涨幅/成交额全 0)。请在 15:05 之后重跑。'
     )
 
 # v2.0.7cs:周末直接退出(防御性 — 之前 v2.0.7cr 已加 GitHub Actions isTradingDay 判断,
@@ -375,6 +376,15 @@ if SAMPLE_ONLY:
     print(f"  sina 限流 5 页 sample({len(spot_df)} 只): ↑{up_count} ↓{down_count} 平{flat_count} 成交 {total_turnover}亿")
 else:
     print(f"  sina 累加 {stock_total} 只(全市场 A股) ↑{up_count} ↓{down_count} 平{flat_count} 成交 {total_turnover}亿")
+
+# 2026-11-17 事故兜底:盘前跑出的快照「现价=昨收、涨跌幅 0、成交额 0」照样能凑够 5,500 只,
+# 数量校验拦不住。这里校验内容:全市场成交额与涨跌家数只要有一项为 0,说明拿到的不是有效
+# 收盘快照,直接拒绝写出(线上保持上一交易日真值,等下一档 cron 自愈)。
+if total_turnover <= 0 or (up_count + down_count) <= 0:
+    raise SystemExit(
+        f'✗ 全市场快照无效(成交额 {total_turnover} 亿 / 涨 {up_count} 跌 {down_count} 平 {flat_count}),拒绝写出。\n'
+        '  常见原因:盘前或盘中运行,行情接口尚未刷新。请在 15:05 之后重跑。'
+    )
 
 # v2.0.7aa:涨跌分布分桶(11 档,跟 user 截图一致)
 # 跌:>10% / 10~7 / 7~5 / 5~3 / 3~0   平:0   涨:0~3 / 3~5 / 5~7 / 7~10 / >10%
@@ -705,7 +715,9 @@ if TODAY.weekday() < 5:  # 周一到周五才 append
     # v2.0.7dy:append 前先删除旧末点(避免同一天多档 cron 重复跑时累加成多倍)
     # 之前 fetch-data 多次跑(18:18-18:43)— 每次 append 8/18 末点 — 6 次累加 = 6× 5 页推算 = 异常大
     # 修法:append 前先 removeIf 8/18 末点 — 8/18 当日只保留最新 1 个末点
-    today_date = TODAY.strftime('%Y-%m-%d')
+    # 2026-11-17 事故:这里原来用「日历今天」,凌晨/盘前补跑时会把上一交易日的收盘数据
+    # 标成今天,history 里多出一条今日零值行。改为「最近已完成收盘的交易日」TRADE_DATE_DASH。
+    today_date = TRADE_DATE_DASH
     history[:] = [h for h in history if h.get('date') != today_date]
     # v2.0.8km:数据源陈旧一致性校验(根治"标今日却昨日数值")
     # — 2026-09-29 盘后 bug:数据源(腾讯指数/全市场)未刷新,拉到昨日 17,168.51 亿,
@@ -746,7 +758,7 @@ print(f"  历史 {len(history)} 个交易日(末 1 用今日 marketTurnover 准)
 # 8/14 盘中 跑 marketTurnover 是盘中累计(可能 10000+ 亿),turnoverDiff = -15000 亿(错)
 # — 所以 useLiveData 盘中间 不覆盖 turnoverDiff(保持 fetch_real_data 算的)
 # — 盘后 15:00+ em marketTurnover 仍是 8/14 收盘最大值,turnoverDiff = 8/14 收盘 - 25673 — 准
-_today_str = TODAY.strftime('%Y-%m-%d')
+_today_str = TRADE_DATE_DASH
 _prev_yesterday_list = [h for h in _prev_history if h.get('date') != _today_str]
 _prev_last = _prev_yesterday_list[-1] if _prev_yesterday_list else None
 yesterday_vol = _prev_last.get('volume', 0) if _prev_last else 0
@@ -1103,7 +1115,7 @@ for i in range(len(zt_history)):
 # — 重复 append 检查:8/21 末点 date=8/21 已在 combined_history(zt_history 末点)— 跳过
 # — 8/21 9:35 跑:append line 462-480 末点 8/21(早盘 5 分钟 100-500 亿)— combined_history 末点=8/21 ✓
 # — user 反馈:"曲线图末点=当日当前实时成交量(等于卡片数据即可)"
-_today_date = TODAY.strftime('%Y-%m-%d')
+_today_date = TRADE_DATE_DASH  # 最近已完成收盘的交易日,不是「日历今天」
 if not any(h.get('date') == _today_date for h in combined_history):
     combined_history.append({
         'date': _today_date,

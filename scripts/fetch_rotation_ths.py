@@ -312,7 +312,8 @@ def main() -> int:
     args = ap.parse_args()
 
     now8 = datetime.now(CST)
-    if now8.weekday() < 5 and (9, 30) <= (now8.hour, now8.minute) < (15, 5):
+    # 09:00~09:30 盘前行情接口尚未刷新，板块日线同样是无效快照 → 一并拦住（2026-11-17 事故）
+    if now8.weekday() < 5 and (9, 0) <= (now8.hour, now8.minute) < (15, 5):
         print(f'⏸ 现在是交易时段({now8.strftime("%H:%M")}),板块日线还是盘中快照 → 15:05 后再跑')
         return 0
 

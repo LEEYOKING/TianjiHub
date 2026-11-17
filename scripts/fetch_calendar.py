@@ -353,8 +353,9 @@ def main() -> int:
     args = ap.parse_args()
 
     now8 = datetime.now(CST)
-    # 盘中保护：收盘前当日板块/个股都还是快照，归档成"完整交易日"就是脏数据
-    if now8.weekday() < 5 and (9, 30) <= (now8.hour, now8.minute) < (15, 5):
+    # 盘中/盘前保护：收盘前当日板块/个股都还是快照，归档成"完整交易日"就是脏数据
+    # 09:00~09:30 盘前行情接口已重置为「现价=昨收、成交额 0」，同样不能写（2026-11-17 事故）
+    if now8.weekday() < 5 and (9, 0) <= (now8.hour, now8.minute) < (15, 5):
         print(f'⏸ 现在是交易时段({now8.strftime("%H:%M")})，收盘数据未就绪 → 15:05 后再跑')
         return EXIT_OK
 
@@ -396,6 +397,11 @@ def main() -> int:
     spot, src = fetch_spot()
     if not spot:
         print('✗ 全市场快照不可用（新浪/腾讯均失败）')
+        return EXIT_SOURCE_DOWN
+    # 2026-11-17 事故兜底：盘前的快照照样能凑够 5,500 只，但成交额全为 0，
+    # 个股榜按「成交额 > 0」过滤后会全空，写进归档就是把已有榜单抹成空榜。
+    if sum(1 for r in spot if r['amount'] > 0) < len(spot) * 0.5:
+        print('✗ 全市场快照成交额几乎全为 0（盘前/盘中未成交），拒绝写入空榜')
         return EXIT_SOURCE_DOWN
     stocks = stock_ranks(spot)
 

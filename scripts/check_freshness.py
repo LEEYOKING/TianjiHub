@@ -142,6 +142,28 @@ def check_file(label: str, path: str, target: str, date_key: str, fmt: str) -> l
     return problems
 
 
+def check_market_sanity() -> list[str]:
+    """行情内容体检：成交额与涨跌家数不能全为 0。
+
+    2026-11-17 事故：09:12 盘前跑出的快照「现价=昨收、涨跌幅 0、成交额 0」被写成
+    tradeDate=11-16 的收盘数据，覆盖了真实值 —— 日期看着是新鲜的，但内容全空
+    （涨跌分布 5579 家全落 0 档、板块涨幅/成交额全 0）。只看日期发现不了，必须盯内容。
+    """
+    j = load_json("public/data.json")
+    if j is None:
+        return []
+    mo = j.get("marketOverview") or {}
+    turnover = mo.get("marketTurnover") or 0
+    up = mo.get("upCount") or 0
+    down = mo.get("downCount") or 0
+    if turnover <= 0 or (up + down) <= 0:
+        return [
+            f"data.json 行情内容为空（成交额 {turnover} 亿 / 涨 {up} 跌 {down}）—— "
+            "多半是盘前/盘中跑出的空快照覆盖了真实收盘数据"
+        ]
+    return []
+
+
 def check_rotation_shape() -> list[str]:
     """板块数健全性检查：归档必须覆盖完整板块全集（同花顺口径 417 个：行业90 + 概念294 + 地域33）。
 
@@ -234,6 +256,7 @@ def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[s
     target, strict = resolve_target(now, dates)
     hard = check_file("data.json（行情主体）", "public/data.json", target, "tradeDate", "compact")
     soft = check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
+    hard += check_market_sanity()     # 行情内容全 0(2026-11-17 事故)
     hard += check_rotation_shape()   # 板块数塌缩=数据损坏,计入硬问题(见其 docstring)
     hard += check_margin_freshness(target, dates)   # 融资流向断供(2026-11-10 事故)
     cal = check_calendar_freshness(target, dates)   # 日历回溯归档缺日
@@ -261,10 +284,17 @@ def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) 
     if schedule == MARGIN_SLOT:
         return "margin", "08:30 融资补抓档"
 
-    # 2) 盘中保护：交易日 09:30~15:00 一律不跑盘后流程
-    #    （防止手动触发或异常调度的 cron 把盘中快照当收盘数据写进 data.json）
-    if trading and MARKET_OPEN <= hhmm < MARKET_CLOSE:
-        return "skip", f"现在是盘中（{MARKET_OPEN}~{MARKET_CLOSE}），拒绝拉取，避免盘中快照污染 data.json"
+    # 2) 盘前 + 盘中保护：交易日 15:05 之前一律不跑盘后流程
+    #    · 09:30~15:00 是盘中，快照未收盘；
+    #    · 09:00~09:30 盘前，行情接口已把全市场快照重置为「现价=昨收、涨跌幅 0、成交额 0」
+    #      —— 2026-11-17 09:12 的补跑档就是这么把全 0 快照写成 tradeDate=11-16 的收盘数据，
+    #      把真实的 11-16 数据覆盖掉（涨跌分布 5579 家全落 0 档、板块涨幅/成交额全 0）。
+    #    此时目标交易日仍是上一交易日，本就没有可补的东西，等 15:05 之后再说。
+    if trading and hhmm < CLOSE_READY:
+        return "skip", (
+            f"现在是盘前/盘中（15:05 之前，当前 {hhmm}），行情接口尚未刷新，"
+            "拒绝拉取，避免空快照污染 data.json"
+        )
 
     # 3) 补跑档（22:00 / 次日 06:00）：只在数据真的过期时才跑
     #    注意这里**不看**"今天是不是交易日" —— 周六早上发现周五数据缺失，正需要它来补
