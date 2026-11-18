@@ -282,7 +282,12 @@ def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) 
     hhmm = now.strftime("%H:%M")
 
     # 1) 08:30 融资补抓档：行为与既有完全一致（不加交易日门槛）
+    #    2026-11-18 实测：免费 cron 延迟可达数小时，应 08:30 跑的这档 15:49 才开跑，
+    #    仍按 margin 处理 → 跳过整个盘后流程，收盘数据整天不更新，收尾 gate 还判红。
+    #    收盘后迟到的这档已无「早晨补融资」的意义（前一晚 21:30 已抓过终值），直接升级为盘后流程。
     if schedule == MARGIN_SLOT:
+        if hhmm >= CLOSE_READY and stale:
+            return "postclose", "08:30 融资档被延迟到收盘后执行，升级为完整盘后流程"
         return "margin", "08:30 融资补抓档"
 
     # 2) 盘前 + 盘中保护：交易日 09:00~15:05 一律不跑盘后流程
