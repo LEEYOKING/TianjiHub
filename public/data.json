@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-18 18:06:11",
+    "generatedAt": "2026-11-18 21:31:10",
     "tradeDate": "20261118",
     "tradeDateSlash": "26/11/18",
     "nextTradeDate": "2026-11-19",
@@ -5591,7 +5591,7 @@
   "marketOverview": {
     "tradeDate": "20261118",
     "tradeDateSlash": "26/11/18",
-    "generatedAt": "2026-11-18 18:06",
+    "generatedAt": "2026-11-18 21:31",
     "marketTurnover": 13801.57,
     "turnoverDiff": -775.38,
     "marketTemperature": {
@@ -5604,8 +5604,8 @@
         "max_boards": 4,
         "broken_rate": "37%",
         "broken_count": 24,
-        "yest_perf": "+1.6%",
-        "yest_perf_value": 1.57,
+        "yest_perf": "+1.7%",
+        "yest_perf_value": 1.72,
         "promote_rate": "23%",
         "promote_rate_value": 0.22580645161290322,
         "limit_ratio": "1.0"
@@ -25708,7 +25708,7 @@
   },
   "surgery": {
     "meta": {
-      "generatedAt": "2026-11-18 16:14:34",
+      "generatedAt": "2026-11-18 18:11:20",
       "tradeDate": "20261118",
       "tradeDateSlash": "26/11/18"
     },
