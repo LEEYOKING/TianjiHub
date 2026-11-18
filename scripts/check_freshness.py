@@ -38,6 +38,7 @@ CLOSE_READY = "15:05"           # 该时点之后，当日收盘数据才算可�
 MIN_SECTORS = 350
 PREMARKET_RESET = "09:00"                         # 盘前行情接口重置快照的时点（之后到收盘都不能拉）
 MARGIN_SLOT = "30 0 * * 1-5"                      # 08:30 CST 融资补抓档
+CLOSE_SLOT = "35 7 * * 1-5"                       # 15:35 CST 收盘档（主路径已改为 Worker 15:10 准点触发，这档只作兜底）
 RESCUE_SLOTS = ("0 14 * * 1-5", "0 22 * * 1-5")   # 22:00 CST / 次日 06:00 CST 补跑档
 
 
@@ -312,6 +313,11 @@ def plan(now: datetime.datetime, dates: list[str], schedule: str, manual: bool) 
         return "skip", "补跑档：数据已是最新，无需补跑（省额度）"
 
     # 4) 常规盘后档（15:35 / 18:35）与手动触发
+    #    2026-11-18 起 Worker 在 15:10 准点触发主流程，15:35 这条 GitHub cron 只作兜底：
+    #    若 15:10 那次已经把三份数据都写新了，这里直接跳过，避免同一份数据跑两遍、提交两次。
+    #    18:35 的龙虎榜档不受影响（它要刷的是 18:00 才披露的龙虎榜，数据"新"不代表该跳过）。
+    if schedule == CLOSE_SLOT and not stale and not manual:
+        return "skip", "收盘数据已由 15:10 准点触发的运行产出，本档只作兜底，无需重跑"
     if not trading:
         # 非交易日：数据不旧就跳过；若确实旧（例如前一交易日漏跑），补一次
         if stale:

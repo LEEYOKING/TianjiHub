@@ -4,7 +4,8 @@ name: Daily Data Refresh
 # 触发优先级：Cloudflare Worker（cloudflare/cron-trigger）准点 workflow_dispatch 调起
 #   → 下面的 GitHub cron 只做兜底（免费 cron 实测延迟 3~14.5 小时，不可依赖）。
 # cron 为 UTC 时间（注释里是北京时间）：
-#   35 7  * * 1-5  → 15:35 收盘快照（Worker 同时准点触发，这档是兜底）
+#   35 7  * * 1-5  → 15:35 收盘快照（Worker 15:10 准点触发为主路径，这档只作兜底；
+#                    若 15:10 那次已把数据写新，本档会被 plan 直接跳过，不重复跑）
 #   35 10 * * 1-5  → 18:35 龙虎榜 18:00 披露后补跑（Worker 18:05 触发）
 #   30 13 * * 1-5  → 21:30 融资余额当晚定稿后补抓（Worker 同时触发）
 #   30 0  * * 1-5  → 08:30 次日早晨：只补抓融资融券终值（不加交易日门槛，假期工作日也要跑）
@@ -33,8 +34,9 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    # 45 分钟：补跑档可能要在同一次里跑完「行情 + 手术台 + 轮动」（轮动单步上限 20 分钟）
-    timeout-minutes: 45
+    # 60 分钟：补跑档可能要在同一次里跑完「行情 + 手术台 + 轮动」（轮动单步上限 20 分钟）。
+    # 2026-11-18:run #194 实测 43 分钟、只差 2 分钟就被 45 分钟上限杀掉,故放宽到 60 分钟。
+    timeout-minutes: 60
     permissions:
       contents: write
     steps:

@@ -227,6 +227,7 @@ _prev_bond_codes = list(_prev_mo.get('bondCodes', []))
 print("\n[2/7] 全市场快照(腾讯 qt.gtimg.cn + 新浪 hs_a 真实代码)...")
 import urllib.request, json as _json
 import time as _t
+from concurrent.futures import ThreadPoolExecutor
 # v2.0.7gf:改用新浪 hs_a 节点拉真实 A 股代码(替代 akshare stock_info_a_code_name)
 # — akshare 海外 IP 常失败 → fallback 硬编码区间产生 13999 个含大量无效代码,
 #   导致前端 fetchMarketSummary 拉 140 批(3-5 分钟)且曾因批数误判永远返 null
@@ -266,27 +267,39 @@ def _fetch_codes_from_sina():
         time.sleep(0.1)
     return codes
 
-try:
-    all_codes = _fetch_codes_from_sina()
-    if len(all_codes) >= 1000:
-        print(f"  新浪 hs_a 真实 A 股代码: {len(all_codes)} 只")
-    else:
-        raise Exception(f"新浪 hs_a 仅 {len(all_codes)} 只,过少")
-except Exception as _e:
-    _prev_codes = (_prev_data or {}).get('meta', {}).get('stockCodes', [])
-    if _prev_codes and len(_prev_codes) >= 1000:
-        # v2.0.8gk:失败时用上一份 data.json 的 stockCodes(真实代码),不回退硬编码 13999
-        all_codes = list(_prev_codes)
-        print(f"  新浪 hs_a 失败({_e}),用上一份 stockCodes {len(all_codes)} 只")
-    else:
-        print(f"  新浪 hs_a 失败({_e})且无上一份有效 stockCodes,fallback 硬编码区间")
-        all_codes = []
-        for i in range(600000, 606000): all_codes.append(f'sh{i:06d}')
-        for i in range(688000, 690000): all_codes.append(f'sh{i:06d}')
-        for i in range(1, 4000): all_codes.append(f'sz{i:06d}')
-        for i in range(300000, 302000): all_codes.append(f'sz{i:06d}')
-# 限流批量 100 只/批(URL 长度限制:实测 100 只不超 414)
-BATCH_SIZE = 100
+_prev_codes = (_prev_data or {}).get('meta', {}).get('stockCodes', [])
+if len(_prev_codes) >= 5000:
+    # 2026-11-18:A 股代码表一天最多变几只,没必要每次重拉新浪 60 页
+    # — 海外 Runner 上这 60 个串行请求要 2~4 分钟,且经常撞 456 限流(退避更慢);
+    # — 直接用上一份 data.json 里已校验过的真实代码表,新股最多晚一天收录,复盘无影响。
+    all_codes = list(_prev_codes)
+    print(f"  沿用上一份 stockCodes {len(all_codes)} 只(跳过新浪 hs_a 60 页分页)")
+else:
+    try:
+        all_codes = _fetch_codes_from_sina()
+        if len(all_codes) >= 1000:
+            print(f"  新浪 hs_a 真实 A 股代码: {len(all_codes)} 只")
+        else:
+            raise Exception(f"新浪 hs_a 仅 {len(all_codes)} 只,过少")
+    except Exception as _e:
+        if _prev_codes and len(_prev_codes) >= 1000:
+            # v2.0.8gk:失败时用上一份 data.json 的 stockCodes(真实代码),不回退硬编码 13999
+            all_codes = list(_prev_codes)
+            print(f"  新浪 hs_a 失败({_e}),用上一份 stockCodes {len(all_codes)} 只")
+        else:
+            print(f"  新浪 hs_a 失败({_e})且无上一份有效 stockCodes,fallback 硬编码区间")
+            all_codes = []
+            for i in range(600000, 606000): all_codes.append(f'sh{i:06d}')
+            for i in range(688000, 690000): all_codes.append(f'sh{i:06d}')
+            for i in range(1, 4000): all_codes.append(f'sz{i:06d}')
+            for i in range(300000, 302000): all_codes.append(f'sz{i:06d}')
+# 2026-11-18:批量从 100 提到 400
+# — run #194 实测「拉取盘后数据」占 2298s(38 分钟),几乎全耗在串行 HTTP 上;
+# — 腾讯 qt.gtimg.cn 实测单次可带 800+ 代码,100 只/批把 5,500 只拆成 56 批,
+#   海外 Runner 单批往返 5~8s,光这一步就要 5 分钟以上;
+# — 400 只/批 → 14 批,再配 6 路并发,整步压到 1 分钟内。
+BATCH_SIZE = 400
+SPOT_WORKERS = 6   # 分批并发数(普通 GET,6 路不会触发风控)
 spot_rows = []
 def _parse_tencent_line(line):
     """解析腾讯 qt.gtimg.cn 一行:v_sh600519="1~贵州茅台~600519~1297.99~..."
@@ -322,8 +335,9 @@ def _parse_tencent_line(line):
 
 _t0 = _t.time()
 ok_count = 0
-for batch_start in range(0, len(all_codes), BATCH_SIZE):
-    batch_codes = all_codes[batch_start:batch_start + BATCH_SIZE]
+
+def _fetch_spot_batch(batch_idx, batch_codes):
+    """拉一批腾讯快照,返回 (批号, [解析后的行])。在线程池里跑,不共享状态。"""
     url = 'http://qt.gtimg.cn/q=' + ','.join(batch_codes)
     # v2.0.7gh:每批失败重试 3 次(腾讯偶发 timeout),避免漏拉导致家数少几百
     for attempt in range(3):
@@ -332,19 +346,22 @@ for batch_start in range(0, len(all_codes), BATCH_SIZE):
                 'User-Agent': 'Mozilla/5.0',
                 'Referer': 'https://stockapp.finance.qq.com/',
             })
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:
                 text = resp.read().decode('gbk', errors='ignore')
-            for line in text.split(';'):
-                d = _parse_tencent_line(line)
-                if d is not None:
-                    spot_rows.append(d)
-                    ok_count += 1
-            break  # 成功跳出 retry
+            return batch_idx, [d for d in (_parse_tencent_line(line) for line in text.split(';')) if d is not None]
         except Exception as e:
             if attempt == 2:
-                print(f"  腾讯拉第 {batch_start//BATCH_SIZE + 1} 批失败(重试3次仍失败): {e}")
+                print(f"  腾讯拉第 {batch_idx + 1} 批失败(重试3次仍失败): {e}")
             else:
                 time.sleep(1 + attempt)
+    return batch_idx, []
+
+_batches = [all_codes[i:i + BATCH_SIZE] for i in range(0, len(all_codes), BATCH_SIZE)]
+# ex.map 保持入参顺序 → spot_rows 顺序稳定,下游按 DataFrame 顺序取数不受影响
+with ThreadPoolExecutor(max_workers=SPOT_WORKERS) as _ex:
+    for _idx, _rows in _ex.map(lambda p: _fetch_spot_batch(*p), enumerate(_batches)):
+        spot_rows.extend(_rows)
+        ok_count += len(_rows)
 _t1 = _t.time()
 print(f"  腾讯全市场拉完: {ok_count} 只有效 (耗时 {_t1 - _t0:.1f}s)")
 
@@ -948,25 +965,27 @@ print(f"  跌停(最终) {limit_down_count} 只")
 print("\n[6/7] 历史涨跌停(用于折线图)...")
 # 遍历近 90 个交易日
 LIMIT_HISTORY_DAYS = 90
-zt_history = []
-dt_history = []
-for i in range(min(LIMIT_HISTORY_DAYS, len(hist_df))):
-    row = hist_df.iloc[-(i+1)]
+def _zt_dt_one(row):
+    """拉某一天的涨停池/跌停池家数。在线程池里跑,失败记 0(与原逻辑一致)。"""
     date_str = str(row['date'])
     date_yyyymmdd = date_str.replace('-', '')
-    # 只统计工作日(去掉周末)
     try:
-        zt_h = ak.stock_zt_pool_em(date=date_yyyymmdd)
-        zt_n = len(zt_h)
+        zt_n = len(ak.stock_zt_pool_em(date=date_yyyymmdd))
     except Exception:
         zt_n = 0
     try:
-        dt_h = ak.stock_zt_pool_dtgc_em(date=date_yyyymmdd)
-        dt_n = len(dt_h)
+        dt_n = len(ak.stock_zt_pool_dtgc_em(date=date_yyyymmdd))
     except Exception:
         dt_n = 0
-    zt_history.append({'date': date_str, 'count': zt_n})
-    dt_history.append({'date': date_str, 'count': dt_n})
+    return {'date': date_str, 'count': zt_n}, {'date': date_str, 'count': dt_n}
+
+# 2026-11-18:原来 90 天 × 2 个接口 = 180 个串行请求,是海外 Runner 上第二大耗时点
+# (run #194 的 38 分钟里占很大一块)→ 改 6 路并发,顺序由 map 保证,结果与串行完全一致。
+_hist_rows = [hist_df.iloc[-(i + 1)] for i in range(min(LIMIT_HISTORY_DAYS, len(hist_df)))]
+with ThreadPoolExecutor(max_workers=6) as _ex:
+    _zt_dt_pairs = list(_ex.map(_zt_dt_one, _hist_rows))
+zt_history = [p[0] for p in _zt_dt_pairs]
+dt_history = [p[1] for p in _zt_dt_pairs]
 zt_history.reverse()
 dt_history.reverse()
 # 只保留有数据的(非周末)
@@ -1350,16 +1369,11 @@ def _fetch_em_sector_fallback(fs, limit=30, label='概念'):
     return out
 print(f"  行业板块 {len(sectors)} 个")
 
-# ========== 概念板块(同花顺 30 个) ==========
+# 概念板块(同花顺 30 个)
 print("  概念板块(同花顺 30 个)...")
-# 从 stock_zh_a_spot 拉一次全市场(用于估算"上涨/下跌家数"和"领涨个股")
-spot_cache = {}
-try:
-    spot_cache_df = ak.stock_zh_a_spot()
-    spot_cache = {row['代码']: row for _, row in spot_cache_df.iterrows()}
-    print(f"    全市场 {len(spot_cache)} 只,用于概念领涨股估算")
-except Exception as e:
-    print(f"    全市场拉取失败: {e}")
+# 2026-11-18:删掉这里原本的 ak.stock_zh_a_spot() 全市场重拉 —— 它只用来填 spot_cache,
+# 而 spot_cache 全文没有任何地方读取(最先的 spot_df 已含 5,579 只的代码/名称/涨跌幅/成交额)。
+# 海外 Runner 上这 70 个串行分页请求要 1~3 分钟,纯属浪费。
 
 try:
     concept_names_df = ak.stock_board_concept_name_ths()
