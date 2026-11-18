@@ -8,6 +8,17 @@ const REPO = 'TianjiHub';
 const WORKFLOW = 'daily-refresh.yml';
 const REF = 'main';
 
+// 免费账户只有 5 条 cron 名额，所以只注册「每 5 分钟」这一条，
+// 由这里判断是否命中三个目标时点（UTC）。
+//   07:35 UTC = 15:35 CST 收盘核心档
+//   10:05 UTC = 18:05 CST 龙虎榜档
+//   13:30 UTC = 21:30 CST 融资档
+const SLOTS = [
+  [7, 35],
+  [10, 5],
+  [13, 30],
+];
+
 async function dispatch(env) {
   const res = await fetch(
     `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
@@ -31,6 +42,9 @@ async function dispatch(env) {
 
 export default {
   async scheduled(controller, env, ctx) {
+    const t = new Date(controller.scheduledTime);
+    const hit = SLOTS.some(([h, m]) => t.getUTCHours() === h && t.getUTCMinutes() === m);
+    if (!hit) return; // 每 5 分钟一次的空转，直接退出，不消耗 GitHub 额度
     try {
       await dispatch(env);
       console.log(`dispatched ${WORKFLOW} at ${new Date().toISOString()}`);
