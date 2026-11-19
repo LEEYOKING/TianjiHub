@@ -274,6 +274,19 @@ def market_summary(data: dict, date: str) -> dict:
     """涨跌家数 / 涨停数 / 总成交额 —— 只有该日正好是 data.json 的 tradeDate 时才有"""
     meta = data.get('meta') or {}
     if str(meta.get('tradeDate') or '') != date.replace('-', ''):
+        # 2026-11-19:补历史日期（11-17 当天整档漏跑）时，改从 data.json 的 history 里取当日快照。
+        # 那几项本来就是当天收盘真值（成交额/涨跌家数/涨跌停），只是当时没写进日历归档；
+        # 没有的不补空值，免得前端把 0 当成真数据渲染。
+        for row in data.get('history') or []:
+            if str(row.get('date') or '') == date:
+                got = {
+                    'up': row.get('up'),
+                    'down': row.get('down'),
+                    'limitUp': row.get('limitUp'),
+                    'limitDown': row.get('limitDown'),
+                    'turnover': row.get('volume'),
+                }
+                return {k: v for k, v in got.items() if v is not None}
         return {}
     mo = data.get('marketOverview') or {}
     return {
@@ -353,12 +366,6 @@ def main() -> int:
     args = ap.parse_args()
 
     now8 = datetime.now(CST)
-    # 盘中/盘前保护：收盘前当日板块/个股都还是快照，归档成"完整交易日"就是脏数据
-    # 09:00~09:30 盘前行情接口已重置为「现价=昨收、成交额 0」，同样不能写（2026-11-17 事故）
-    if now8.weekday() < 5 and (9, 0) <= (now8.hour, now8.minute) < (15, 5):
-        print(f'⏸ 现在是交易时段({now8.strftime("%H:%M")})，收盘数据未就绪 → 15:05 后再跑')
-        return EXIT_OK
-
     rot = load_json(os.path.join(PUB, 'rotation.json'), None)
     if not rot or not rot.get('dates'):
         print('✗ rotation.json 不可用 → 板块榜无法生成')
@@ -388,6 +395,14 @@ def main() -> int:
         return EXIT_OK if ok else EXIT_THIN
 
     # ---- 单日模式 ----
+    # 盘中/盘前保护：收盘前当日板块/个股都还是快照，归档成"完整交易日"就是脏数据
+    # 09:00~09:30 盘前行情接口已重置为「现价=昨收、成交额 0」，同样不能写（2026-11-17 事故）
+    # 2026-11-19:这层保护只对单日模式（会拉实时快照）生效；--backfill 走的是 rotation.json +
+    # data.json 的历史，与盘中快照无关，盘中补历史日期不该被拦。
+    if now8.weekday() < 5 and (9, 0) <= (now8.hour, now8.minute) < (15, 5):
+        print(f'⏸ 现在是交易时段({now8.strftime("%H:%M")})，收盘数据未就绪 → 15:05 后再跑')
+        return EXIT_OK
+
     if date not in (rot.get('dates') or []):
         print(f'⚠ {date} 不在板块归档窗口内（{rot["dates"][0]} ~ {rot["dates"][-1]}）→ 只写个股与摘要')
         sec = {'up': [], 'down': []}
