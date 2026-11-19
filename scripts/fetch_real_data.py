@@ -878,7 +878,18 @@ from margin_history import fetch_margin_history
 
 def _fetch_margin_history():
     """返回 list[dict{date, margin_balance, margin_balance_diff, sh_close}],失败返 None"""
-    return fetch_margin_history()
+    fresh = fetch_margin_history()
+    # 2026-11-19 事故：当天 15:11 的云端运行里上交所官方接口失败，多源逻辑退到金十镜像，
+    # 而金十从 11-06 起就停更 —— 于是融资流向从 11-17 直接倒退到 10-05→11-05。
+    # 「回退比不更新更糟」：这里加单调保护，新序列末点没超过已有数据就沿用旧序列。
+    old = ((_prev_data or {}).get('marketOverview') or {}).get('marginHistory') or []
+    old_last = (old[-1].get('date') if old else '') or ''
+    if not fresh:
+        return old or None
+    if old_last and fresh[-1].get('date', '') <= old_last:
+        print(f"    融资融券新序列末点 {fresh[-1]['date']} 未超过已有 {old_last} → 沿用旧序列（不倒退）")
+        return old
+    return fresh
 
 
 _main_capital_flow = _fetch_main_capital_flow_20d()
