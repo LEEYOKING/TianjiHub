@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-20 03:07:46",
+    "generatedAt": "2026-11-20 05:43:37",
     "tradeDate": "20261119",
     "tradeDateSlash": "26/11/19",
     "nextTradeDate": "2026-11-20",
@@ -5591,7 +5591,7 @@
   "marketOverview": {
     "tradeDate": "20261119",
     "tradeDateSlash": "26/11/19",
-    "generatedAt": "2026-11-20 03:07",
+    "generatedAt": "2026-11-20 05:43",
     "marketTurnover": 13147.82,
     "turnoverDiff": -653.75,
     "marketTemperature": {
@@ -23634,9 +23634,9 @@
   },
   "surgery": {
     "meta": {
-      "generatedAt": "2026-11-19 21:35:34",
-      "tradeDate": "20261119",
-      "tradeDateSlash": "26/11/19"
+      "generatedAt": "2026-11-20 03:13:50",
+      "tradeDate": "20261120",
+      "tradeDateSlash": "26/11/20"
     },
     "sealCards": [
       {
@@ -23988,7 +23988,7 @@
     "bigLoser": [],
     "loserChain": [],
     "loserIntersection": [],
-    "prevLimitUpCount": 41,
+    "prevLimitUpCount": 23,
     "systemWarning": false,
     "north": [
       {
