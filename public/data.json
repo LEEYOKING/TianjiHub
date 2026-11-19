@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-19 21:31:16",
+    "generatedAt": "2026-11-20 03:07:46",
     "tradeDate": "20261119",
     "tradeDateSlash": "26/11/19",
     "nextTradeDate": "2026-11-20",
@@ -5591,11 +5591,11 @@
   "marketOverview": {
     "tradeDate": "20261119",
     "tradeDateSlash": "26/11/19",
-    "generatedAt": "2026-11-19 21:31",
+    "generatedAt": "2026-11-20 03:07",
     "marketTurnover": 13147.82,
     "turnoverDiff": -653.75,
     "marketTemperature": {
-      "temperature": 25,
+      "temperature": 30,
       "status": "低温分歧",
       "statusDesc": "情绪修复,接力谨慎",
       "details": {
@@ -5604,17 +5604,17 @@
         "max_boards": 3,
         "broken_rate": "51%",
         "broken_count": 24,
-        "yest_perf": "+0.1%",
-        "yest_perf_value": 0.12,
-        "promote_rate": "6%",
-        "promote_rate_value": 0.06060606060606061,
+        "yest_perf": "+10.4%",
+        "yest_perf_value": 10.42,
+        "promote_rate": "11%",
+        "promote_rate_value": 0.1111111111111111,
         "limit_ratio": "0.3"
       },
       "dimension_scores": {
         "涨跌停对比": -15,
         "连板高度": 0,
         "炸板率": -10,
-        "昨日涨停今日": 5,
+        "昨日涨停今日": 10,
         "晋级率": -5
       }
     },
@@ -6942,7 +6942,7 @@
       "sz128142"
     ],
     "mainCapitalFlow20d": {
-      "date": "2026-11-19",
+      "date": "2026-11-20",
       "total_net_inflow": -239.62,
       "industries": [
         {
@@ -9154,259 +9154,147 @@
   ],
   "sectors": [
     {
-      "name": "航空机场",
-      "changePercent": 0.63,
-      "stockCount": 14,
+      "name": "机场航运",
+      "changePercent": 0.72,
+      "stockCount": 13,
       "upCount": 8,
-      "downCount": 6,
+      "downCount": 5,
       "totalTurnover": 33.0,
-      "netInflow": 0.8,
+      "netInflow": 5.64,
       "leaderName": "吉祥航空",
       "leaderChangePercent": 3.04,
-      "leaderCode": "603885",
+      "leaderCode": "",
       "topStocks": [
         "吉祥航空"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "白色家电",
-      "changePercent": 0.29,
-      "stockCount": 11,
-      "upCount": 7,
-      "downCount": 4,
-      "totalTurnover": 87.68,
-      "netInflow": -4.21,
-      "leaderName": "海信家电",
-      "leaderChangePercent": 5.36,
-      "leaderCode": "000921",
-      "topStocks": [
-        "海信家电"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "电子化学品Ⅱ",
-      "changePercent": 0.23,
-      "stockCount": 36,
-      "upCount": 14,
-      "downCount": 22,
-      "totalTurnover": 183.46,
-      "netInflow": 3.76,
-      "leaderName": "格林达",
-      "leaderChangePercent": 10.0,
-      "leaderCode": "603931",
-      "topStocks": [
-        "格林达"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "旅游零售Ⅱ",
-      "changePercent": 0.0,
-      "stockCount": 0,
-      "upCount": 0,
-      "downCount": 0,
-      "totalTurnover": 5.46,
-      "netInflow": -0.36,
-      "leaderName": "中国中免",
-      "leaderChangePercent": 0.0,
-      "leaderCode": "601888",
-      "topStocks": [
-        "中国中免"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "证券Ⅱ",
+      "name": "证券",
       "changePercent": -0.05,
       "stockCount": 46,
       "upCount": 27,
       "downCount": 19,
       "totalTurnover": 149.44,
-      "netInflow": -4.85,
+      "netInflow": 15.13,
       "leaderName": "国信证券",
       "leaderChangePercent": 1.66,
-      "leaderCode": "002736",
+      "leaderCode": "",
       "topStocks": [
         "国信证券"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "银行Ⅱ",
+      "name": "电子化学品",
+      "changePercent": -0.06,
+      "stockCount": 43,
+      "upCount": 15,
+      "downCount": 28,
+      "totalTurnover": 217.27,
+      "netInflow": -0.73,
+      "leaderName": "格林达",
+      "leaderChangePercent": 10.0,
+      "leaderCode": "",
+      "topStocks": [
+        "格林达"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "银行",
       "changePercent": -0.62,
       "stockCount": 40,
       "upCount": 10,
       "downCount": 30,
       "totalTurnover": 310.36,
-      "netInflow": -19.29,
+      "netInflow": -5.11,
       "leaderName": "苏州银行",
       "leaderChangePercent": 1.69,
-      "leaderCode": "002966",
+      "leaderCode": "",
       "topStocks": [
         "苏州银行"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "半导体",
-      "changePercent": -0.63,
-      "stockCount": 187,
-      "upCount": 65,
-      "downCount": 122,
-      "totalTurnover": 2155.25,
-      "netInflow": 30.51,
-      "leaderName": "三佳科技",
-      "leaderChangePercent": 10.02,
-      "leaderCode": "600520",
-      "topStocks": [
-        "三佳科技",
-        "大港股份"
-      ],
-      "limitUpCount": 3
-    },
-    {
-      "name": "调味发酵品Ⅱ",
-      "changePercent": -0.67,
-      "stockCount": 15,
-      "upCount": 6,
-      "downCount": 9,
-      "totalTurnover": 43.64,
-      "netInflow": -1.24,
-      "leaderName": "天味食品",
-      "leaderChangePercent": 3.24,
-      "leaderCode": "603317",
-      "topStocks": [
-        "天味食品"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "保险Ⅱ",
+      "name": "保险",
       "changePercent": -0.74,
       "stockCount": 5,
       "upCount": 1,
       "downCount": 4,
       "totalTurnover": 53.54,
-      "netInflow": -2.67,
+      "netInflow": 1.71,
       "leaderName": "中国平安",
       "leaderChangePercent": 0.48,
-      "leaderCode": "601318",
+      "leaderCode": "",
       "topStocks": [
         "中国平安"
       ],
       "limitUpCount": 0
     },
     {
+      "name": "半导体",
+      "changePercent": -0.8,
+      "stockCount": 189,
+      "upCount": 62,
+      "downCount": 127,
+      "totalTurnover": 2163.28,
+      "netInflow": 64.23,
+      "leaderName": "蓝箭电子",
+      "leaderChangePercent": 20.0,
+      "leaderCode": "",
+      "topStocks": [
+        "蓝箭电子",
+        "大港股份"
+      ],
+      "limitUpCount": 3
+    },
+    {
       "name": "贵金属",
       "changePercent": -0.98,
-      "stockCount": 13,
+      "stockCount": 14,
       "upCount": 3,
-      "downCount": 10,
-      "totalTurnover": 105.23,
-      "netInflow": 0.18,
+      "downCount": 11,
+      "totalTurnover": 200.69,
+      "netInflow": -3.31,
       "leaderName": "西部黄金",
       "leaderChangePercent": 2.67,
-      "leaderCode": "601069",
+      "leaderCode": "",
       "topStocks": [
         "西部黄金"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "非白酒",
-      "changePercent": -1.0,
-      "stockCount": 18,
-      "upCount": 4,
-      "downCount": 14,
-      "totalTurnover": 15.07,
-      "netInflow": -0.08,
-      "leaderName": "ST椰岛",
-      "leaderChangePercent": 4.87,
-      "leaderCode": "600238",
-      "topStocks": [
-        "ST椰岛"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "商用车",
-      "changePercent": -1.01,
-      "stockCount": 13,
-      "upCount": 3,
-      "downCount": 10,
-      "totalTurnover": 22.79,
-      "netInflow": -0.17,
-      "leaderName": "中集车辆",
-      "leaderChangePercent": 2.66,
-      "leaderCode": "301039",
-      "topStocks": [
-        "中集车辆"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "休闲食品",
-      "changePercent": -1.09,
-      "stockCount": 23,
-      "upCount": 4,
-      "downCount": 19,
-      "totalTurnover": 31.62,
-      "netInflow": 1.31,
-      "leaderName": "青岛食品",
-      "leaderChangePercent": 7.37,
-      "leaderCode": "001219",
-      "topStocks": [
-        "青岛食品"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "乘用车",
-      "changePercent": -1.12,
-      "stockCount": 9,
-      "upCount": 1,
-      "downCount": 8,
-      "totalTurnover": 38.84,
-      "netInflow": -3.3,
-      "leaderName": "比亚迪",
-      "leaderChangePercent": 0.29,
-      "leaderCode": "002594",
-      "topStocks": [
-        "比亚迪"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "航运港口",
+      "name": "食品加工制造",
       "changePercent": -1.13,
-      "stockCount": 35,
-      "upCount": 5,
-      "downCount": 30,
-      "totalTurnover": 72.12,
-      "netInflow": -2.53,
-      "leaderName": "招商港口",
-      "leaderChangePercent": 1.92,
-      "leaderCode": "001872",
-      "topStocks": [
-        "招商港口"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "食品加工",
-      "changePercent": -1.18,
-      "stockCount": 27,
-      "upCount": 5,
-      "downCount": 22,
-      "totalTurnover": 24.93,
-      "netInflow": -0.73,
+      "stockCount": 66,
+      "upCount": 15,
+      "downCount": 51,
+      "totalTurnover": 98.49,
+      "netInflow": -0.07,
       "leaderName": "ST交昂",
       "leaderChangePercent": 9.98,
-      "leaderCode": "600530",
+      "leaderCode": "",
       "topStocks": [
         "ST交昂"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "港口航运",
+      "changePercent": -1.18,
+      "stockCount": 34,
+      "upCount": 5,
+      "downCount": 29,
+      "totalTurnover": 72.5,
+      "netInflow": -4.78,
+      "leaderName": "招商港口",
+      "leaderChangePercent": 1.92,
+      "leaderCode": "",
+      "topStocks": [
+        "招商港口"
       ],
       "limitUpCount": 0
     },
@@ -9417,1021 +9305,1294 @@
       "upCount": 3,
       "downCount": 6,
       "totalTurnover": 40.61,
-      "netInflow": -5.23,
+      "netInflow": 0.67,
       "leaderName": "四川长虹",
       "leaderChangePercent": 1.41,
-      "leaderCode": "600839",
+      "leaderCode": "",
       "topStocks": [
         "四川长虹"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "个护用品",
-      "changePercent": -1.34,
-      "stockCount": 12,
-      "upCount": 3,
-      "downCount": 9,
-      "totalTurnover": 13.15,
-      "netInflow": 2.43,
-      "leaderName": "登康口腔",
-      "leaderChangePercent": 4.07,
-      "leaderCode": "001328",
-      "topStocks": [
-        "登康口腔"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "房屋建设Ⅱ",
-      "changePercent": -1.4,
-      "stockCount": 8,
-      "upCount": 2,
-      "downCount": 6,
-      "totalTurnover": 24.25,
-      "netInflow": -2.58,
-      "leaderName": "ST龙元",
-      "leaderChangePercent": 2.68,
-      "leaderCode": "600491",
-      "topStocks": [
-        "ST龙元"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "多元金融",
-      "changePercent": -1.42,
-      "stockCount": 24,
+      "name": "汽车整车",
+      "changePercent": -1.41,
+      "stockCount": 22,
       "upCount": 4,
-      "downCount": 20,
-      "totalTurnover": 26.56,
-      "netInflow": -1.68,
-      "leaderName": "渤海租赁",
-      "leaderChangePercent": 1.48,
-      "leaderCode": "000415",
+      "downCount": 18,
+      "totalTurnover": 66.83,
+      "netInflow": -2.4,
+      "leaderName": "中集车辆",
+      "leaderChangePercent": 2.66,
+      "leaderCode": "",
       "topStocks": [
-        "渤海租赁"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "医疗美容",
-      "changePercent": -1.46,
-      "stockCount": 5,
-      "upCount": 1,
-      "downCount": 4,
-      "totalTurnover": 3.98,
-      "netInflow": -0.32,
-      "leaderName": "华熙生物",
-      "leaderChangePercent": 0.79,
-      "leaderCode": "688363",
-      "topStocks": [
-        "华熙生物"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "油气开采Ⅱ",
-      "changePercent": -1.5,
-      "stockCount": 5,
-      "upCount": 0,
-      "downCount": 5,
-      "totalTurnover": 13.27,
-      "netInflow": -2.08,
-      "leaderName": "新潮能源",
-      "leaderChangePercent": -0.25,
-      "leaderCode": "600777",
-      "topStocks": [
-        "新潮能源"
+        "中集车辆"
       ],
       "limitUpCount": 0
     },
     {
       "name": "电力",
-      "changePercent": -1.51,
-      "stockCount": 108,
-      "upCount": 13,
-      "downCount": 95,
-      "totalTurnover": 244.43,
-      "netInflow": -1.72,
+      "changePercent": -1.44,
+      "stockCount": 106,
+      "upCount": 14,
+      "downCount": 92,
+      "totalTurnover": 242.64,
+      "netInflow": -14.23,
       "leaderName": "立新能源",
       "leaderChangePercent": 5.07,
-      "leaderCode": "001258",
+      "leaderCode": "",
       "topStocks": [
         "立新能源"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "摩托车及其他",
-      "changePercent": -1.53,
-      "stockCount": 20,
-      "upCount": 5,
-      "downCount": 15,
-      "totalTurnover": 17.84,
-      "netInflow": -0.66,
-      "leaderName": "九号公司-WD",
-      "leaderChangePercent": 3.84,
-      "leaderCode": "689009",
-      "topStocks": [
-        "九号公司-WD"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "航海装备Ⅱ",
-      "changePercent": -1.53,
-      "stockCount": 10,
-      "upCount": 1,
-      "downCount": 9,
-      "totalTurnover": 34.8,
-      "netInflow": -0.7,
-      "leaderName": "松发股份",
-      "leaderChangePercent": 1.84,
-      "leaderCode": "603268",
-      "topStocks": [
-        "松发股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "小金属",
-      "changePercent": -1.54,
-      "stockCount": 27,
-      "upCount": 6,
-      "downCount": 21,
-      "totalTurnover": 126.3,
-      "netInflow": -5.65,
-      "leaderName": "北方稀土",
-      "leaderChangePercent": 2.64,
-      "leaderCode": "600111",
-      "topStocks": [
-        "北方稀土"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "综合Ⅱ",
-      "changePercent": -1.58,
-      "stockCount": 21,
-      "upCount": 3,
-      "downCount": 18,
-      "totalTurnover": 24.73,
-      "netInflow": 0.7,
-      "leaderName": "毅昌科技",
-      "leaderChangePercent": 9.93,
-      "leaderCode": "002420",
-      "topStocks": [
-        "毅昌科技"
-      ],
-      "limitUpCount": 1
-    },
-    {
-      "name": "铁路公路",
-      "changePercent": -1.59,
-      "stockCount": 36,
+      "name": "多元金融",
+      "changePercent": -1.45,
+      "stockCount": 25,
       "upCount": 4,
-      "downCount": 32,
-      "totalTurnover": 40.22,
+      "downCount": 21,
+      "totalTurnover": 27.46,
+      "netInflow": -0.57,
+      "leaderName": "渤海租赁",
+      "leaderChangePercent": 1.48,
+      "leaderCode": "",
+      "topStocks": [
+        "渤海租赁"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "美容护理",
+      "changePercent": -1.49,
+      "stockCount": 32,
+      "upCount": 5,
+      "downCount": 27,
+      "totalTurnover": 27.95,
+      "netInflow": -3.61,
+      "leaderName": "登康口腔",
+      "leaderChangePercent": 4.07,
+      "leaderCode": "",
+      "topStocks": [
+        "登康口腔"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "公路铁路运输",
+      "changePercent": -1.58,
+      "stockCount": 32,
+      "upCount": 4,
+      "downCount": 28,
+      "totalTurnover": 38.67,
       "netInflow": -0.53,
       "leaderName": "重庆路桥",
       "leaderChangePercent": 1.84,
-      "leaderCode": "600106",
+      "leaderCode": "",
       "topStocks": [
         "重庆路桥"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "化妆品",
-      "changePercent": -1.6,
-      "stockCount": 15,
-      "upCount": 1,
+      "name": "综合",
+      "changePercent": -1.59,
+      "stockCount": 18,
+      "upCount": 4,
       "downCount": 14,
-      "totalTurnover": 10.87,
-      "netInflow": -0.19,
-      "leaderName": "丸美生物",
-      "leaderChangePercent": 2.65,
-      "leaderCode": "603983",
+      "totalTurnover": 27.93,
+      "netInflow": -2.67,
+      "leaderName": "毅昌科技",
+      "leaderChangePercent": 9.93,
+      "leaderCode": "",
       "topStocks": [
-        "丸美生物"
+        "毅昌科技"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "贸易Ⅱ",
+      "name": "饮料制造",
       "changePercent": -1.62,
-      "stockCount": 14,
-      "upCount": 3,
-      "downCount": 11,
-      "totalTurnover": 11.12,
-      "netInflow": -0.36,
-      "leaderName": "苏豪弘业",
-      "leaderChangePercent": 2.33,
-      "leaderCode": "600128",
+      "stockCount": 48,
+      "upCount": 13,
+      "downCount": 35,
+      "totalTurnover": 75.17,
+      "netInflow": 1.33,
+      "leaderName": "ST椰岛",
+      "leaderChangePercent": 4.87,
+      "leaderCode": "",
       "topStocks": [
-        "苏豪弘业"
+        "ST椰岛"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "小金属",
+      "changePercent": -1.63,
+      "stockCount": 30,
+      "upCount": 6,
+      "downCount": 24,
+      "totalTurnover": 133.26,
+      "netInflow": 0.86,
+      "leaderName": "北方稀土",
+      "leaderChangePercent": 2.64,
+      "leaderCode": "",
+      "topStocks": [
+        "北方稀土"
       ],
       "limitUpCount": 0
     },
     {
       "name": "工程机械",
-      "changePercent": -1.63,
-      "stockCount": 33,
+      "changePercent": -1.73,
+      "stockCount": 34,
       "upCount": 8,
-      "downCount": 25,
-      "totalTurnover": 89.56,
-      "netInflow": -8.62,
+      "downCount": 26,
+      "totalTurnover": 90.17,
+      "netInflow": -7.83,
       "leaderName": "福事特",
       "leaderChangePercent": 4.63,
-      "leaderCode": "301446",
+      "leaderCode": "",
       "topStocks": [
         "福事特"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "专业工程",
-      "changePercent": -1.64,
-      "stockCount": 39,
-      "upCount": 9,
-      "downCount": 30,
-      "totalTurnover": 42.45,
-      "netInflow": 0.12,
-      "leaderName": "时空科技",
-      "leaderChangePercent": 10.0,
-      "leaderCode": "605178",
-      "topStocks": [
-        "时空科技"
-      ],
-      "limitUpCount": 1
-    },
-    {
       "name": "元件",
-      "changePercent": -1.72,
-      "stockCount": 67,
+      "changePercent": -1.74,
+      "stockCount": 63,
       "upCount": 9,
-      "downCount": 58,
-      "totalTurnover": 560.07,
-      "netInflow": 2.82,
+      "downCount": 54,
+      "totalTurnover": 553.39,
+      "netInflow": 4.13,
       "leaderName": "中京电子",
       "leaderChangePercent": 10.04,
-      "leaderCode": "002579",
+      "leaderCode": "",
       "topStocks": [
         "中京电子"
       ],
       "limitUpCount": 1
     },
     {
-      "name": "航空装备Ⅱ",
-      "changePercent": -1.75,
-      "stockCount": 49,
-      "upCount": 8,
-      "downCount": 41,
-      "totalTurnover": 90.03,
-      "netInflow": -4.51,
-      "leaderName": "光启技术",
-      "leaderChangePercent": 3.35,
-      "leaderCode": "002625",
-      "topStocks": [
-        "光启技术"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "生物制品",
-      "changePercent": -1.78,
-      "stockCount": 56,
-      "upCount": 11,
-      "downCount": 45,
-      "totalTurnover": 72.43,
-      "netInflow": -2.85,
-      "leaderName": "百利天恒",
-      "leaderChangePercent": 5.75,
-      "leaderCode": "688506",
-      "topStocks": [
-        "百利天恒"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "中药Ⅱ",
+      "name": "中药",
       "changePercent": -1.79,
-      "stockCount": 66,
+      "stockCount": 68,
       "upCount": 11,
-      "downCount": 55,
-      "totalTurnover": 65.48,
-      "netInflow": -2.72,
+      "downCount": 57,
+      "totalTurnover": 66.23,
+      "netInflow": 0.43,
       "leaderName": "华润江中",
       "leaderChangePercent": 2.18,
-      "leaderCode": "600750",
+      "leaderCode": "",
       "topStocks": [
         "华润江中"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "炼化及贸易",
-      "changePercent": -1.79,
-      "stockCount": 28,
-      "upCount": 3,
-      "downCount": 25,
-      "totalTurnover": 60.5,
-      "netInflow": -1.26,
-      "leaderName": "岳阳兴长",
-      "leaderChangePercent": 5.5,
-      "leaderCode": "000819",
-      "topStocks": [
-        "岳阳兴长"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "普钢",
+      "name": "钢铁",
       "changePercent": -1.81,
-      "stockCount": 23,
-      "upCount": 1,
-      "downCount": 22,
-      "totalTurnover": 25.79,
-      "netInflow": -1.07,
-      "leaderName": "南钢股份",
-      "leaderChangePercent": 0.22,
-      "leaderCode": "600282",
-      "topStocks": [
-        "南钢股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "饮料乳品",
-      "changePercent": -1.82,
-      "stockCount": 29,
-      "upCount": 9,
-      "downCount": 20,
-      "totalTurnover": 57.63,
-      "netInflow": -2.06,
-      "leaderName": "妙可蓝多",
-      "leaderChangePercent": 3.89,
-      "leaderCode": "600882",
-      "topStocks": [
-        "妙可蓝多"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "冶钢原料",
-      "changePercent": -1.82,
-      "stockCount": 10,
-      "upCount": 1,
-      "downCount": 9,
-      "totalTurnover": 9.16,
-      "netInflow": -0.82,
+      "stockCount": 43,
+      "upCount": 3,
+      "downCount": 40,
+      "totalTurnover": 43.02,
+      "netInflow": -2.59,
       "leaderName": "鄂尔多斯",
       "leaderChangePercent": 1.73,
-      "leaderCode": "600295",
+      "leaderCode": "",
       "topStocks": [
         "鄂尔多斯"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "白酒Ⅱ",
-      "changePercent": -1.85,
-      "stockCount": 20,
-      "upCount": 5,
-      "downCount": 15,
-      "totalTurnover": 115.9,
-      "netInflow": -2.16,
-      "leaderName": "贵州茅台",
-      "leaderChangePercent": 1.22,
-      "leaderCode": "600519",
-      "topStocks": [
-        "贵州茅台"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "装修装饰Ⅱ",
-      "changePercent": -1.85,
-      "stockCount": 21,
-      "upCount": 6,
-      "downCount": 15,
-      "totalTurnover": 23.89,
-      "netInflow": -0.17,
-      "leaderName": "全筑股份",
-      "leaderChangePercent": 9.86,
-      "leaderCode": "603030",
-      "topStocks": [
-        "全筑股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "物流",
-      "changePercent": -1.88,
-      "stockCount": 47,
-      "upCount": 10,
-      "downCount": 37,
-      "totalTurnover": 45.74,
-      "netInflow": -1.29,
-      "leaderName": "原尚股份",
-      "leaderChangePercent": 9.99,
-      "leaderCode": "603813",
-      "topStocks": [
-        "原尚股份"
-      ],
-      "limitUpCount": 1
-    },
-    {
-      "name": "房地产开发",
-      "changePercent": -1.9,
-      "stockCount": 87,
-      "upCount": 8,
-      "downCount": 79,
-      "totalTurnover": 92.66,
-      "netInflow": -4.57,
-      "leaderName": "金科股份",
-      "leaderChangePercent": 9.68,
-      "leaderCode": "000656",
-      "topStocks": [
-        "金科股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "煤炭开采",
-      "changePercent": -1.94,
-      "stockCount": 27,
-      "upCount": 4,
-      "downCount": 23,
-      "totalTurnover": 67.74,
-      "netInflow": -4.83,
-      "leaderName": "淮北矿业",
-      "leaderChangePercent": 0.5,
-      "leaderCode": "600985",
-      "topStocks": [
-        "淮北矿业"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "农化制品",
-      "changePercent": -1.95,
-      "stockCount": 63,
-      "upCount": 5,
-      "downCount": 58,
-      "totalTurnover": 67.33,
-      "netInflow": -5.78,
-      "leaderName": "新洋丰",
-      "leaderChangePercent": 1.29,
-      "leaderCode": "000902",
-      "topStocks": [
-        "新洋丰"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "环保设备Ⅱ",
-      "changePercent": -1.98,
-      "stockCount": 26,
-      "upCount": 4,
-      "downCount": 22,
-      "totalTurnover": 27.53,
-      "netInflow": -0.39,
-      "leaderName": "盛剑科技",
-      "leaderChangePercent": 10.0,
-      "leaderCode": "603324",
-      "topStocks": [
-        "盛剑科技"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "特钢Ⅱ",
-      "changePercent": -2.01,
-      "stockCount": 12,
-      "upCount": 1,
-      "downCount": 11,
-      "totalTurnover": 7.73,
-      "netInflow": -0.62,
-      "leaderName": "中信特钢",
-      "leaderChangePercent": 0.08,
-      "leaderCode": "000708",
-      "topStocks": [
-        "中信特钢"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "金属新材料",
-      "changePercent": -2.07,
-      "stockCount": 36,
-      "upCount": 4,
-      "downCount": 32,
-      "totalTurnover": 38.1,
-      "netInflow": -1.04,
-      "leaderName": "安泰科技",
-      "leaderChangePercent": 0.5,
-      "leaderCode": "000969",
-      "topStocks": [
-        "安泰科技"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "工业金属",
-      "changePercent": -2.09,
-      "stockCount": 57,
-      "upCount": 4,
-      "downCount": 53,
-      "totalTurnover": 291.4,
-      "netInflow": -14.16,
-      "leaderName": "鑫铂股份",
-      "leaderChangePercent": 1.25,
-      "leaderCode": "003038",
-      "topStocks": [
-        "鑫铂股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "基础建设",
-      "changePercent": -2.09,
-      "stockCount": 42,
-      "upCount": 6,
-      "downCount": 36,
-      "totalTurnover": 47.92,
-      "netInflow": -0.95,
-      "leaderName": "*ST美丽",
-      "leaderChangePercent": 8.42,
-      "leaderCode": "000010",
-      "topStocks": [
-        "*ST美丽"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "化学纤维",
-      "changePercent": -2.14,
-      "stockCount": 26,
-      "upCount": 3,
-      "downCount": 23,
-      "totalTurnover": 23.47,
-      "netInflow": -0.53,
-      "leaderName": "宝丽迪",
-      "leaderChangePercent": 6.11,
-      "leaderCode": "300905",
-      "topStocks": [
-        "宝丽迪"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "能源金属",
-      "changePercent": -2.2,
-      "stockCount": 12,
-      "upCount": 0,
-      "downCount": 12,
-      "totalTurnover": 45.85,
-      "netInflow": -4.78,
-      "leaderName": "中矿资源",
-      "leaderChangePercent": -0.84,
-      "leaderCode": "002738",
-      "topStocks": [
-        "中矿资源"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "其他电子Ⅱ",
-      "changePercent": -2.2,
-      "stockCount": 33,
-      "upCount": 3,
-      "downCount": 30,
-      "totalTurnover": 75.0,
-      "netInflow": -4.57,
-      "leaderName": "创益通",
-      "leaderChangePercent": 7.45,
-      "leaderCode": "300991",
-      "topStocks": [
-        "创益通"
-      ],
-      "limitUpCount": 0
-    },
-    {
       "name": "造纸",
-      "changePercent": -2.21,
-      "stockCount": 25,
+      "changePercent": -1.87,
+      "stockCount": 23,
       "upCount": 5,
-      "downCount": 20,
-      "totalTurnover": 30.38,
-      "netInflow": 2.82,
+      "downCount": 18,
+      "totalTurnover": 30.29,
+      "netInflow": -0.39,
       "leaderName": "青山纸业",
       "leaderChangePercent": 7.01,
-      "leaderCode": "600103",
+      "leaderCode": "",
       "topStocks": [
         "青山纸业"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "玻璃玻纤",
-      "changePercent": -2.23,
-      "stockCount": 17,
-      "upCount": 1,
-      "downCount": 16,
-      "totalTurnover": 60.87,
-      "netInflow": -0.99,
-      "leaderName": "中国巨石",
-      "leaderChangePercent": 1.51,
-      "leaderCode": "600176",
+      "name": "白酒",
+      "changePercent": -1.88,
+      "stockCount": 19,
+      "upCount": 5,
+      "downCount": 14,
+      "totalTurnover": 115.8,
+      "netInflow": 6.88,
+      "leaderName": "贵州茅台",
+      "leaderChangePercent": 1.22,
+      "leaderCode": "",
       "topStocks": [
-        "中国巨石"
+        "贵州茅台"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "贸易",
+      "changePercent": -1.89,
+      "stockCount": 14,
+      "upCount": 2,
+      "downCount": 12,
+      "totalTurnover": 11.04,
+      "netInflow": -1.0,
+      "leaderName": "苏豪弘业",
+      "leaderChangePercent": 2.33,
+      "leaderCode": "",
+      "topStocks": [
+        "苏豪弘业"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "生物制品",
+      "changePercent": -1.89,
+      "stockCount": 54,
+      "upCount": 10,
+      "downCount": 44,
+      "totalTurnover": 67.71,
+      "netInflow": -1.61,
+      "leaderName": "近岸蛋白",
+      "leaderChangePercent": 1.89,
+      "leaderCode": "",
+      "topStocks": [
+        "近岸蛋白"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "农化制品",
+      "changePercent": -1.92,
+      "stockCount": 61,
+      "upCount": 5,
+      "downCount": 56,
+      "totalTurnover": 65.61,
+      "netInflow": -2.13,
+      "leaderName": "新洋丰",
+      "leaderChangePercent": 1.29,
+      "leaderCode": "",
+      "topStocks": [
+        "新洋丰"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "石油加工贸易",
+      "changePercent": -1.95,
+      "stockCount": 25,
+      "upCount": 2,
+      "downCount": 23,
+      "totalTurnover": 51.65,
+      "netInflow": 1.63,
+      "leaderName": "岳阳兴长",
+      "leaderChangePercent": 5.5,
+      "leaderCode": "",
+      "topStocks": [
+        "岳阳兴长"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "工业金属",
+      "changePercent": -2.01,
+      "stockCount": 54,
+      "upCount": 4,
+      "downCount": 50,
+      "totalTurnover": 194.52,
+      "netInflow": -3.87,
+      "leaderName": "鑫铂股份",
+      "leaderChangePercent": 1.25,
+      "leaderCode": "",
+      "topStocks": [
+        "鑫铂股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "化学纤维",
+      "changePercent": -2.01,
+      "stockCount": 29,
+      "upCount": 4,
+      "downCount": 25,
+      "totalTurnover": 31.99,
+      "netInflow": -1.06,
+      "leaderName": "宝丽迪",
+      "leaderChangePercent": 6.11,
+      "leaderCode": "",
+      "topStocks": [
+        "宝丽迪"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "白色家电",
+      "changePercent": -2.02,
+      "stockCount": 43,
+      "upCount": 12,
+      "downCount": 31,
+      "totalTurnover": 148.93,
+      "netInflow": 15.01,
+      "leaderName": "康盛股份",
+      "leaderChangePercent": 10.14,
+      "leaderCode": "",
+      "topStocks": [
+        "康盛股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "军工装备",
+      "changePercent": -2.02,
+      "stockCount": 82,
+      "upCount": 10,
+      "downCount": 72,
+      "totalTurnover": 171.19,
+      "netInflow": -1.71,
+      "leaderName": "光启技术",
+      "leaderChangePercent": 3.35,
+      "leaderCode": "",
+      "topStocks": [
+        "光启技术"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "房地产",
+      "changePercent": -2.04,
+      "stockCount": 86,
+      "upCount": 8,
+      "downCount": 78,
+      "totalTurnover": 94.86,
+      "netInflow": -6.58,
+      "leaderName": "*ST发展",
+      "leaderChangePercent": 10.09,
+      "leaderCode": "",
+      "topStocks": [
+        "*ST发展"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "建筑装饰",
+      "changePercent": -2.06,
+      "stockCount": 143,
+      "upCount": 26,
+      "downCount": 117,
+      "totalTurnover": 158.48,
+      "netInflow": -9.55,
+      "leaderName": "时空科技",
+      "leaderChangePercent": 10.0,
+      "leaderCode": "",
+      "topStocks": [
+        "时空科技"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "物流",
+      "changePercent": -2.1,
+      "stockCount": 50,
+      "upCount": 10,
+      "downCount": 40,
+      "totalTurnover": 48.85,
+      "netInflow": -0.33,
+      "leaderName": "原尚股份",
+      "leaderChangePercent": 9.99,
+      "leaderCode": "",
+      "topStocks": [
+        "原尚股份"
+      ],
+      "limitUpCount": 1
+    },
+    {
+      "name": "其他电子",
+      "changePercent": -2.1,
+      "stockCount": 34,
+      "upCount": 4,
+      "downCount": 30,
+      "totalTurnover": 77.11,
+      "netInflow": -4.29,
+      "leaderName": "创益通",
+      "leaderChangePercent": 7.45,
+      "leaderCode": "",
+      "topStocks": [
+        "创益通"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "金属新材料",
+      "changePercent": -2.14,
+      "stockCount": 34,
+      "upCount": 4,
+      "downCount": 30,
+      "totalTurnover": 32.32,
+      "netInflow": -0.61,
+      "leaderName": "安泰科技",
+      "leaderChangePercent": 0.5,
+      "leaderCode": "",
+      "topStocks": [
+        "安泰科技"
       ],
       "limitUpCount": 0
     },
     {
       "name": "化学制药",
-      "changePercent": -2.23,
+      "changePercent": -2.15,
       "stockCount": 160,
-      "upCount": 8,
-      "downCount": 152,
-      "totalTurnover": 177.56,
-      "netInflow": -9.53,
+      "upCount": 10,
+      "downCount": 150,
+      "totalTurnover": 182.66,
+      "netInflow": -8.84,
       "leaderName": "ST天圣",
       "leaderChangePercent": 6.93,
-      "leaderCode": "002872",
+      "leaderCode": "",
       "topStocks": [
         "ST天圣"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "医疗器械",
-      "changePercent": -2.34,
-      "stockCount": 140,
-      "upCount": 16,
-      "downCount": 124,
-      "totalTurnover": 121.53,
-      "netInflow": -5.21,
-      "leaderName": "博拓生物",
-      "leaderChangePercent": 3.68,
-      "leaderCode": "688767",
-      "topStocks": [
-        "博拓生物"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "农业综合Ⅱ",
-      "changePercent": -2.36,
-      "stockCount": 3,
+      "name": "油气开采及服务",
+      "changePercent": -2.17,
+      "stockCount": 19,
       "upCount": 0,
-      "downCount": 3,
-      "totalTurnover": 0.57,
-      "netInflow": -0.0,
-      "leaderName": "辉隆股份",
-      "leaderChangePercent": -1.18,
-      "leaderCode": "002556",
-      "topStocks": [
-        "辉隆股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "风电设备",
-      "changePercent": -2.38,
-      "stockCount": 31,
-      "upCount": 4,
-      "downCount": 27,
-      "totalTurnover": 40.23,
-      "netInflow": -0.97,
-      "leaderName": "恒润股份",
-      "leaderChangePercent": 1.97,
-      "leaderCode": "603985",
-      "topStocks": [
-        "恒润股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "专业服务",
-      "changePercent": -2.38,
-      "stockCount": 33,
-      "upCount": 3,
-      "downCount": 30,
-      "totalTurnover": 34.41,
-      "netInflow": 0.57,
-      "leaderName": "苏试试验",
-      "leaderChangePercent": 3.81,
-      "leaderCode": "300416",
-      "topStocks": [
-        "苏试试验"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "饰品",
-      "changePercent": -2.39,
-      "stockCount": 17,
-      "upCount": 0,
-      "downCount": 17,
-      "totalTurnover": 11.95,
-      "netInflow": -0.73,
-      "leaderName": "老凤祥",
-      "leaderChangePercent": -0.19,
-      "leaderCode": "600612",
-      "topStocks": [
-        "老凤祥"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "装修建材",
-      "changePercent": -2.41,
-      "stockCount": 38,
-      "upCount": 8,
-      "downCount": 30,
-      "totalTurnover": 30.13,
-      "netInflow": -0.82,
-      "leaderName": "扬子新材",
-      "leaderChangePercent": 2.8,
-      "leaderCode": "002652",
-      "topStocks": [
-        "扬子新材"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "旅游及景区",
-      "changePercent": -2.41,
-      "stockCount": 27,
-      "upCount": 1,
-      "downCount": 26,
-      "totalTurnover": 18.18,
-      "netInflow": -1.67,
-      "leaderName": "九华旅游",
-      "leaderChangePercent": -0.29,
-      "leaderCode": "603199",
-      "topStocks": [
-        "九华旅游"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "化学原料",
-      "changePercent": -2.41,
-      "stockCount": 62,
-      "upCount": 5,
-      "downCount": 57,
-      "totalTurnover": 71.32,
-      "netInflow": -4.33,
-      "leaderName": "三祥新材",
-      "leaderChangePercent": 3.1,
-      "leaderCode": "603663",
-      "topStocks": [
-        "三祥新材"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "文娱用品",
-      "changePercent": -2.42,
-      "stockCount": 21,
-      "upCount": 2,
       "downCount": 19,
-      "totalTurnover": 17.73,
-      "netInflow": 0.23,
-      "leaderName": "高乐股份",
-      "leaderChangePercent": 2.13,
-      "leaderCode": "002348",
-      "topStocks": [
-        "高乐股份"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "酒店餐饮",
-      "changePercent": -2.42,
-      "stockCount": 9,
-      "upCount": 1,
-      "downCount": 8,
-      "totalTurnover": 7.18,
-      "netInflow": -0.23,
-      "leaderName": "首旅酒店",
-      "leaderChangePercent": 0.07,
-      "leaderCode": "600258",
-      "topStocks": [
-        "首旅酒店"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "纺织制造",
-      "changePercent": -2.48,
-      "stockCount": 33,
-      "upCount": 3,
-      "downCount": 30,
-      "totalTurnover": 37.57,
-      "netInflow": -2.57,
-      "leaderName": "华升股份",
-      "leaderChangePercent": 10.01,
-      "leaderCode": "600156",
-      "topStocks": [
-        "华升股份"
-      ],
-      "limitUpCount": 1
-    },
-    {
-      "name": "环境治理",
-      "changePercent": -2.48,
-      "stockCount": 107,
-      "upCount": 11,
-      "downCount": 96,
-      "totalTurnover": 83.12,
-      "netInflow": -2.7,
-      "leaderName": "京蓝科技",
-      "leaderChangePercent": 10.06,
-      "leaderCode": "000711",
-      "topStocks": [
-        "京蓝科技"
-      ],
-      "limitUpCount": 1
-    },
-    {
-      "name": "轨交设备Ⅱ",
-      "changePercent": -2.49,
-      "stockCount": 31,
-      "upCount": 3,
-      "downCount": 28,
-      "totalTurnover": 27.43,
-      "netInflow": -1.96,
-      "leaderName": "铁科轨道",
-      "leaderChangePercent": 5.99,
-      "leaderCode": "688569",
-      "topStocks": [
-        "铁科轨道"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "化学制品",
-      "changePercent": -2.49,
-      "stockCount": 185,
-      "upCount": 18,
-      "downCount": 167,
-      "totalTurnover": 202.41,
-      "netInflow": -3.99,
-      "leaderName": "红 宝 丽",
-      "leaderChangePercent": 9.95,
-      "leaderCode": "002165",
-      "topStocks": [
-        "红 宝 丽",
-        "兴欣新材"
-      ],
-      "limitUpCount": 2
-    },
-    {
-      "name": "医药商业",
-      "changePercent": -2.49,
-      "stockCount": 32,
-      "upCount": 3,
-      "downCount": 29,
-      "totalTurnover": 27.23,
-      "netInflow": -1.01,
-      "leaderName": "开开Ｂ股",
-      "leaderChangePercent": 0.25,
-      "leaderCode": "900943",
-      "topStocks": [
-        "开开Ｂ股"
-      ],
-      "limitUpCount": 0
-    },
-    {
-      "name": "油服工程",
-      "changePercent": -2.52,
-      "stockCount": 14,
-      "upCount": 0,
-      "downCount": 14,
-      "totalTurnover": 13.79,
-      "netInflow": -0.98,
+      "totalTurnover": 28.18,
+      "netInflow": -3.24,
       "leaderName": "海油发展",
       "leaderChangePercent": -0.24,
-      "leaderCode": "600968",
+      "leaderCode": "",
       "topStocks": [
         "海油发展"
       ],
       "limitUpCount": 0
     },
     {
+      "name": "轨交设备",
+      "changePercent": -2.29,
+      "stockCount": 30,
+      "upCount": 3,
+      "downCount": 27,
+      "totalTurnover": 24.45,
+      "netInflow": 0.42,
+      "leaderName": "铁科轨道",
+      "leaderChangePercent": 6.0,
+      "leaderCode": "",
+      "topStocks": [
+        "铁科轨道"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "煤炭开采加工",
+      "changePercent": -2.32,
+      "stockCount": 34,
+      "upCount": 4,
+      "downCount": 30,
+      "totalTurnover": 80.75,
+      "netInflow": -5.58,
+      "leaderName": "淮北矿业",
+      "leaderChangePercent": 0.5,
+      "leaderCode": "",
+      "topStocks": [
+        "淮北矿业"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "风电设备",
+      "changePercent": -2.32,
+      "stockCount": 32,
+      "upCount": 5,
+      "downCount": 27,
+      "totalTurnover": 43.41,
+      "netInflow": -3.17,
+      "leaderName": "恒润股份",
+      "leaderChangePercent": 1.97,
+      "leaderCode": "",
+      "topStocks": [
+        "恒润股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "医疗器械",
+      "changePercent": -2.36,
+      "stockCount": 141,
+      "upCount": 16,
+      "downCount": 125,
+      "totalTurnover": 120.96,
+      "netInflow": -3.44,
+      "leaderName": "博拓生物",
+      "leaderChangePercent": 3.68,
+      "leaderCode": "",
+      "topStocks": [
+        "博拓生物"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "建筑材料",
+      "changePercent": -2.39,
+      "stockCount": 72,
+      "upCount": 13,
+      "downCount": 59,
+      "totalTurnover": 102.44,
+      "netInflow": -3.31,
+      "leaderName": "扬子新材",
+      "leaderChangePercent": 2.8,
+      "leaderCode": "",
+      "topStocks": [
+        "扬子新材"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "环保设备",
+      "changePercent": -2.43,
+      "stockCount": 30,
+      "upCount": 4,
+      "downCount": 26,
+      "totalTurnover": 34.72,
+      "netInflow": -2.71,
+      "leaderName": "*ST仕净",
+      "leaderChangePercent": 20.0,
+      "leaderCode": "",
+      "topStocks": [
+        "*ST仕净",
+        "盛剑科技"
+      ],
+      "limitUpCount": 1
+    },
+    {
+      "name": "化学制品",
+      "changePercent": -2.45,
+      "stockCount": 183,
+      "upCount": 20,
+      "downCount": 163,
+      "totalTurnover": 196.69,
+      "netInflow": -11.75,
+      "leaderName": "兴欣新材",
+      "leaderChangePercent": 10.02,
+      "leaderCode": "",
+      "topStocks": [
+        "兴欣新材",
+        "红 宝 丽"
+      ],
+      "limitUpCount": 2
+    },
+    {
+      "name": "环境治理",
+      "changePercent": -2.46,
+      "stockCount": 109,
+      "upCount": 12,
+      "downCount": 97,
+      "totalTurnover": 95.01,
+      "netInflow": -5.69,
+      "leaderName": "京蓝科技",
+      "leaderChangePercent": 10.06,
+      "leaderCode": "",
+      "topStocks": [
+        "京蓝科技"
+      ],
+      "limitUpCount": 1
+    },
+    {
       "name": "服装家纺",
-      "changePercent": -2.53,
-      "stockCount": 59,
+      "changePercent": -2.48,
+      "stockCount": 74,
       "upCount": 10,
-      "downCount": 49,
-      "totalTurnover": 44.82,
-      "netInflow": -1.83,
+      "downCount": 64,
+      "totalTurnover": 57.55,
+      "netInflow": -5.33,
       "leaderName": "摩登大道",
       "leaderChangePercent": 3.77,
-      "leaderCode": "002656",
+      "leaderCode": "",
       "topStocks": [
         "摩登大道"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "水泥",
-      "changePercent": -2.54,
-      "stockCount": 22,
+      "name": "汽车服务及其他",
+      "changePercent": -2.48,
+      "stockCount": 26,
       "upCount": 4,
-      "downCount": 18,
-      "totalTurnover": 18.47,
-      "netInflow": -0.39,
-      "leaderName": "华新建材",
-      "leaderChangePercent": 1.02,
-      "leaderCode": "600801",
+      "downCount": 22,
+      "totalTurnover": 26.59,
+      "netInflow": 0.81,
+      "leaderName": "九号公司",
+      "leaderChangePercent": 3.84,
+      "leaderCode": "",
       "topStocks": [
-        "华新建材"
+        "九号公司"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "橡胶",
-      "changePercent": -2.62,
-      "stockCount": 23,
+      "name": "纺织制造",
+      "changePercent": -2.49,
+      "stockCount": 32,
+      "upCount": 3,
+      "downCount": 29,
+      "totalTurnover": 37.59,
+      "netInflow": 1.39,
+      "leaderName": "华升股份",
+      "leaderChangePercent": 10.01,
+      "leaderCode": "",
+      "topStocks": [
+        "华升股份"
+      ],
+      "limitUpCount": 1
+    },
+    {
+      "name": "其他社会服务",
+      "changePercent": -2.49,
+      "stockCount": 42,
+      "upCount": 3,
+      "downCount": 39,
+      "totalTurnover": 42.01,
+      "netInflow": -1.4,
+      "leaderName": "苏试试验",
+      "leaderChangePercent": 3.81,
+      "leaderCode": "",
+      "topStocks": [
+        "苏试试验"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "旅游及酒店",
+      "changePercent": -2.54,
+      "stockCount": 35,
+      "upCount": 2,
+      "downCount": 33,
+      "totalTurnover": 26.07,
+      "netInflow": -1.81,
+      "leaderName": "*ST西旅",
+      "leaderChangePercent": 10.06,
+      "leaderCode": "",
+      "topStocks": [
+        "*ST西旅"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "电池",
+      "changePercent": -2.64,
+      "stockCount": 105,
+      "upCount": 6,
+      "downCount": 99,
+      "totalTurnover": 286.87,
+      "netInflow": 3.2,
+      "leaderName": "野马电池",
+      "leaderChangePercent": 2.48,
+      "leaderCode": "",
+      "topStocks": [
+        "野马电池"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "塑料制品",
+      "changePercent": -2.64,
+      "stockCount": 78,
+      "upCount": 9,
+      "downCount": 69,
+      "totalTurnover": 125.39,
+      "netInflow": -6.69,
+      "leaderName": "兴业股份",
+      "leaderChangePercent": 10.04,
+      "leaderCode": "",
+      "topStocks": [
+        "兴业股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "橡胶制品",
+      "changePercent": -2.66,
+      "stockCount": 22,
       "upCount": 1,
-      "downCount": 22,
-      "totalTurnover": 20.02,
-      "netInflow": -0.25,
+      "downCount": 21,
+      "totalTurnover": 19.76,
+      "netInflow": -0.23,
       "leaderName": "彤程新材",
       "leaderChangePercent": 3.0,
-      "leaderCode": "603650",
+      "leaderCode": "",
       "topStocks": [
         "彤程新材"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "塑料",
-      "changePercent": -2.63,
-      "stockCount": 78,
-      "upCount": 9,
-      "downCount": 69,
-      "totalTurnover": 126.61,
-      "netInflow": -3.24,
-      "leaderName": "兴业股份",
-      "leaderChangePercent": 10.04,
-      "leaderCode": "603928",
+      "name": "家居用品",
+      "changePercent": -2.66,
+      "stockCount": 97,
+      "upCount": 12,
+      "downCount": 85,
+      "totalTurnover": 63.14,
+      "netInflow": -1.72,
+      "leaderName": "艾芬达",
+      "leaderChangePercent": 4.04,
+      "leaderCode": "",
       "topStocks": [
-        "兴业股份"
+        "艾芬达"
       ],
-      "limitUpCount": 1
+      "limitUpCount": 0
+    },
+    {
+      "name": "专用设备",
+      "changePercent": -2.67,
+      "stockCount": 202,
+      "upCount": 19,
+      "downCount": 183,
+      "totalTurnover": 225.59,
+      "netInflow": -12.6,
+      "leaderName": "耐科装备",
+      "leaderChangePercent": 10.75,
+      "leaderCode": "",
+      "topStocks": [
+        "耐科装备"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "化学原料",
+      "changePercent": -2.67,
+      "stockCount": 57,
+      "upCount": 2,
+      "downCount": 55,
+      "totalTurnover": 64.17,
+      "netInflow": -4.33,
+      "leaderName": "维远股份",
+      "leaderChangePercent": 1.31,
+      "leaderCode": "",
+      "topStocks": [
+        "维远股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "教育",
+      "changePercent": -2.72,
+      "stockCount": 15,
+      "upCount": 2,
+      "downCount": 13,
+      "totalTurnover": 16.0,
+      "netInflow": -1.51,
+      "leaderName": "*ST开元",
+      "leaderChangePercent": 4.7,
+      "leaderCode": "",
+      "topStocks": [
+        "*ST开元"
+      ],
+      "limitUpCount": 0
     },
     {
       "name": "光学光电子",
-      "changePercent": -2.64,
-      "stockCount": 97,
-      "upCount": 14,
-      "downCount": 83,
-      "totalTurnover": 235.59,
-      "netInflow": -2.33,
+      "changePercent": -2.79,
+      "stockCount": 105,
+      "upCount": 15,
+      "downCount": 90,
+      "totalTurnover": 261.63,
+      "netInflow": -5.13,
       "leaderName": "冠石科技",
       "leaderChangePercent": 4.57,
-      "leaderCode": "605588",
+      "leaderCode": "",
       "topStocks": [
         "冠石科技"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "农产品加工",
-      "changePercent": -2.64,
-      "stockCount": 28,
+      "name": "医药商业",
+      "changePercent": -2.92,
+      "stockCount": 32,
       "upCount": 2,
-      "downCount": 26,
-      "totalTurnover": 39.68,
-      "netInflow": 0.15,
-      "leaderName": "国投中鲁",
-      "leaderChangePercent": 2.22,
-      "leaderCode": "600962",
+      "downCount": 30,
+      "totalTurnover": 30.64,
+      "netInflow": -1.89,
+      "leaderName": "国药股份",
+      "leaderChangePercent": 0.24,
+      "leaderCode": "",
       "topStocks": [
-        "国投中鲁"
+        "国药股份"
       ],
       "limitUpCount": 0
     },
     {
-      "name": "家电零部件Ⅱ",
-      "changePercent": -2.68,
-      "stockCount": 35,
-      "upCount": 6,
-      "downCount": 29,
-      "totalTurnover": 63.16,
-      "netInflow": 3.76,
-      "leaderName": "康盛股份",
-      "leaderChangePercent": 10.14,
-      "leaderCode": "002418",
+      "name": "电机",
+      "changePercent": -2.92,
+      "stockCount": 26,
+      "upCount": 0,
+      "downCount": 26,
+      "totalTurnover": 34.32,
+      "netInflow": -2.35,
+      "leaderName": "江特电机",
+      "leaderChangePercent": -0.58,
+      "leaderCode": "",
       "topStocks": [
-        "康盛股份"
+        "江特电机"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "自动化设备",
+      "changePercent": -2.93,
+      "stockCount": 99,
+      "upCount": 8,
+      "downCount": 91,
+      "totalTurnover": 263.3,
+      "netInflow": -10.1,
+      "leaderName": "锐翔智能",
+      "leaderChangePercent": 10.47,
+      "leaderCode": "",
+      "topStocks": [
+        "锐翔智能"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "能源金属",
+      "changePercent": -2.94,
+      "stockCount": 14,
+      "upCount": 0,
+      "downCount": 14,
+      "totalTurnover": 47.62,
+      "netInflow": -1.43,
+      "leaderName": "赣锋锂业",
+      "leaderChangePercent": -1.36,
+      "leaderCode": "",
+      "topStocks": [
+        "赣锋锂业"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "其他电源设备",
+      "changePercent": -2.96,
+      "stockCount": 34,
+      "upCount": 1,
+      "downCount": 33,
+      "totalTurnover": 67.08,
+      "netInflow": -3.14,
+      "leaderName": "中国动力",
+      "leaderChangePercent": 0.42,
+      "leaderCode": "",
+      "topStocks": [
+        "中国动力"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "非金属材料",
+      "changePercent": -2.97,
+      "stockCount": 17,
+      "upCount": 1,
+      "downCount": 16,
+      "totalTurnover": 22.09,
+      "netInflow": -0.89,
+      "leaderName": "三祥新材",
+      "leaderChangePercent": 3.1,
+      "leaderCode": "",
+      "topStocks": [
+        "三祥新材"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "光伏设备",
+      "changePercent": -3.03,
+      "stockCount": 72,
+      "upCount": 9,
+      "downCount": 63,
+      "totalTurnover": 174.17,
+      "netInflow": 0.16,
+      "leaderName": "大全能源",
+      "leaderChangePercent": 4.72,
+      "leaderCode": "",
+      "topStocks": [
+        "大全能源"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "互联网电商",
+      "changePercent": -3.04,
+      "stockCount": 20,
+      "upCount": 2,
+      "downCount": 18,
+      "totalTurnover": 36.27,
+      "netInflow": -2.91,
+      "leaderName": "赛维时代",
+      "leaderChangePercent": 1.21,
+      "leaderCode": "",
+      "topStocks": [
+        "赛维时代"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "农产品加工",
+      "changePercent": -3.13,
+      "stockCount": 43,
+      "upCount": 1,
+      "downCount": 42,
+      "totalTurnover": 60.14,
+      "netInflow": 3.26,
+      "leaderName": "乖宝宠物",
+      "leaderChangePercent": 0.42,
+      "leaderCode": "",
+      "topStocks": [
+        "乖宝宠物"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "燃气",
+      "changePercent": -3.13,
+      "stockCount": 26,
+      "upCount": 2,
+      "downCount": 24,
+      "totalTurnover": 25.71,
+      "netInflow": -2.82,
+      "leaderName": "东方环宇",
+      "leaderChangePercent": 4.07,
+      "leaderCode": "",
+      "topStocks": [
+        "东方环宇"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "包装印刷",
+      "changePercent": -3.13,
+      "stockCount": 45,
+      "upCount": 1,
+      "downCount": 44,
+      "totalTurnover": 43.45,
+      "netInflow": -5.34,
+      "leaderName": "奥瑞金",
+      "leaderChangePercent": 2.88,
+      "leaderCode": "",
+      "topStocks": [
+        "奥瑞金"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "养殖业",
+      "changePercent": -3.14,
+      "stockCount": 36,
+      "upCount": 1,
+      "downCount": 35,
+      "totalTurnover": 60.24,
+      "netInflow": -0.55,
+      "leaderName": "生物股份",
+      "leaderChangePercent": 1.27,
+      "leaderCode": "",
+      "topStocks": [
+        "生物股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "小家电",
+      "changePercent": -3.16,
+      "stockCount": 26,
+      "upCount": 5,
+      "downCount": 21,
+      "totalTurnover": 100.92,
+      "netInflow": 10.9,
+      "leaderName": "九阳股份",
+      "leaderChangePercent": 10.01,
+      "leaderCode": "",
+      "topStocks": [
+        "九阳股份"
+      ],
+      "limitUpCount": 1
+    },
+    {
+      "name": "电网设备",
+      "changePercent": -3.16,
+      "stockCount": 139,
+      "upCount": 8,
+      "downCount": 131,
+      "totalTurnover": 174.73,
+      "netInflow": -12.01,
+      "leaderName": "广电电气",
+      "leaderChangePercent": 10.0,
+      "leaderCode": "",
+      "topStocks": [
+        "广电电气"
+      ],
+      "limitUpCount": 1
+    },
+    {
+      "name": "种植业与林业",
+      "changePercent": -3.21,
+      "stockCount": 29,
+      "upCount": 0,
+      "downCount": 29,
+      "totalTurnover": 31.44,
+      "netInflow": -4.13,
+      "leaderName": "诺普信",
+      "leaderChangePercent": -1.16,
+      "leaderCode": "",
+      "topStocks": [
+        "诺普信"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "汽车零部件",
+      "changePercent": -3.24,
+      "stockCount": 276,
+      "upCount": 19,
+      "downCount": 257,
+      "totalTurnover": 385.0,
+      "netInflow": -24.44,
+      "leaderName": "襄阳轴承",
+      "leaderChangePercent": 9.99,
+      "leaderCode": "",
+      "topStocks": [
+        "襄阳轴承"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "军工电子",
+      "changePercent": -3.29,
+      "stockCount": 62,
+      "upCount": 2,
+      "downCount": 60,
+      "totalTurnover": 119.16,
+      "netInflow": -5.85,
+      "leaderName": "国博电子",
+      "leaderChangePercent": 0.44,
+      "leaderCode": "",
+      "topStocks": [
+        "国博电子"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "软件开发",
+      "changePercent": -3.3,
+      "stockCount": 139,
+      "upCount": 11,
+      "downCount": 128,
+      "totalTurnover": 275.15,
+      "netInflow": -14.93,
+      "leaderName": "任子行",
+      "leaderChangePercent": 9.96,
+      "leaderCode": "",
+      "topStocks": [
+        "任子行"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "通用设备",
+      "changePercent": -3.32,
+      "stockCount": 254,
+      "upCount": 15,
+      "downCount": 239,
+      "totalTurnover": 361.21,
+      "netInflow": -21.51,
+      "leaderName": "*ST宝馨",
+      "leaderChangePercent": 7.89,
+      "leaderCode": "",
+      "topStocks": [
+        "*ST宝馨"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "零售",
+      "changePercent": -3.35,
+      "stockCount": 68,
+      "upCount": 1,
+      "downCount": 67,
+      "totalTurnover": 81.76,
+      "netInflow": -7.55,
+      "leaderName": "新华百货",
+      "leaderChangePercent": 0.2,
+      "leaderCode": "",
+      "topStocks": [
+        "新华百货"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "通信设备",
+      "changePercent": -3.37,
+      "stockCount": 93,
+      "upCount": 8,
+      "downCount": 85,
+      "totalTurnover": 776.4,
+      "netInflow": 21.27,
+      "leaderName": "新易盛",
+      "leaderChangePercent": 5.59,
+      "leaderCode": "",
+      "topStocks": [
+        "新易盛"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "医疗服务",
+      "changePercent": -3.4,
+      "stockCount": 56,
+      "upCount": 2,
+      "downCount": 54,
+      "totalTurnover": 157.53,
+      "netInflow": -5.14,
+      "leaderName": "九洲药业",
+      "leaderChangePercent": 1.1,
+      "leaderCode": "",
+      "topStocks": [
+        "九洲药业"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "计算机设备",
+      "changePercent": -3.59,
+      "stockCount": 83,
+      "upCount": 4,
+      "downCount": 79,
+      "totalTurnover": 255.73,
+      "netInflow": -11.64,
+      "leaderName": "卡莱特",
+      "leaderChangePercent": 19.97,
+      "leaderCode": "",
+      "topStocks": [
+        "卡莱特"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "消费电子",
+      "changePercent": -3.6,
+      "stockCount": 96,
+      "upCount": 7,
+      "downCount": 89,
+      "totalTurnover": 294.07,
+      "netInflow": -4.77,
+      "leaderName": "鸿日达",
+      "leaderChangePercent": 4.82,
+      "leaderCode": "",
+      "topStocks": [
+        "鸿日达"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "通信服务",
+      "changePercent": -4.02,
+      "stockCount": 43,
+      "upCount": 6,
+      "downCount": 37,
+      "totalTurnover": 195.32,
+      "netInflow": -15.96,
+      "leaderName": "国安股份",
+      "leaderChangePercent": 6.22,
+      "leaderCode": "",
+      "topStocks": [
+        "国安股份"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "IT服务",
+      "changePercent": -4.19,
+      "stockCount": 129,
+      "upCount": 10,
+      "downCount": 119,
+      "totalTurnover": 431.25,
+      "netInflow": -42.3,
+      "leaderName": "真视通",
+      "leaderChangePercent": 10.02,
+      "leaderCode": "",
+      "topStocks": [
+        "真视通"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "游戏",
+      "changePercent": -4.4,
+      "stockCount": 23,
+      "upCount": 0,
+      "downCount": 23,
+      "totalTurnover": 70.83,
+      "netInflow": -5.18,
+      "leaderName": "世纪华通",
+      "leaderChangePercent": -0.46,
+      "leaderCode": "",
+      "topStocks": [
+        "世纪华通"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "文化传媒",
+      "changePercent": -4.69,
+      "stockCount": 85,
+      "upCount": 2,
+      "downCount": 83,
+      "totalTurnover": 276.11,
+      "netInflow": -34.2,
+      "leaderName": "龙版传媒",
+      "leaderChangePercent": 3.81,
+      "leaderCode": "",
+      "topStocks": [
+        "龙版传媒"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "影视院线",
+      "changePercent": -5.93,
+      "stockCount": 20,
+      "upCount": 0,
+      "downCount": 20,
+      "totalTurnover": 77.07,
+      "netInflow": -4.26,
+      "leaderName": "中国电影",
+      "leaderChangePercent": -0.33,
+      "leaderCode": "",
+      "topStocks": [
+        "中国电影"
+      ],
+      "limitUpCount": 0
+    },
+    {
+      "name": "厨卫电器",
+      "changePercent": -6.18,
+      "stockCount": 9,
+      "upCount": 1,
+      "downCount": 8,
+      "totalTurnover": 23.17,
+      "netInflow": 1.18,
+      "leaderName": "老板电器",
+      "leaderChangePercent": 0.24,
+      "leaderCode": "",
+      "topStocks": [
+        "老板电器"
       ],
       "limitUpCount": 0
     }
@@ -12620,10 +12781,10 @@
       "closePrice": 14.4,
       "changePercent": -10.0,
       "turnover": 0,
-      "netBuy": 2.82,
-      "buyAmount": 21.71,
-      "sellAmount": 18.9,
-      "reason": "64家机构买卖, 成功率",
+      "netBuy": 3.07,
+      "buyAmount": 21.02,
+      "sellAmount": 17.96,
+      "reason": "60家机构买卖, 成功率",
       "isMockSeats": false,
       "details": {
         "buys": [
@@ -12670,7 +12831,7 @@
         "stock_info": {
           "code": "000995",
           "name": "皇台酒业",
-          "reason": "64家机构买卖, 成功率"
+          "reason": "60家机构买卖, 成功率"
         },
         "tags": [
           "普通"
@@ -13239,132 +13400,6 @@
       }
     },
     {
-      "code": "002242",
-      "name": "九阳股份",
-      "closePrice": 31.21,
-      "changePercent": 10.01,
-      "turnover": 0,
-      "netBuy": 2.11,
-      "buyAmount": 37.84,
-      "sellAmount": 35.73,
-      "reason": "9家机构买卖, 成功率",
-      "isMockSeats": false,
-      "details": {
-        "buys": [
-          {
-            "direction": "buy",
-            "seat": "国新证券股份有限公司北京分公司",
-            "buyAmount": 1.54,
-            "sellAmount": 0.0,
-            "netAmount": 1.54
-          }
-        ],
-        "sells": [
-          {
-            "direction": "sell",
-            "seat": "中国银河证券股份有限公司北京学院南路证券营业部",
-            "buyAmount": 0.02,
-            "sellAmount": 1.24,
-            "netAmount": -1.22
-          },
-          {
-            "direction": "sell",
-            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
-            "buyAmount": 0.71,
-            "sellAmount": 1.73,
-            "netAmount": -1.02
-          },
-          {
-            "direction": "sell",
-            "seat": "国信证券股份有限公司浙江互联网分公司",
-            "buyAmount": 2.64,
-            "sellAmount": 2.92,
-            "netAmount": -0.28
-          },
-          {
-            "direction": "sell",
-            "seat": "机构专用",
-            "buyAmount": 4.1,
-            "sellAmount": 4.14,
-            "netAmount": -0.04
-          },
-          {
-            "direction": "sell",
-            "seat": "深股通专用",
-            "buyAmount": 15.19,
-            "sellAmount": 9.86,
-            "netAmount": 5.33
-          }
-        ]
-      },
-      "interpreted": {
-        "stock_info": {
-          "code": "002242",
-          "name": "九阳股份",
-          "reason": "9家机构买卖, 成功率"
-        },
-        "tags": [
-          "普通"
-        ],
-        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
-        "structured_buy_list": [
-          {
-            "seat": "国新证券股份有限公司北京分公司",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 154000000.0
-          }
-        ],
-        "structured_sell_list": [
-          {
-            "seat": "中国银河证券股份有限公司北京学院南路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": -122000000.0
-          },
-          {
-            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
-            "name": "章盟主",
-            "type": "一线游资",
-            "style": "点火打板",
-            "icon": "🔥",
-            "net_amount": -102000000.0
-          },
-          {
-            "seat": "国信证券股份有限公司浙江互联网分公司",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": -28000000.000000004
-          },
-          {
-            "seat": "机构专用",
-            "name": "机构资金",
-            "type": "机构",
-            "style": "中长线价值",
-            "icon": "🏛",
-            "net_amount": -4000000.0
-          },
-          {
-            "seat": "深股通专用",
-            "name": "北向资金",
-            "type": "外资",
-            "style": "配置型",
-            "icon": "🌐",
-            "net_amount": 533000000.0
-          }
-        ],
-        "force_distribution": {
-          "普通营业部": 100.0
-        }
-      }
-    },
-    {
       "code": "600410",
       "name": "华胜天成",
       "closePrice": 16.7,
@@ -13534,147 +13569,6 @@
         "force_distribution": {
           "普通营业部": 76.0,
           "散户集中营": 24.0
-        }
-      }
-    },
-    {
-      "code": "000530",
-      "name": "冰山冷热",
-      "closePrice": 11.17,
-      "changePercent": -9.99,
-      "turnover": 0,
-      "netBuy": 1.74,
-      "buyAmount": 68.87,
-      "sellAmount": 67.13,
-      "reason": "83家机构买卖, 成功率",
-      "isMockSeats": false,
-      "details": {
-        "buys": [
-          {
-            "direction": "buy",
-            "seat": "国泰海通证券股份有限公司常州健身路证券营业部",
-            "buyAmount": 0.6,
-            "sellAmount": 0.0,
-            "netAmount": 0.6
-          },
-          {
-            "direction": "buy",
-            "seat": "东莞证券股份有限公司南京分公司",
-            "buyAmount": 0.32,
-            "sellAmount": 0.02,
-            "netAmount": 0.3
-          },
-          {
-            "direction": "buy",
-            "seat": "国信证券股份有限公司浙江互联网分公司",
-            "buyAmount": 0.5,
-            "sellAmount": 0.26,
-            "netAmount": 0.24
-          },
-          {
-            "direction": "buy",
-            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
-            "buyAmount": 0.24,
-            "sellAmount": 0.17,
-            "netAmount": 0.07
-          }
-        ],
-        "sells": [
-          {
-            "direction": "sell",
-            "seat": "机构专用",
-            "buyAmount": 0.19,
-            "sellAmount": 1.82,
-            "netAmount": -1.64
-          },
-          {
-            "direction": "sell",
-            "seat": "中国国际金融股份有限公司上海分公司",
-            "buyAmount": 0.02,
-            "sellAmount": 0.32,
-            "netAmount": -0.3
-          },
-          {
-            "direction": "sell",
-            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
-            "buyAmount": 1.11,
-            "sellAmount": 0.8,
-            "netAmount": 0.31
-          }
-        ]
-      },
-      "interpreted": {
-        "stock_info": {
-          "code": "000530",
-          "name": "冰山冷热",
-          "reason": "83家机构买卖, 成功率"
-        },
-        "tags": [
-          "普通"
-        ],
-        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
-        "structured_buy_list": [
-          {
-            "seat": "国泰海通证券股份有限公司常州健身路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 60000000.0
-          },
-          {
-            "seat": "东莞证券股份有限公司南京分公司",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 30000000.0
-          },
-          {
-            "seat": "国信证券股份有限公司浙江互联网分公司",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 24000000.0
-          },
-          {
-            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 7000000.000000001
-          }
-        ],
-        "structured_sell_list": [
-          {
-            "seat": "机构专用",
-            "name": "机构资金",
-            "type": "机构",
-            "style": "中长线价值",
-            "icon": "🏛",
-            "net_amount": -164000000.0
-          },
-          {
-            "seat": "中国国际金融股份有限公司上海分公司",
-            "name": "中金上海",
-            "type": "一线游资",
-            "style": "机构联动",
-            "icon": "🏦",
-            "net_amount": -30000000.0
-          },
-          {
-            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 31000000.0
-          }
-        ],
-        "force_distribution": {
-          "普通营业部": 100.0
         }
       }
     },
@@ -13962,6 +13856,147 @@
       }
     },
     {
+      "code": "000530",
+      "name": "冰山冷热",
+      "closePrice": 11.17,
+      "changePercent": -9.99,
+      "turnover": 0,
+      "netBuy": 1.33,
+      "buyAmount": 67.2,
+      "sellAmount": 65.87,
+      "reason": "80家机构买卖, 成功率",
+      "isMockSeats": false,
+      "details": {
+        "buys": [
+          {
+            "direction": "buy",
+            "seat": "国泰海通证券股份有限公司常州健身路证券营业部",
+            "buyAmount": 0.6,
+            "sellAmount": 0.0,
+            "netAmount": 0.6
+          },
+          {
+            "direction": "buy",
+            "seat": "东莞证券股份有限公司南京分公司",
+            "buyAmount": 0.32,
+            "sellAmount": 0.02,
+            "netAmount": 0.3
+          },
+          {
+            "direction": "buy",
+            "seat": "国信证券股份有限公司浙江互联网分公司",
+            "buyAmount": 0.5,
+            "sellAmount": 0.26,
+            "netAmount": 0.24
+          },
+          {
+            "direction": "buy",
+            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
+            "buyAmount": 0.24,
+            "sellAmount": 0.17,
+            "netAmount": 0.07
+          }
+        ],
+        "sells": [
+          {
+            "direction": "sell",
+            "seat": "机构专用",
+            "buyAmount": 0.19,
+            "sellAmount": 1.82,
+            "netAmount": -1.64
+          },
+          {
+            "direction": "sell",
+            "seat": "中国国际金融股份有限公司上海分公司",
+            "buyAmount": 0.02,
+            "sellAmount": 0.32,
+            "netAmount": -0.3
+          },
+          {
+            "direction": "sell",
+            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
+            "buyAmount": 1.11,
+            "sellAmount": 0.8,
+            "netAmount": 0.31
+          }
+        ]
+      },
+      "interpreted": {
+        "stock_info": {
+          "code": "000530",
+          "name": "冰山冷热",
+          "reason": "80家机构买卖, 成功率"
+        },
+        "tags": [
+          "普通"
+        ],
+        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
+        "structured_buy_list": [
+          {
+            "seat": "国泰海通证券股份有限公司常州健身路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 60000000.0
+          },
+          {
+            "seat": "东莞证券股份有限公司南京分公司",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 30000000.0
+          },
+          {
+            "seat": "国信证券股份有限公司浙江互联网分公司",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 24000000.0
+          },
+          {
+            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 7000000.000000001
+          }
+        ],
+        "structured_sell_list": [
+          {
+            "seat": "机构专用",
+            "name": "机构资金",
+            "type": "机构",
+            "style": "中长线价值",
+            "icon": "🏛",
+            "net_amount": -164000000.0
+          },
+          {
+            "seat": "中国国际金融股份有限公司上海分公司",
+            "name": "中金上海",
+            "type": "一线游资",
+            "style": "机构联动",
+            "icon": "🏦",
+            "net_amount": -30000000.0
+          },
+          {
+            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 31000000.0
+          }
+        ],
+        "force_distribution": {
+          "普通营业部": 100.0
+        }
+      }
+    },
+    {
       "code": "002708",
       "name": "光洋股份",
       "closePrice": 20.48,
@@ -14051,6 +14086,132 @@
           }
         ],
         "force_distribution": {}
+      }
+    },
+    {
+      "code": "002242",
+      "name": "九阳股份",
+      "closePrice": 31.21,
+      "changePercent": 10.01,
+      "turnover": 0,
+      "netBuy": 1.12,
+      "buyAmount": 34.89,
+      "sellAmount": 33.78,
+      "reason": "9家机构买卖, 成功率",
+      "isMockSeats": false,
+      "details": {
+        "buys": [
+          {
+            "direction": "buy",
+            "seat": "国新证券股份有限公司北京分公司",
+            "buyAmount": 1.54,
+            "sellAmount": 0.0,
+            "netAmount": 1.54
+          }
+        ],
+        "sells": [
+          {
+            "direction": "sell",
+            "seat": "中国银河证券股份有限公司北京学院南路证券营业部",
+            "buyAmount": 0.02,
+            "sellAmount": 1.24,
+            "netAmount": -1.22
+          },
+          {
+            "direction": "sell",
+            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
+            "buyAmount": 0.71,
+            "sellAmount": 1.73,
+            "netAmount": -1.02
+          },
+          {
+            "direction": "sell",
+            "seat": "国信证券股份有限公司浙江互联网分公司",
+            "buyAmount": 2.64,
+            "sellAmount": 2.92,
+            "netAmount": -0.28
+          },
+          {
+            "direction": "sell",
+            "seat": "机构专用",
+            "buyAmount": 4.1,
+            "sellAmount": 4.14,
+            "netAmount": -0.04
+          },
+          {
+            "direction": "sell",
+            "seat": "深股通专用",
+            "buyAmount": 15.19,
+            "sellAmount": 9.86,
+            "netAmount": 5.33
+          }
+        ]
+      },
+      "interpreted": {
+        "stock_info": {
+          "code": "002242",
+          "name": "九阳股份",
+          "reason": "9家机构买卖, 成功率"
+        },
+        "tags": [
+          "普通"
+        ],
+        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
+        "structured_buy_list": [
+          {
+            "seat": "国新证券股份有限公司北京分公司",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 154000000.0
+          }
+        ],
+        "structured_sell_list": [
+          {
+            "seat": "中国银河证券股份有限公司北京学院南路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": -122000000.0
+          },
+          {
+            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
+            "name": "章盟主",
+            "type": "一线游资",
+            "style": "点火打板",
+            "icon": "🔥",
+            "net_amount": -102000000.0
+          },
+          {
+            "seat": "国信证券股份有限公司浙江互联网分公司",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": -28000000.000000004
+          },
+          {
+            "seat": "机构专用",
+            "name": "机构资金",
+            "type": "机构",
+            "style": "中长线价值",
+            "icon": "🏛",
+            "net_amount": -4000000.0
+          },
+          {
+            "seat": "深股通专用",
+            "name": "北向资金",
+            "type": "外资",
+            "style": "配置型",
+            "icon": "🌐",
+            "net_amount": 533000000.0
+          }
+        ],
+        "force_distribution": {
+          "普通营业部": 100.0
+        }
       }
     },
     {
@@ -15232,68 +15393,6 @@
       }
     },
     {
-      "code": "301052",
-      "name": "果麦文化",
-      "closePrice": 32.88,
-      "changePercent": -11.16,
-      "turnover": 0,
-      "netBuy": 0.58,
-      "buyAmount": 32.14,
-      "sellAmount": 31.56,
-      "reason": "95家机构买卖, 成功率",
-      "isMockSeats": false,
-      "details": {
-        "buys": [],
-        "sells": [
-          {
-            "direction": "sell",
-            "seat": "东方财富证券股份有限公司拉萨东环路第二证券营业部",
-            "buyAmount": 0.07,
-            "sellAmount": 0.12,
-            "netAmount": -0.05
-          },
-          {
-            "direction": "sell",
-            "seat": "机构专用",
-            "buyAmount": 2.43,
-            "sellAmount": 1.46,
-            "netAmount": 0.97
-          }
-        ]
-      },
-      "interpreted": {
-        "stock_info": {
-          "code": "301052",
-          "name": "果麦文化",
-          "reason": "95家机构买卖, 成功率"
-        },
-        "tags": [
-          "冷门"
-        ],
-        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
-        "structured_buy_list": [],
-        "structured_sell_list": [
-          {
-            "seat": "东方财富证券股份有限公司拉萨东环路第二证券营业部",
-            "name": "拉萨天团-东环",
-            "type": "散户集中营",
-            "style": "高频量化/抢帽子",
-            "icon": "👥",
-            "net_amount": -5000000.0
-          },
-          {
-            "seat": "机构专用",
-            "name": "机构资金",
-            "type": "机构",
-            "style": "中长线价值",
-            "icon": "🏛",
-            "net_amount": 97000000.0
-          }
-        ],
-        "force_distribution": {}
-      }
-    },
-    {
       "code": "301288",
       "name": "清研环境",
       "closePrice": 19.34,
@@ -16307,6 +16406,68 @@
         "force_distribution": {
           "普通营业部": 100.0
         }
+      }
+    },
+    {
+      "code": "301052",
+      "name": "果麦文化",
+      "closePrice": 32.88,
+      "changePercent": -11.16,
+      "turnover": 0,
+      "netBuy": 0.31,
+      "buyAmount": 30.78,
+      "sellAmount": 30.47,
+      "reason": "90家机构买卖, 成功率",
+      "isMockSeats": false,
+      "details": {
+        "buys": [],
+        "sells": [
+          {
+            "direction": "sell",
+            "seat": "东方财富证券股份有限公司拉萨东环路第二证券营业部",
+            "buyAmount": 0.07,
+            "sellAmount": 0.12,
+            "netAmount": -0.05
+          },
+          {
+            "direction": "sell",
+            "seat": "机构专用",
+            "buyAmount": 2.43,
+            "sellAmount": 1.46,
+            "netAmount": 0.97
+          }
+        ]
+      },
+      "interpreted": {
+        "stock_info": {
+          "code": "301052",
+          "name": "果麦文化",
+          "reason": "90家机构买卖, 成功率"
+        },
+        "tags": [
+          "冷门"
+        ],
+        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
+        "structured_buy_list": [],
+        "structured_sell_list": [
+          {
+            "seat": "东方财富证券股份有限公司拉萨东环路第二证券营业部",
+            "name": "拉萨天团-东环",
+            "type": "散户集中营",
+            "style": "高频量化/抢帽子",
+            "icon": "👥",
+            "net_amount": -5000000.0
+          },
+          {
+            "seat": "机构专用",
+            "name": "机构资金",
+            "type": "机构",
+            "style": "中长线价值",
+            "icon": "🏛",
+            "net_amount": 97000000.0
+          }
+        ],
+        "force_distribution": {}
       }
     },
     {
@@ -21565,6 +21726,163 @@
       }
     },
     {
+      "code": "920157",
+      "name": "宇特光电",
+      "closePrice": 55.8,
+      "changePercent": -10.81,
+      "turnover": 0,
+      "netBuy": -0.31,
+      "buyAmount": 7.62,
+      "sellAmount": 7.92,
+      "reason": "30家机构卖出, 成功率",
+      "isMockSeats": false,
+      "details": {
+        "buys": [
+          {
+            "direction": "buy",
+            "seat": "财达证券股份有限公司秦皇岛迎宾路营业部",
+            "buyAmount": 0.05,
+            "sellAmount": 0.0,
+            "netAmount": 0.05
+          },
+          {
+            "direction": "buy",
+            "seat": "民生证券股份有限公司无锡县前东街证券营业部",
+            "buyAmount": 0.04,
+            "sellAmount": 0.0,
+            "netAmount": 0.04
+          },
+          {
+            "direction": "buy",
+            "seat": "华福证券有限责任公司内蒙古分公司",
+            "buyAmount": 0.03,
+            "sellAmount": 0.0,
+            "netAmount": 0.03
+          },
+          {
+            "direction": "buy",
+            "seat": "东方财富证券股份有限公司拉萨团结路第一证券营业部",
+            "buyAmount": 0.03,
+            "sellAmount": 0.03,
+            "netAmount": -0.0
+          }
+        ],
+        "sells": [
+          {
+            "direction": "sell",
+            "seat": "机构专用",
+            "buyAmount": 0.07,
+            "sellAmount": 0.2,
+            "netAmount": -0.13
+          },
+          {
+            "direction": "sell",
+            "seat": "浙商证券股份有限公司上海浦东杨高南路证券营业部",
+            "buyAmount": 0.0,
+            "sellAmount": 0.04,
+            "netAmount": -0.04
+          },
+          {
+            "direction": "sell",
+            "seat": "东方财富证券股份有限公司昌都两江大道证券营业部",
+            "buyAmount": 0.02,
+            "sellAmount": 0.05,
+            "netAmount": -0.03
+          },
+          {
+            "direction": "sell",
+            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
+            "buyAmount": 0.01,
+            "sellAmount": 0.04,
+            "netAmount": -0.03
+          }
+        ]
+      },
+      "interpreted": {
+        "stock_info": {
+          "code": "920157",
+          "name": "宇特光电",
+          "reason": "30家机构卖出, 成功率"
+        },
+        "tags": [
+          "普通"
+        ],
+        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
+        "structured_buy_list": [
+          {
+            "seat": "财达证券股份有限公司秦皇岛迎宾路营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 5000000.0
+          },
+          {
+            "seat": "民生证券股份有限公司无锡县前东街证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 4000000.0
+          },
+          {
+            "seat": "华福证券有限责任公司内蒙古分公司",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 3000000.0
+          },
+          {
+            "seat": "东方财富证券股份有限公司拉萨团结路第一证券营业部",
+            "name": "拉萨天团-1",
+            "type": "散户集中营",
+            "style": "高频量化/抢帽子",
+            "icon": "👥",
+            "net_amount": 0.0
+          }
+        ],
+        "structured_sell_list": [
+          {
+            "seat": "机构专用",
+            "name": "机构资金",
+            "type": "机构",
+            "style": "中长线价值",
+            "icon": "🏛",
+            "net_amount": -13000000.0
+          },
+          {
+            "seat": "浙商证券股份有限公司上海浦东杨高南路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": -4000000.0
+          },
+          {
+            "seat": "东方财富证券股份有限公司昌都两江大道证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": -3000000.0
+          },
+          {
+            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
+            "name": "拉萨天团-金融城",
+            "type": "散户集中营",
+            "style": "高频量化/抢帽子",
+            "icon": "👥",
+            "net_amount": -3000000.0
+          }
+        ],
+        "force_distribution": {
+          "普通营业部": 100.0,
+          "散户集中营": 0.0
+        }
+      }
+    },
+    {
       "code": "000665",
       "name": "湖北广电",
       "closePrice": 3.65,
@@ -21784,163 +22102,6 @@
         "force_distribution": {
           "普通营业部": 50.0,
           "机构": 50.0
-        }
-      }
-    },
-    {
-      "code": "920157",
-      "name": "宇特光电",
-      "closePrice": 55.8,
-      "changePercent": -10.81,
-      "turnover": 0,
-      "netBuy": -0.52,
-      "buyAmount": 8.05,
-      "sellAmount": 8.57,
-      "reason": "31家机构卖出, 成功率",
-      "isMockSeats": false,
-      "details": {
-        "buys": [
-          {
-            "direction": "buy",
-            "seat": "财达证券股份有限公司秦皇岛迎宾路营业部",
-            "buyAmount": 0.05,
-            "sellAmount": 0.0,
-            "netAmount": 0.05
-          },
-          {
-            "direction": "buy",
-            "seat": "民生证券股份有限公司无锡县前东街证券营业部",
-            "buyAmount": 0.04,
-            "sellAmount": 0.0,
-            "netAmount": 0.04
-          },
-          {
-            "direction": "buy",
-            "seat": "华福证券有限责任公司内蒙古分公司",
-            "buyAmount": 0.03,
-            "sellAmount": 0.0,
-            "netAmount": 0.03
-          },
-          {
-            "direction": "buy",
-            "seat": "东方财富证券股份有限公司拉萨团结路第一证券营业部",
-            "buyAmount": 0.03,
-            "sellAmount": 0.03,
-            "netAmount": -0.0
-          }
-        ],
-        "sells": [
-          {
-            "direction": "sell",
-            "seat": "机构专用",
-            "buyAmount": 0.07,
-            "sellAmount": 0.2,
-            "netAmount": -0.13
-          },
-          {
-            "direction": "sell",
-            "seat": "浙商证券股份有限公司上海浦东杨高南路证券营业部",
-            "buyAmount": 0.0,
-            "sellAmount": 0.04,
-            "netAmount": -0.04
-          },
-          {
-            "direction": "sell",
-            "seat": "东方财富证券股份有限公司昌都两江大道证券营业部",
-            "buyAmount": 0.02,
-            "sellAmount": 0.05,
-            "netAmount": -0.03
-          },
-          {
-            "direction": "sell",
-            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
-            "buyAmount": 0.01,
-            "sellAmount": 0.04,
-            "netAmount": -0.03
-          }
-        ]
-      },
-      "interpreted": {
-        "stock_info": {
-          "code": "920157",
-          "name": "宇特光电",
-          "reason": "31家机构卖出, 成功率"
-        },
-        "tags": [
-          "普通"
-        ],
-        "summary_text": "买卖力量分散,缺乏明确主力资金主导,建议观望。",
-        "structured_buy_list": [
-          {
-            "seat": "财达证券股份有限公司秦皇岛迎宾路营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 5000000.0
-          },
-          {
-            "seat": "民生证券股份有限公司无锡县前东街证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 4000000.0
-          },
-          {
-            "seat": "华福证券有限责任公司内蒙古分公司",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 3000000.0
-          },
-          {
-            "seat": "东方财富证券股份有限公司拉萨团结路第一证券营业部",
-            "name": "拉萨天团-1",
-            "type": "散户集中营",
-            "style": "高频量化/抢帽子",
-            "icon": "👥",
-            "net_amount": 0.0
-          }
-        ],
-        "structured_sell_list": [
-          {
-            "seat": "机构专用",
-            "name": "机构资金",
-            "type": "机构",
-            "style": "中长线价值",
-            "icon": "🏛",
-            "net_amount": -13000000.0
-          },
-          {
-            "seat": "浙商证券股份有限公司上海浦东杨高南路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": -4000000.0
-          },
-          {
-            "seat": "东方财富证券股份有限公司昌都两江大道证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": -3000000.0
-          },
-          {
-            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
-            "name": "拉萨天团-金融城",
-            "type": "散户集中营",
-            "style": "高频量化/抢帽子",
-            "icon": "👥",
-            "net_amount": -3000000.0
-          }
-        ],
-        "force_distribution": {
-          "普通营业部": 100.0,
-          "散户集中营": 0.0
         }
       }
     },
@@ -22881,134 +23042,6 @@
       }
     },
     {
-      "code": "002343",
-      "name": "慈文传媒",
-      "closePrice": 7.38,
-      "changePercent": -10.0,
-      "turnover": 0,
-      "netBuy": -1.6,
-      "buyAmount": 45.95,
-      "sellAmount": 47.55,
-      "reason": "73家机构买入, 成功率",
-      "isMockSeats": false,
-      "details": {
-        "buys": [
-          {
-            "direction": "buy",
-            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
-            "buyAmount": 0.21,
-            "sellAmount": 0.16,
-            "netAmount": 0.05
-          },
-          {
-            "direction": "buy",
-            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
-            "buyAmount": 0.19,
-            "sellAmount": 0.19,
-            "netAmount": -0.0
-          }
-        ],
-        "sells": [
-          {
-            "direction": "sell",
-            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
-            "buyAmount": 1.9,
-            "sellAmount": 2.87,
-            "netAmount": -0.96
-          },
-          {
-            "direction": "sell",
-            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
-            "buyAmount": 0.01,
-            "sellAmount": 0.78,
-            "netAmount": -0.78
-          },
-          {
-            "direction": "sell",
-            "seat": "机构专用",
-            "buyAmount": 0.74,
-            "sellAmount": 1.38,
-            "netAmount": -0.63
-          },
-          {
-            "direction": "sell",
-            "seat": "国信证券股份有限公司浙江互联网分公司",
-            "buyAmount": 0.74,
-            "sellAmount": 0.55,
-            "netAmount": 0.19
-          }
-        ]
-      },
-      "interpreted": {
-        "stock_info": {
-          "code": "002343",
-          "name": "慈文传媒",
-          "reason": "73家机构买入, 成功率"
-        },
-        "tags": [
-          "游资出货",
-          "警惕低开"
-        ],
-        "summary_text": "卖方出现【章盟主】大额出货,买方多为散户集中营接力,警惕 慈文传媒 次日低开。",
-        "structured_buy_list": [
-          {
-            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 5000000.0
-          },
-          {
-            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
-            "name": "拉萨天团-金融城",
-            "type": "散户集中营",
-            "style": "高频量化/抢帽子",
-            "icon": "👥",
-            "net_amount": 0.0
-          }
-        ],
-        "structured_sell_list": [
-          {
-            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
-            "name": "章盟主",
-            "type": "一线游资",
-            "style": "点火打板",
-            "icon": "🔥",
-            "net_amount": -96000000.0
-          },
-          {
-            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": -78000000.0
-          },
-          {
-            "seat": "机构专用",
-            "name": "机构资金",
-            "type": "机构",
-            "style": "中长线价值",
-            "icon": "🏛",
-            "net_amount": -63000000.0
-          },
-          {
-            "seat": "国信证券股份有限公司浙江互联网分公司",
-            "name": "普通营业部",
-            "type": "普通营业部",
-            "style": "未知",
-            "icon": "🏢",
-            "net_amount": 19000000.0
-          }
-        ],
-        "force_distribution": {
-          "普通营业部": 100.0,
-          "散户集中营": 0.0
-        }
-      }
-    },
-    {
       "code": "002584",
       "name": "西陇科学",
       "closePrice": 8.22,
@@ -23462,6 +23495,134 @@
           "散户集中营": 19.5
         }
       }
+    },
+    {
+      "code": "002343",
+      "name": "慈文传媒",
+      "closePrice": 7.38,
+      "changePercent": -10.0,
+      "turnover": 0,
+      "netBuy": -6.03,
+      "buyAmount": 36.96,
+      "sellAmount": 42.99,
+      "reason": "58家机构买入, 成功率",
+      "isMockSeats": false,
+      "details": {
+        "buys": [
+          {
+            "direction": "buy",
+            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
+            "buyAmount": 0.21,
+            "sellAmount": 0.16,
+            "netAmount": 0.05
+          },
+          {
+            "direction": "buy",
+            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
+            "buyAmount": 0.19,
+            "sellAmount": 0.19,
+            "netAmount": -0.0
+          }
+        ],
+        "sells": [
+          {
+            "direction": "sell",
+            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
+            "buyAmount": 1.9,
+            "sellAmount": 2.87,
+            "netAmount": -0.96
+          },
+          {
+            "direction": "sell",
+            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
+            "buyAmount": 0.01,
+            "sellAmount": 0.78,
+            "netAmount": -0.78
+          },
+          {
+            "direction": "sell",
+            "seat": "机构专用",
+            "buyAmount": 0.74,
+            "sellAmount": 1.38,
+            "netAmount": -0.63
+          },
+          {
+            "direction": "sell",
+            "seat": "国信证券股份有限公司浙江互联网分公司",
+            "buyAmount": 0.74,
+            "sellAmount": 0.55,
+            "netAmount": 0.19
+          }
+        ]
+      },
+      "interpreted": {
+        "stock_info": {
+          "code": "002343",
+          "name": "慈文传媒",
+          "reason": "58家机构买入, 成功率"
+        },
+        "tags": [
+          "游资出货",
+          "警惕低开"
+        ],
+        "summary_text": "卖方出现【章盟主】大额出货,买方多为散户集中营接力,警惕 慈文传媒 次日低开。",
+        "structured_buy_list": [
+          {
+            "seat": "东方财富证券股份有限公司山南香曲东路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 5000000.0
+          },
+          {
+            "seat": "东方财富证券股份有限公司拉萨金融城南环路证券营业部",
+            "name": "拉萨天团-金融城",
+            "type": "散户集中营",
+            "style": "高频量化/抢帽子",
+            "icon": "👥",
+            "net_amount": 0.0
+          }
+        ],
+        "structured_sell_list": [
+          {
+            "seat": "国泰海通证券股份有限公司上海长宁区江苏路证券营业部",
+            "name": "章盟主",
+            "type": "一线游资",
+            "style": "点火打板",
+            "icon": "🔥",
+            "net_amount": -96000000.0
+          },
+          {
+            "seat": "国泰海通证券股份有限公司武汉紫阳东路证券营业部",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": -78000000.0
+          },
+          {
+            "seat": "机构专用",
+            "name": "机构资金",
+            "type": "机构",
+            "style": "中长线价值",
+            "icon": "🏛",
+            "net_amount": -63000000.0
+          },
+          {
+            "seat": "国信证券股份有限公司浙江互联网分公司",
+            "name": "普通营业部",
+            "type": "普通营业部",
+            "style": "未知",
+            "icon": "🏢",
+            "net_amount": 19000000.0
+          }
+        ],
+        "force_distribution": {
+          "普通营业部": 100.0,
+          "散户集中营": 0.0
+        }
+      }
     }
   ],
   "dragonTiger": {
@@ -23473,7 +23634,7 @@
   },
   "surgery": {
     "meta": {
-      "generatedAt": "2026-11-19 18:10:01",
+      "generatedAt": "2026-11-19 21:35:34",
       "tradeDate": "20261119",
       "tradeDateSlash": "26/11/19"
     },
