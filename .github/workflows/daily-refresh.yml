@@ -34,6 +34,11 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # 同一时间只允许一个刷新任务（Worker 的重试档 + GitHub cron 兜底可能撞车，
+    # 并发跑会互相 push 冲突）
+    concurrency:
+      group: daily-refresh
+      cancel-in-progress: false
     # 60 分钟：补跑档可能要在同一次里跑完「行情 + 手术台 + 轮动」（轮动单步上限 20 分钟）。
     # 2026-11-18:run #194 实测 43 分钟、只差 2 分钟就被 45 分钟上限杀掉,故放宽到 60 分钟。
     timeout-minutes: 60
@@ -69,7 +74,33 @@ jobs:
 
       - name: 拉取盘后数据
         if: steps.plan.outputs.mode == 'postclose'
+        # 2026-11-20 事故：这步 375s 正常跑完，但后面的手术台步骤无限期挂起，
+        # 60 分钟被整体超时杀掉 → 提交步骤 skipped → 当天行情主体全丢。
+        timeout-minutes: 20
         run: NO_PROXY="*" no_proxy="*" python3 scripts/fetch_real_data.py
+
+      # ★抓完立刻提交（2026-11-20 事故的根因修复）
+      # 原来只在最后一步提交，中间任何步骤挂住/被杀，已经抓到的行情就一起丢掉。
+      # 这里先把行情主体落库，后面的手术台/轮动/日历各自追加提交。
+      - name: 提交行情主体（先落库，避免后续步骤挂起导致丢失）
+        if: always() && steps.plan.outputs.mode == 'postclose'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A -- public/data.json public/surgery.json public/prescan.json || true
+          if git diff --cached --quiet; then
+            echo "行情主体无变化,跳过"
+            exit 0
+          fi
+          git commit -m "盘后刷新数据 $(TZ=Asia/Shanghai date +%F)（行情主体）"
+          for i in 1 2 3; do
+            if git push; then echo "推送成功"; exit 0; fi
+            echo "第 $i 次推送失败,同步后重试"
+            git pull --rebase origin main || true
+            sleep 10
+          done
+          echo "推送失败"
+          exit 1
 
       # 本档不跑轮动时显式标记 —— 否则收尾的「数据新鲜度校验」会把"归档过期"算到这一档头上，
       # 让 08:30 融资补抓档这类本来不碰轮动的运行无故变红。
@@ -85,6 +116,11 @@ jobs:
 
       - name: 拉取手术台数据(封成比评分/亏钱传导/北向)
         if: steps.plan.outputs.mode == 'postclose'
+        # 2026-11-20 事故：这步挂起 3219s（53 分钟）把整个 job 拖到超时被杀。
+        # 海外接口不返回时 requests 会一直等，必须由步骤级 timeout 兜住；
+        # 失败也不该阻断后面的轮动/日历（它们各自独立，由收尾 gate 统一判定）。
+        continue-on-error: true
+        timeout-minutes: 10
         run: |
           NO_PROXY="*" no_proxy="*" python3 scripts/fetch_surgery_data.py || \
             echo "! 手术台数据拉取失败(海外 IP 风控),本次跳过"
