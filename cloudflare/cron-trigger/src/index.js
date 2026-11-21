@@ -22,6 +22,7 @@ const SLOTS = [
   { h: 7, m: 10, kind: 'close' }, // 15:10 CST 收盘主档
   { h: 7, m: 40, kind: 'close' }, // 15:40 CST 重试
   { h: 8, m: 10, kind: 'close' }, // 16:10 CST 重试（复盘前最后一次）
+  { h: 14, m: 10, kind: 'close' }, // 22:10 CST 兜底（当天快照到 24 点前都有效）
   { h: 10, m: 5, kind: 'always' }, // 18:05 CST 龙虎榜档
   { h: 13, m: 30, kind: 'always' }, // 21:30 CST 融资档
 ];
