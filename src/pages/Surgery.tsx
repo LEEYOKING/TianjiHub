@@ -12,6 +12,7 @@ import type { ReportData } from '../data/loader'
 // — 之前 Surgery 自己手写 PageHeader,zIndex 100 > 蒙层 99 → 蒙层下方 PageHeader 仍可见
 // — 移动端没区分 flex column → 标题+tag+date/time 全挤一行
 import { PageHeader } from './Overview'
+import { fetchZTPool, inTradingSession, livePollDelayMs, type LiveSealCard } from '../data/live'
 
 interface SealCard {
   code: string
@@ -126,11 +127,66 @@ export default function Surgery(_props: { data?: ReportData }) {
   return <SurgeryInner data={_props.data} />
 }
 
+/**
+ * 盘中实时封成比(双层方案):
+ *   · 交易时段内轮询东财涨停池 —— 14:00 前 120 秒一次,14:00(含)后 60 秒一次;
+ *   · 休市/非交易日不轮询(5 分钟探一次是否开盘),直接沿用静态快照;
+ *   · 拉取失败时保留上一次成功的数据,再失败就回退静态快照,不白屏。
+ * 拉到的只有卡片数据,绝不会写回 data.json,不存在污染静态数据的可能。
+ */
+function useLiveSealCards() {
+  const [cards, setCards] = useState<LiveSealCard[] | null>(null)
+  const [at, setAt] = useState<number | null>(null)
+  useEffect(() => {
+    let timer = 0
+    let cancelled = false
+    let busy = false
+
+    const tick = async () => {
+      if (cancelled || busy) return
+      busy = true
+      let next = 300_000 // 休市:5 分钟探一次
+      try {
+        if (inTradingSession() && document.visibilityState === 'visible') {
+          const res = await fetchZTPool()
+          if (!cancelled && res) {
+            setCards(res)
+            setAt(Date.now())
+          }
+          next = livePollDelayMs()
+        }
+      } catch {
+        next = livePollDelayMs()
+      }
+      busy = false
+      if (!cancelled) timer = window.setTimeout(tick, next)
+    }
+
+    tick()
+    // 切回前台立刻补一次(后台标签页不计时,回来时可能已过很久)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && inTradingSession()) {
+        window.clearTimeout(timer)
+        tick()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [])
+  return { cards, at }
+}
+
 function SurgeryInner({ data }: { data?: ReportData }) {
   // v2.0.7fs:删 selectedCard state + Modal 弹窗("封板心电图")— user 反馈点击股票卡片不需要弹窗
   // 之前用 selectedCard state 记录点击的卡片,Modal 显示 SealCardDetail 组件
   // 现在直接删除:state/Modal/SealCardDetail 都不需要
   const surgery = data?.surgery
+  // 盘中实时层:hook 必须在任何 return 之前调用
+  const { cards: liveCards, at: liveAt } = useLiveSealCards()
 
   // v2.0.7fv:L1 修 — 删 v2.0.7fc debug 屏,生产环境显示 [Debug v2.0.7fc] 用户以为系统坏了
   if (!surgery) {
@@ -142,6 +198,12 @@ function SurgeryInner({ data }: { data?: ReportData }) {
   }
 
   const { sealCards, systemWarning, meta } = surgery as SurgeryData
+  // 双层:交易时段拿到实时涨停池就覆盖静态卡片;拿不到/休市则用收盘定稿
+  const shownCards: SealCard[] = liveCards ?? sealCards
+  const isLiveNow = Boolean(liveCards)
+  const inSession = inTradingSession()
+  const refreshSec = livePollDelayMs() / 1000
+  const liveClock = liveAt ? new Date(liveAt + 8 * 3600 * 1000).toISOString().slice(11, 19) : ''
   const { tradeDateSlash, tradeDate: _origTradeDate } = meta
   // v2.0.7av:08:00 之后,如果 data 是"昨天",显示 today(模拟新数据,跟 Overview 8:00 hook 一致)
   let displayDate = tradeDateSlash
@@ -174,11 +236,15 @@ function SurgeryInner({ data }: { data?: ReportData }) {
       <PageHeader
         title="全景手术台"
         tradeDateSlash={displayDate}
-        subtitle={`盘后深度复盘 · 涨停封成比动态评分 · 更新于 ${generatedTime}`}
-        liveTag="收盘复盘数据"
-        liveColor="#4b5563"
-        liveBg="#F0F1F2"
-        lastUpdatedAt={lastUpdatedAtMs}
+        subtitle={
+          isLiveNow
+            ? `盘中实时 · 涨停封成比每 ${refreshSec} 秒刷新 · 更新于 ${liveClock}`
+            : `盘后深度复盘 · 涨停封成比动态评分 · 更新于 ${generatedTime}`
+        }
+        liveTag={isLiveNow ? (inSession ? '盘中实时' : '已收盘·定格') : '收盘复盘数据'}
+        liveColor={isLiveNow ? '#0958D9' : '#4b5563'}
+        liveBg={isLiveNow ? '#E6F4FF' : '#F0F1F2'}
+        lastUpdatedAt={isLiveNow && liveAt ? liveAt : lastUpdatedAtMs}
       />
 
       {systemWarning && (
@@ -211,7 +277,7 @@ function SurgeryInner({ data }: { data?: ReportData }) {
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT }}>
-              涨跌停封成比动态评分 ({sealCards.length}只)
+              涨跌停封成比动态评分 ({shownCards.length}只)
             </span>
             <Popover content={HelpPopover} trigger="hover" placement="leftTop">
               {/* 用户 #13 反馈:浅灰色感叹号 icon,hover 即弹出气泡
@@ -241,7 +307,7 @@ function SurgeryInner({ data }: { data?: ReportData }) {
             </Popover>
           </div>
         }>
-        <SealCardGrid sealCards={sealCards} />
+        <SealCardGrid sealCards={shownCards} />
       </Card>
     </div>
   )

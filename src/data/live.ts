@@ -897,3 +897,107 @@ export const fetchEMRegions = () => fetchEMSectors('m:90+t:1+f:!50')
 // — fetchMarketSummary 已改腾讯 qt.gtimg.cn(海外 IP 28s 5,363 只稳定)
 // — ETF/可转债:盘中靠 fetchEMEtfStats / fetchEMBondStats(em 限流时返 null — sticky prev/baseData)
 // — React useLiveData 直接调 fetchMarketSummary 即可
+
+// =============================================================
+// 全景手术台:涨停池实时层
+// 东财 push2ex 涨停池单请求就能拿到当日全部涨停股(封单金额 / 首封时间 / 炸板次数),
+// CORS 实测开放(Access-Control-Allow-Origin 会回显请求 Origin),可直接浏览器直连。
+// 注意:必须走浏览器 —— 东财 push2/push2ex 对海外 IP 直接 RST(Cloudflare 边缘与
+// GitHub Runner 都是海外),所以不要搬到 Worker 或 Actions 里。
+// =============================================================
+export interface LiveSealCard {
+  code: string
+  name: string
+  industry: string
+  consecutiveDays: number
+  firstSealTime: string
+  bombedCount: number
+  sealedAmount: number
+  turnover: number
+  changePercent: number
+  closePrice: number
+  ratio: number
+  grade: 'S' | 'A' | 'B' | 'C'
+  isLateSeal: boolean
+}
+
+const ZT_POOL_API = 'https://push2ex.eastmoney.com/getTopicZTPool'
+const ZT_POOL_UT = '7eea3edcaed734bea9cbfc24409ed989'
+
+function cstNow() {
+  return new Date(Date.now() + 8 * 3600 * 1000)
+}
+
+/** 是否处在可拉实时数据的时间窗(工作日 09:30~15:00,含集合竞价后) */
+export function inTradingSession(d = cstNow()): boolean {
+  const wd = d.getUTCDay()
+  const mins = d.getUTCHours() * 60 + d.getUTCMinutes()
+  return wd >= 1 && wd <= 5 && mins >= 9 * 60 + 30 && mins < 15 * 60
+}
+
+/** 按用户要求:14:00 前 120 秒一次,14:00(含)后 60 秒一次 */
+export function livePollDelayMs(d = cstNow()): number {
+  const mins = d.getUTCHours() * 60 + d.getUTCMinutes()
+  return mins >= 14 * 60 && mins < 15 * 60 ? 60_000 : 120_000
+}
+
+const fmtFbt = (v: number) => {
+  const s = String(v || 0).padStart(6, '0')
+  return `${s.slice(0, 2)}:${s.slice(2, 4)}:${s.slice(4, 6)}`
+}
+
+/**
+ * 拉当日涨停池并换算成与 surgery.json 完全一致的卡片结构。
+ * 收盘后(或非交易日)拿不到当日池时返回 null,调用方回退到静态快照。
+ */
+export async function fetchZTPool(): Promise<LiveSealCard[] | null> {
+  const d = cstNow()
+  const wd = d.getUTCDay()
+  if (wd === 0 || wd === 6) return null
+  const dateStr = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`
+
+  try {
+    const res = await fetch(
+      `${ZT_POOL_API}?ut=${ZT_POOL_UT}&dpt=wz.ztzt&Pageindex=0&pagesize=500&sort=fbt%3Aasc&date=${dateStr}`,
+      { cache: 'no-store' },
+    )
+    if (!res.ok) return null
+    const json = await res.json()
+    const pool: any[] = json?.data?.pool || []
+    if (!pool.length) return null
+
+    const cards: LiveSealCard[] = pool.map((r) => {
+      const sealedYi = Number(r.fund || 0) / 1e8
+      const amountYi = Number(r.amount || 0) / 1e8
+      const ratio = amountYi > 0 ? Math.round((sealedYi / amountYi) * 100) / 100 : 0
+      let grade: LiveSealCard['grade'] = ratio > 3 ? 'S' : ratio > 1 ? 'A' : ratio > 0.3 ? 'B' : 'C'
+      const firstSealTime = fmtFbt(Number(r.fbt || 0))
+      const isLateSeal = firstSealTime >= '14:00:00'
+      // 尾盘偷鸡降级,与 fetch_surgery_data.py 保持一致
+      if (isLateSeal && grade === 'S') grade = 'A'
+      else if (isLateSeal && grade === 'A') grade = 'B'
+
+      return {
+        code: String(r.c || ''),
+        name: String(r.n || ''),
+        industry: String(r.hybk || '-'),
+        consecutiveDays: Number(r.lbc || 1),
+        firstSealTime,
+        bombedCount: Number(r.zbc || 0),
+        sealedAmount: Math.round(sealedYi * 100) / 100,
+        turnover: Math.round(amountYi * 100) / 100,
+        changePercent: Math.round(Number(r.zdp || 0) * 100) / 100,
+        closePrice: Math.round(Number(r.p || 0)) / 1000,
+        ratio,
+        grade,
+        isLateSeal,
+      }
+    })
+
+    const order: Record<string, number> = { S: 0, A: 1, B: 2, C: 3 }
+    cards.sort((a, b) => order[a.grade] - order[b.grade] || b.ratio - a.ratio)
+    return cards
+  } catch {
+    return null
+  }
+}
