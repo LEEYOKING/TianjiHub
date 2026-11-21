@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, Tooltip, Popover } from 'antd' // v2.0.7fs:删 Modal(心电图弹窗删除)
 import {
   COLOR_UP,
-  COLOR_DOWN,
   COLOR_TEXT,
   COLOR_PURPLE,
   COLOR_BLUE,
@@ -142,7 +141,7 @@ function SurgeryInner({ data }: { data?: ReportData }) {
     )
   }
 
-  const { sealCards, loserChain, systemWarning, prevLimitUpCount, meta } = surgery as SurgeryData
+  const { sealCards, systemWarning, meta } = surgery as SurgeryData
   const { tradeDateSlash, tradeDate: _origTradeDate } = meta
   // v2.0.7av:08:00 之后,如果 data 是"昨天",显示 today(模拟新数据,跟 Overview 8:00 hook 一致)
   let displayDate = tradeDateSlash
@@ -175,7 +174,7 @@ function SurgeryInner({ data }: { data?: ReportData }) {
       <PageHeader
         title="全景手术台"
         tradeDateSlash={displayDate}
-        subtitle={`盘后深度复盘 · 涨停封成比 / 亏钱传导 / 北向真假外资 · 更新于 ${generatedTime}`}
+        subtitle={`盘后深度复盘 · 涨停封成比动态评分 · 更新于 ${generatedTime}`}
         liveTag="收盘复盘数据"
         liveColor="#4b5563"
         liveBg="#F0F1F2"
@@ -243,30 +242,6 @@ function SurgeryInner({ data }: { data?: ReportData }) {
           </div>
         }>
         <SealCardGrid sealCards={sealCards} />
-      </Card>
-
-      {/* 亏钱效应传导链 */}
-      <Card
-        bodyStyle={{ padding: 20 }}
-        style={{ borderRadius: 14, marginBottom: 16 }}
-        title={
-          <span style={{ fontSize: 15, fontWeight: 600, color: COLOR_TEXT }}>
-            亏钱效应传导链 (大盘股 {loserChain.length} 只 · 昨日涨停 → 今日大跌{' '}
-            {(surgery as SurgeryData).loserIntersection.length} 只)
-          </span>
-        }>
-        {loserChain.length === 0 ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: '#86909C', fontSize: 13 }}>
-            今日无明显亏钱传导,昨日涨停 {prevLimitUpCount} 只中无大跌股,情绪稳定
-          </div>
-        ) : (
-          <div>
-            <div style={{ fontSize: 12, color: '#86909C', marginBottom: 12 }}>
-              以下是昨日涨停(连板龙头) → 今日跌幅 &gt; 7% 且换手率 &gt; 15% 的传导路径
-            </div>
-            <LoserChainTable chain={loserChain} />
-          </div>
-        )}
       </Card>
     </div>
   )
@@ -354,34 +329,6 @@ function SealCardItem({ card }: { card: SealCard }) {
   )
 }
 
-function LoserChainTable({ chain }: { chain: LoserChainItem[] }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {chain.map((c, i) => (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '10px 16px',
-            background: '#F7F8FA',
-            borderRadius: 8,
-          }}>
-          <span style={{ fontSize: 13, color: COLOR_TEXT, fontWeight: 600 }}>{c.from.name}</span>
-          <span style={{ fontSize: 11, color: '#86909C' }}>({c.from.consecutiveDays}连板)</span>
-          <span style={{ fontSize: 16, color: COLOR_DOWN }}>→</span>
-          <span style={{ fontSize: 13, color: COLOR_DOWN, fontWeight: 600 }}>{c.to.name}</span>
-          <span style={{ fontSize: 11, color: '#86909C' }}>({c.to.industry})</span>
-          <span style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: COLOR_DOWN, fontWeight: 600 }}>
-            {c.to.changePercent.toFixed(2)}%
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
 // v2.0.7ch:SealCardGrid 组件 — ResizeObserver + 最多 8 列 + 卡片最小 200px
 // v2.0.7fs:删 onSelect prop(点击卡片不再弹"心电图"弹窗)
 function SealCardGrid({ sealCards }: { sealCards: SealCard[] }) {
