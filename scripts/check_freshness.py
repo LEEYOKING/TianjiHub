@@ -243,6 +243,25 @@ def check_calendar_freshness(target: str, dates: list[str]) -> list[str]:
     return []
 
 
+def check_etf_shape() -> list[str]:
+    """ETF 代码表健全性检查。
+
+    2026-11-11 23:49 事故：东财 fund_etf_spot_em 在海外 Runner 上失败后回退到新浪
+    etf_hq_fund 节点，而该节点只有 938 只、成分也不同 → etfCodes 从 1666 静默腰斩到
+    927，页面「场内ETF涨跌分布」数字直接对不上同花顺，且没有任何告警。
+    完整口径约 1668~1704 只，低于 1400 视为塌缩。
+    """
+    j = load_json("public/data.json")
+    if j is None:
+        return []
+    n = len((j.get("marketOverview") or {}).get("etfCodes") or [])
+    if 0 < n < 1400:
+        return [
+            f"ETF 代码表塌缩：只有 {n} 只（完整约 1700）—— 多半是东财 ETF 接口失败后回退到新浪节点"
+        ]
+    return []
+
+
 def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[str], list[str], str, bool]:
     """返回 (行情主体问题, 轮动归档问题, 日历归档问题, 目标交易日, 交易日历是否可信)。
 
@@ -260,6 +279,7 @@ def inspect(now: datetime.datetime, dates: list[str]) -> tuple[list[str], list[s
     soft = check_file("rotation.json（轮动归档）", "public/rotation.json", target, "lastTradeDate", "dash")
     hard += check_market_sanity()     # 行情内容全 0(2026-11-17 事故)
     hard += check_rotation_shape()   # 板块数塌缩=数据损坏,计入硬问题(见其 docstring)
+    hard += check_etf_shape()        # ETF 代码表塌缩(2026-11-11 事故)
     hard += check_margin_freshness(target, dates)   # 融资流向断供(2026-11-10 事故)
     cal = check_calendar_freshness(target, dates)   # 日历回溯归档缺日
     return hard, soft, cal, target, strict

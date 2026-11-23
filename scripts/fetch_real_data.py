@@ -549,49 +549,52 @@ except Exception as e:
         else:
             print(f"  ETF 新浪 fallback 也失败({e2})且无旧值,置 0")
 
-# 2026-11-23:ETF 代码表防塌缩。
-# 实测:东财 fund_etf_spot_em 给 1668 只(全量),而海外 Runner 上它常失败、回退的
-# 新浪 etf_hq_fund 只有 ~930 只 —— 少了近一半,页面「场内ETF涨跌分布」直接从
-# 603:251 变成看起来对不上的数字(用户 11-23 反馈)。
-# 处理:新列表比上一份少 10% 以上时,沿用上一份完整代码表,并用腾讯批量行情重算家数,
-# 保证口径不塌缩(宁可数据源降级,也不能让统计口径缩水)。
-if _prev_etf_codes and len(etf_codes) < len(_prev_etf_codes) * 0.9:
-    print(f"  ! ETF 代码表塌缩 {len(etf_codes)} < 上一份 {len(_prev_etf_codes)}，改用上一份 + 腾讯行情重算")
-    etf_codes = list(_prev_etf_codes)
-    _eu = _ed = _efl = 0
-    for _i in range(0, len(etf_codes), 100):
-        _b = etf_codes[_i:_i + 100]
-        try:
-            _rq = urllib.request.Request(
-                'https://qt.gtimg.cn/q=' + ','.join(_b),
-                headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'},
-            )
-            _txt = urllib.request.urlopen(_rq, timeout=15).read().decode('gbk', errors='ignore')
-        except Exception:
-            continue
-        for _ln in _txt.split(';'):
-            _eq = _ln.find('=')
-            if _eq < 0:
-                continue
-            _f = _ln[_eq + 1:].strip().strip('"').split('~')
-            if len(_f) < 5:
-                continue
+# 2026-11-23:ETF 代码表只增不减(并集合并)。
+# 实测:东财 fund_etf_spot_em 在住宅 IP 下给 1668 只(全量),在海外 Runner 上大概率失败,
+# 回退的新浪 etf_hq_fund 只有 938 只,而且成分不同(含 511xxx 债券ETF、缺 510040 等)——
+# 11-11 23:49 那次运行就是从这里开始,1666 一路塌到 927,页面「场内ETF涨跌分布」
+# 直接腰斩(用户 11-23 反馈)。
+# 处理:历史代码表与本次结果取并集,永不缩减;家数一律用腾讯批量行情在合并后的
+# 完整列表上重算(腾讯 qt.gtimg.cn 对海外 IP 最稳,全市场快照本来就靠它)。
+if _prev_etf_codes:
+    _merged = list(dict.fromkeys(list(_prev_etf_codes) + etf_codes))
+    if len(_merged) > len(etf_codes):
+        print(f"  ETF 代码表合并:本次 {len(etf_codes)} + 历史 {len(_prev_etf_codes)} → {len(_merged)}，用腾讯行情重算家数")
+        etf_codes = _merged
+        _eu = _ed = _efl = 0
+        for _i in range(0, len(etf_codes), 100):
+            _b = etf_codes[_i:_i + 100]
             try:
-                _c, _p = float(_f[3]), float(_f[4])
+                _rq = urllib.request.Request(
+                    'https://qt.gtimg.cn/q=' + ','.join(_b),
+                    headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://stockapp.finance.qq.com/'},
+                )
+                _txt = urllib.request.urlopen(_rq, timeout=15).read().decode('gbk', errors='ignore')
             except Exception:
                 continue
-            if _p <= 0:
-                continue
-            _d = (_c - _p) / _p * 100
-            if _d > 0.005:
-                _eu += 1
-            elif _d < -0.005:
-                _ed += 1
-            else:
-                _efl += 1
-    if _eu + _ed + _efl > 800:
-        etf_up, etf_down, etf_flat = _eu, _ed, _efl
-        print(f"  ETF(腾讯重算·完整口径): 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat}")
+            for _ln in _txt.split(';'):
+                _eq = _ln.find('=')
+                if _eq < 0:
+                    continue
+                _f = _ln[_eq + 1:].strip().strip('"').split('~')
+                if len(_f) < 5:
+                    continue
+                try:
+                    _c, _p = float(_f[3]), float(_f[4])
+                except Exception:
+                    continue
+                if _p <= 0:
+                    continue
+                _d = (_c - _p) / _p * 100
+                if _d > 0.005:
+                    _eu += 1
+                elif _d < -0.005:
+                    _ed += 1
+                else:
+                    _efl += 1
+        if _eu + _ed + _efl > 800:
+            etf_up, etf_down, etf_flat = _eu, _ed, _efl
+            print(f"  ETF(腾讯重算·合并口径): 涨 {etf_up} / 跌 {etf_down} / 平 {etf_flat}")
 
 # 2.6 可转债 涨/跌/平家数
 print("  可转债 涨/跌/平...")
