@@ -202,6 +202,23 @@ def main():
             json.dump(cal, f, ensure_ascii=False, separators=(',', ':'))
         print(f'已写入 {cal_path} 的 summary')
 
+        # 日历格子读的是 index.json 的 days[]，只写当日文件不会显示 —— 两处都要写
+        idx_path = 'public/calendar/index.json'
+        idx = json.load(open(idx_path, encoding='utf-8'))
+        days = [x for x in idx.get('days') or [] if x.get('date') != date]
+        old = next((x for x in idx.get('days') or [] if x.get('date') == date), {})
+        days.append({
+            'date': date, **cal['summary'],
+            'topUp': old.get('topUp') or (cal.get('sectors') or {}).get('up', [])[:5],
+            'topDown': old.get('topDown') or (cal.get('sectors') or {}).get('down', [])[:5],
+            'hasStocks': bool(cal.get('stocks')),
+        })
+        days.sort(key=lambda x: x.get('date') or '')
+        idx['days'] = days
+        with open(idx_path, 'w', encoding='utf-8') as f:
+            json.dump(idx, f, ensure_ascii=False, separators=(',', ':'))
+        print(f'已更新 {idx_path} 的 {date} 条目')
+
     print(f'✓ 已回填 {date}: 涨 {s["up"]} / 跌 {s["down"]} / 平 {s["flat"]} / 成交 {volume} 亿 / 涨停 {lu} / 跌停 {ld}')
 
 
