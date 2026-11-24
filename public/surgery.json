@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-11-24 21:35:41",
-    "tradeDate": "20261124",
-    "tradeDateSlash": "26/11/24"
+    "generatedAt": "2026-11-25 04:53:38",
+    "tradeDate": "20261125",
+    "tradeDateSlash": "26/11/25"
   },
   "sealCards": [
     {
@@ -506,7 +506,7 @@
       "industry": "纺织制造",
       "consecutiveDays": 2,
       "firstSealTime": "09:30:55",
-      "bombedCount": 5,
+      "bombedCount": 4,
       "sealedAmount": 0.69,
       "turnover": 8.52,
       "changePercent": 10.14,
@@ -834,7 +834,7 @@
   "bigLoser": [],
   "loserChain": [],
   "loserIntersection": [],
-  "prevLimitUpCount": 146,
+  "prevLimitUpCount": 55,
   "systemWarning": false,
   "north": [
     {
