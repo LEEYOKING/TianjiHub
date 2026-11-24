@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-25 04:53:38",
+    "generatedAt": "2026-11-25 07:15:18",
     "tradeDate": "20261125",
     "tradeDateSlash": "26/11/25"
   },
@@ -506,7 +506,7 @@
       "industry": "纺织制造",
       "consecutiveDays": 2,
       "firstSealTime": "09:30:55",
-      "bombedCount": 4,
+      "bombedCount": 5,
       "sealedAmount": 0.69,
       "turnover": 8.52,
       "changePercent": 10.14,
