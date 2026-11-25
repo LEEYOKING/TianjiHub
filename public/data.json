@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-26 04:05:43",
+    "generatedAt": "2026-11-26 06:39:09",
     "tradeDate": "20261125",
     "tradeDateSlash": "26/11/25",
     "nextTradeDate": "2026-11-26",
@@ -5591,7 +5591,7 @@
   "marketOverview": {
     "tradeDate": "20261125",
     "tradeDateSlash": "26/11/25",
-    "generatedAt": "2026-11-26 04:05",
+    "generatedAt": "2026-11-26 06:39",
     "marketTurnover": 13928.3,
     "turnoverDiff": -2751.95,
     "marketTemperature": {
@@ -12383,7 +12383,7 @@
       "closePrice": 17.8,
       "changePercent": 20.03,
       "turnover": 6.95,
-      "volumeMultiple": 5.5,
+      "volumeMultiple": 6.1,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12394,7 +12394,7 @@
       "closePrice": 2.61,
       "changePercent": 10.13,
       "turnover": 3.88,
-      "volumeMultiple": 5.0,
+      "volumeMultiple": 4.9,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12405,7 +12405,7 @@
       "closePrice": 3.59,
       "changePercent": 10.12,
       "turnover": 8.1,
-      "volumeMultiple": 23.3,
+      "volumeMultiple": 26.4,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12416,7 +12416,7 @@
       "closePrice": 5.01,
       "changePercent": 10.11,
       "turnover": 8.75,
-      "volumeMultiple": 6.6,
+      "volumeMultiple": 6.8,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12427,7 +12427,7 @@
       "closePrice": 3.6,
       "changePercent": 10.09,
       "turnover": 9.98,
-      "volumeMultiple": 6.8,
+      "volumeMultiple": 7.0,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12438,7 +12438,7 @@
       "closePrice": 38.56,
       "changePercent": 10.01,
       "turnover": 41.09,
-      "volumeMultiple": 5.4,
+      "volumeMultiple": 5.3,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12449,7 +12449,7 @@
       "closePrice": 8.35,
       "changePercent": 10.01,
       "turnover": 3.32,
-      "volumeMultiple": 2.9,
+      "volumeMultiple": 3.2,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12460,7 +12460,7 @@
       "closePrice": 14.7,
       "changePercent": 9.54,
       "turnover": 33.0,
-      "volumeMultiple": 17.6,
+      "volumeMultiple": 15.6,
       "isNewHigh": true,
       "isLimitUp": false
     }
@@ -12473,7 +12473,7 @@
       "closePrice": 17.8,
       "changePercent": 20.03,
       "turnover": 6.95,
-      "volumeMultiple": 5.5,
+      "volumeMultiple": 6.1,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 20.03
@@ -12485,7 +12485,7 @@
       "closePrice": 2.61,
       "changePercent": 10.13,
       "turnover": 3.88,
-      "volumeMultiple": 5.0,
+      "volumeMultiple": 4.9,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.13
@@ -12497,7 +12497,7 @@
       "closePrice": 3.59,
       "changePercent": 10.12,
       "turnover": 8.1,
-      "volumeMultiple": 23.3,
+      "volumeMultiple": 26.4,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.12
@@ -12509,7 +12509,7 @@
       "closePrice": 5.01,
       "changePercent": 10.11,
       "turnover": 8.75,
-      "volumeMultiple": 6.6,
+      "volumeMultiple": 6.8,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.11
@@ -12521,7 +12521,7 @@
       "closePrice": 3.6,
       "changePercent": 10.09,
       "turnover": 9.98,
-      "volumeMultiple": 6.8,
+      "volumeMultiple": 7.0,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.09
@@ -12533,7 +12533,7 @@
       "closePrice": 7.1,
       "changePercent": 10.08,
       "turnover": 0.22,
-      "volumeMultiple": 0.9,
+      "volumeMultiple": 1.0,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.08
@@ -12545,7 +12545,7 @@
       "closePrice": 38.56,
       "changePercent": 10.01,
       "turnover": 41.09,
-      "volumeMultiple": 5.4,
+      "volumeMultiple": 5.3,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.01
@@ -12557,7 +12557,7 @@
       "closePrice": 8.35,
       "changePercent": 10.01,
       "turnover": 3.32,
-      "volumeMultiple": 2.9,
+      "volumeMultiple": 3.2,
       "isNewHigh": true,
       "isLimitUp": true,
       "breakoutPercent": 10.01
@@ -12571,7 +12571,7 @@
       "closePrice": 14.7,
       "changePercent": 9.54,
       "turnover": 33.0,
-      "volumeMultiple": 17.6,
+      "volumeMultiple": 15.6,
       "isNewHigh": true,
       "isLimitUp": false,
       "breakoutPercent": 9.54
@@ -12583,7 +12583,7 @@
       "closePrice": 9.32,
       "changePercent": 8.88,
       "turnover": 9.02,
-      "volumeMultiple": 4.6,
+      "volumeMultiple": 4.0,
       "isNewHigh": false,
       "isLimitUp": false,
       "breakoutPercent": 8.88
@@ -12595,7 +12595,7 @@
       "closePrice": 18.73,
       "changePercent": 8.08,
       "turnover": 20.27,
-      "volumeMultiple": 14.7,
+      "volumeMultiple": 16.5,
       "isNewHigh": true,
       "isLimitUp": false,
       "breakoutPercent": 8.08
@@ -12607,7 +12607,7 @@
       "closePrice": 4.52,
       "changePercent": 6.6,
       "turnover": 15.58,
-      "volumeMultiple": 3.1,
+      "volumeMultiple": 3.3,
       "isNewHigh": false,
       "isLimitUp": false,
       "breakoutPercent": 6.6
@@ -12619,7 +12619,7 @@
       "closePrice": 13.6,
       "changePercent": 5.92,
       "turnover": 5.03,
-      "volumeMultiple": 7.4,
+      "volumeMultiple": 7.8,
       "isNewHigh": true,
       "isLimitUp": false,
       "breakoutPercent": 5.92
@@ -12631,7 +12631,7 @@
       "closePrice": 33.54,
       "changePercent": 5.57,
       "turnover": 5.6,
-      "volumeMultiple": 6.6,
+      "volumeMultiple": 8.3,
       "isNewHigh": true,
       "isLimitUp": false,
       "breakoutPercent": 5.57
@@ -12645,7 +12645,7 @@
       "closePrice": 17.8,
       "changePercent": 20.03,
       "turnover": 6.95,
-      "volumeMultiple": 5.5,
+      "volumeMultiple": 6.1,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12656,7 +12656,7 @@
       "closePrice": 2.61,
       "changePercent": 10.13,
       "turnover": 3.88,
-      "volumeMultiple": 5.0,
+      "volumeMultiple": 4.9,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12667,7 +12667,7 @@
       "closePrice": 3.59,
       "changePercent": 10.12,
       "turnover": 8.1,
-      "volumeMultiple": 23.3,
+      "volumeMultiple": 26.4,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12678,7 +12678,7 @@
       "closePrice": 5.01,
       "changePercent": 10.11,
       "turnover": 8.75,
-      "volumeMultiple": 6.6,
+      "volumeMultiple": 6.8,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12689,7 +12689,7 @@
       "closePrice": 3.6,
       "changePercent": 10.09,
       "turnover": 9.98,
-      "volumeMultiple": 6.8,
+      "volumeMultiple": 7.0,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12700,7 +12700,7 @@
       "closePrice": 7.1,
       "changePercent": 10.08,
       "turnover": 0.22,
-      "volumeMultiple": 0.9,
+      "volumeMultiple": 1.0,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12711,7 +12711,7 @@
       "closePrice": 8.54,
       "changePercent": 10.05,
       "turnover": 16.53,
-      "volumeMultiple": 20.1,
+      "volumeMultiple": 17.7,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12722,7 +12722,7 @@
       "closePrice": 13.15,
       "changePercent": 10.04,
       "turnover": 19.13,
-      "volumeMultiple": 1.6,
+      "volumeMultiple": 1.4,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12733,7 +12733,7 @@
       "closePrice": 7.9,
       "changePercent": 10.03,
       "turnover": 3.75,
-      "volumeMultiple": 2.8,
+      "volumeMultiple": 3.4,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12744,7 +12744,7 @@
       "closePrice": 20.54,
       "changePercent": 10.02,
       "turnover": 1.21,
-      "volumeMultiple": 0.5,
+      "volumeMultiple": 0.4,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12755,7 +12755,7 @@
       "closePrice": 38.56,
       "changePercent": 10.01,
       "turnover": 41.09,
-      "volumeMultiple": 5.4,
+      "volumeMultiple": 5.3,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12766,7 +12766,7 @@
       "closePrice": 8.35,
       "changePercent": 10.01,
       "turnover": 3.32,
-      "volumeMultiple": 2.9,
+      "volumeMultiple": 3.2,
       "isNewHigh": true,
       "isLimitUp": true
     },
@@ -12777,7 +12777,7 @@
       "closePrice": 17.82,
       "changePercent": 10.0,
       "turnover": 41.87,
-      "volumeMultiple": 1.6,
+      "volumeMultiple": 1.8,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12788,7 +12788,7 @@
       "closePrice": 10.56,
       "changePercent": 10.0,
       "turnover": 5.81,
-      "volumeMultiple": 4.6,
+      "volumeMultiple": 5.0,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12799,7 +12799,7 @@
       "closePrice": 20.03,
       "changePercent": 9.99,
       "turnover": 9.81,
-      "volumeMultiple": 1.1,
+      "volumeMultiple": 1.2,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12821,7 +12821,7 @@
       "closePrice": 32.27,
       "changePercent": 9.99,
       "turnover": 9.97,
-      "volumeMultiple": 11.1,
+      "volumeMultiple": 13.0,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12832,7 +12832,7 @@
       "closePrice": 21.7,
       "changePercent": 9.98,
       "turnover": 8.09,
-      "volumeMultiple": 1.8,
+      "volumeMultiple": 1.3,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12843,7 +12843,7 @@
       "closePrice": 17.97,
       "changePercent": 9.98,
       "turnover": 4.7,
-      "volumeMultiple": 6.5,
+      "volumeMultiple": 6.8,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12854,7 +12854,7 @@
       "closePrice": 3.78,
       "changePercent": 9.88,
       "turnover": 24.84,
-      "volumeMultiple": 2.6,
+      "volumeMultiple": 2.9,
       "isNewHigh": false,
       "isLimitUp": true
     },
@@ -12865,7 +12865,7 @@
       "closePrice": 14.7,
       "changePercent": 9.54,
       "turnover": 33.0,
-      "volumeMultiple": 17.6,
+      "volumeMultiple": 15.6,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12876,7 +12876,7 @@
       "closePrice": 9.32,
       "changePercent": 8.88,
       "turnover": 9.02,
-      "volumeMultiple": 4.6,
+      "volumeMultiple": 4.0,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -12887,7 +12887,7 @@
       "closePrice": 18.73,
       "changePercent": 8.08,
       "turnover": 20.27,
-      "volumeMultiple": 14.7,
+      "volumeMultiple": 16.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12898,7 +12898,7 @@
       "closePrice": 4.52,
       "changePercent": 6.6,
       "turnover": 15.58,
-      "volumeMultiple": 3.1,
+      "volumeMultiple": 3.3,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -12909,7 +12909,7 @@
       "closePrice": 13.6,
       "changePercent": 5.92,
       "turnover": 5.03,
-      "volumeMultiple": 7.4,
+      "volumeMultiple": 7.8,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12920,7 +12920,7 @@
       "closePrice": 33.54,
       "changePercent": 5.57,
       "turnover": 5.6,
-      "volumeMultiple": 6.6,
+      "volumeMultiple": 8.3,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12931,7 +12931,7 @@
       "closePrice": 14.94,
       "changePercent": 5.06,
       "turnover": 9.63,
-      "volumeMultiple": 19.7,
+      "volumeMultiple": 20.2,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12942,7 +12942,7 @@
       "closePrice": 13.03,
       "changePercent": 4.91,
       "turnover": 6.84,
-      "volumeMultiple": 11.1,
+      "volumeMultiple": 10.6,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12953,7 +12953,7 @@
       "closePrice": 55.42,
       "changePercent": 3.59,
       "turnover": 7.98,
-      "volumeMultiple": 5.2,
+      "volumeMultiple": 4.7,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12964,7 +12964,7 @@
       "closePrice": 5.21,
       "changePercent": 2.76,
       "turnover": 2.92,
-      "volumeMultiple": 2.7,
+      "volumeMultiple": 3.0,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -12997,7 +12997,7 @@
       "closePrice": 6.49,
       "changePercent": 2.04,
       "turnover": 4.81,
-      "volumeMultiple": 2.2,
+      "volumeMultiple": 2.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13008,7 +13008,7 @@
       "closePrice": 17.52,
       "changePercent": 1.86,
       "turnover": 8.66,
-      "volumeMultiple": 3.3,
+      "volumeMultiple": 3.7,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13019,7 +13019,7 @@
       "closePrice": 51.82,
       "changePercent": 1.79,
       "turnover": 14.32,
-      "volumeMultiple": 1.5,
+      "volumeMultiple": 1.6,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13041,7 +13041,7 @@
       "closePrice": 14.98,
       "changePercent": 1.77,
       "turnover": 3.16,
-      "volumeMultiple": 2.7,
+      "volumeMultiple": 2.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13074,7 +13074,7 @@
       "closePrice": 20.48,
       "changePercent": 1.39,
       "turnover": 28.99,
-      "volumeMultiple": 2.3,
+      "volumeMultiple": 2.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13085,7 +13085,7 @@
       "closePrice": 6.8,
       "changePercent": 1.19,
       "turnover": 6.38,
-      "volumeMultiple": 1.5,
+      "volumeMultiple": 1.8,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13096,7 +13096,7 @@
       "closePrice": 5.97,
       "changePercent": 1.19,
       "turnover": 13.5,
-      "volumeMultiple": 1.7,
+      "volumeMultiple": 1.8,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13107,7 +13107,7 @@
       "closePrice": 14.59,
       "changePercent": 1.18,
       "turnover": 1.5,
-      "volumeMultiple": 5.2,
+      "volumeMultiple": 4.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13118,7 +13118,7 @@
       "closePrice": 31.96,
       "changePercent": 1.01,
       "turnover": 44.72,
-      "volumeMultiple": 2.1,
+      "volumeMultiple": 2.0,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13129,7 +13129,7 @@
       "closePrice": 17.93,
       "changePercent": 0.73,
       "turnover": 1.3,
-      "volumeMultiple": 2.0,
+      "volumeMultiple": 2.2,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13140,7 +13140,7 @@
       "closePrice": 36.8,
       "changePercent": 0.63,
       "turnover": 1.85,
-      "volumeMultiple": 6.0,
+      "volumeMultiple": 6.6,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13151,7 +13151,7 @@
       "closePrice": 3.28,
       "changePercent": 0.61,
       "turnover": 8.72,
-      "volumeMultiple": 1.7,
+      "volumeMultiple": 1.9,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13173,7 +13173,7 @@
       "closePrice": 8.99,
       "changePercent": 0.45,
       "turnover": 35.61,
-      "volumeMultiple": 7.8,
+      "volumeMultiple": 7.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13184,7 +13184,7 @@
       "closePrice": 7.96,
       "changePercent": 0.38,
       "turnover": 32.13,
-      "volumeMultiple": 1.6,
+      "volumeMultiple": 1.5,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13195,7 +13195,7 @@
       "closePrice": 76.28,
       "changePercent": 0.36,
       "turnover": 8.42,
-      "volumeMultiple": 6.0,
+      "volumeMultiple": 6.1,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13217,7 +13217,7 @@
       "closePrice": 13.04,
       "changePercent": -0.99,
       "turnover": 7.39,
-      "volumeMultiple": 1.2,
+      "volumeMultiple": 1.4,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13228,7 +13228,7 @@
       "closePrice": 22.8,
       "changePercent": -1.26,
       "turnover": 24.77,
-      "volumeMultiple": 3.0,
+      "volumeMultiple": 3.1,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13239,7 +13239,7 @@
       "closePrice": 9.91,
       "changePercent": -1.39,
       "turnover": 10.52,
-      "volumeMultiple": 1.5,
+      "volumeMultiple": 1.7,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13250,7 +13250,7 @@
       "closePrice": 42.2,
       "changePercent": -1.49,
       "turnover": 1.21,
-      "volumeMultiple": 5.2,
+      "volumeMultiple": 5.7,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13261,7 +13261,7 @@
       "closePrice": 19.28,
       "changePercent": -2.87,
       "turnover": 2.25,
-      "volumeMultiple": 5.7,
+      "volumeMultiple": 6.2,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13272,7 +13272,7 @@
       "closePrice": 80.3,
       "changePercent": -3.02,
       "turnover": 19.58,
-      "volumeMultiple": 6.6,
+      "volumeMultiple": 6.2,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13283,7 +13283,7 @@
       "closePrice": 49.61,
       "changePercent": -3.58,
       "turnover": 27.28,
-      "volumeMultiple": 6.9,
+      "volumeMultiple": 7.2,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13305,7 +13305,7 @@
       "closePrice": 14.18,
       "changePercent": -3.99,
       "turnover": 2.72,
-      "volumeMultiple": 5.5,
+      "volumeMultiple": 6.0,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13316,7 +13316,7 @@
       "closePrice": 4.34,
       "changePercent": -4.41,
       "turnover": 32.4,
-      "volumeMultiple": 12.6,
+      "volumeMultiple": 12.7,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13349,7 +13349,7 @@
       "closePrice": 21.37,
       "changePercent": -5.36,
       "turnover": 9.81,
-      "volumeMultiple": 4.8,
+      "volumeMultiple": 4.0,
       "isNewHigh": true,
       "isLimitUp": false
     },
@@ -13360,7 +13360,7 @@
       "closePrice": 24.73,
       "changePercent": -5.68,
       "turnover": 15.14,
-      "volumeMultiple": 1.1,
+      "volumeMultiple": 1.2,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13371,7 +13371,7 @@
       "closePrice": 26.23,
       "changePercent": -5.99,
       "turnover": 4.3,
-      "volumeMultiple": 5.4,
+      "volumeMultiple": 4.4,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13382,7 +13382,7 @@
       "closePrice": 43.9,
       "changePercent": -6.02,
       "turnover": 15.02,
-      "volumeMultiple": 7.7,
+      "volumeMultiple": 8.2,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13393,7 +13393,7 @@
       "closePrice": 3.76,
       "changePercent": -6.47,
       "turnover": 13.66,
-      "volumeMultiple": 18.9,
+      "volumeMultiple": 18.7,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13415,7 +13415,7 @@
       "closePrice": 16.69,
       "changePercent": -8.6,
       "turnover": 4.63,
-      "volumeMultiple": 4.8,
+      "volumeMultiple": 4.6,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13426,7 +13426,7 @@
       "closePrice": 9.54,
       "changePercent": -9.66,
       "turnover": 9.62,
-      "volumeMultiple": 2.3,
+      "volumeMultiple": 2.2,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13437,7 +13437,7 @@
       "closePrice": 2.83,
       "changePercent": -9.87,
       "turnover": 25.03,
-      "volumeMultiple": 21.3,
+      "volumeMultiple": 18.7,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13448,7 +13448,7 @@
       "closePrice": 10.27,
       "changePercent": -9.99,
       "turnover": 1.0,
-      "volumeMultiple": 0.9,
+      "volumeMultiple": 0.7,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13470,7 +13470,7 @@
       "closePrice": 10.26,
       "changePercent": -10.0,
       "turnover": 2.73,
-      "volumeMultiple": 3.1,
+      "volumeMultiple": 2.9,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13481,7 +13481,7 @@
       "closePrice": 4.77,
       "changePercent": -10.0,
       "turnover": 8.78,
-      "volumeMultiple": 12.0,
+      "volumeMultiple": 11.4,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13492,7 +13492,7 @@
       "closePrice": 32.75,
       "changePercent": -10.0,
       "turnover": 2.85,
-      "volumeMultiple": 5.2,
+      "volumeMultiple": 3.5,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13503,7 +13503,7 @@
       "closePrice": 27.43,
       "changePercent": -10.01,
       "turnover": 1.38,
-      "volumeMultiple": 0.9,
+      "volumeMultiple": 1.0,
       "isNewHigh": false,
       "isLimitUp": false
     },
@@ -13514,7 +13514,7 @@
       "closePrice": 30.89,
       "changePercent": -10.26,
       "turnover": 10.3,
-      "volumeMultiple": 5.0,
+      "volumeMultiple": 5.5,
       "isNewHigh": true,
       "isLimitUp": false
     }
@@ -22602,9 +22602,9 @@
   },
   "surgery": {
     "meta": {
-      "generatedAt": "2026-11-25 18:10:28",
-      "tradeDate": "20261125",
-      "tradeDateSlash": "26/11/25"
+      "generatedAt": "2026-11-26 04:10:24",
+      "tradeDate": "20261126",
+      "tradeDateSlash": "26/11/26"
     },
     "sealCards": [
       {
@@ -23376,7 +23376,7 @@
     "bigLoser": [],
     "loserChain": [],
     "loserIntersection": [],
-    "prevLimitUpCount": 55,
+    "prevLimitUpCount": 51,
     "systemWarning": false,
     "north": [
       {
