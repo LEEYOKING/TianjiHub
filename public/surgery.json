@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generatedAt": "2026-11-26 21:38:28",
-    "tradeDate": "20261126",
-    "tradeDateSlash": "26/11/26"
+    "generatedAt": "2026-11-27 03:50:33",
+    "tradeDate": "20261127",
+    "tradeDateSlash": "26/11/27"
   },
   "sealCards": [
     {
@@ -984,7 +984,7 @@
   "bigLoser": [],
   "loserChain": [],
   "loserIntersection": [],
-  "prevLimitUpCount": 51,
+  "prevLimitUpCount": 65,
   "systemWarning": false,
   "north": [
     {
