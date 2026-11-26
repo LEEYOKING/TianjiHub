@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-11-27 03:50:33",
+    "generatedAt": "2026-11-27 06:36:40",
     "tradeDate": "20261127"
   },
   "assets": [
     {
       "code": "USDCNH",
       "name": "离岸人民币",
-      "price": 6.6628,
+      "price": 6.6637,
       "changePct": 0.0,
       "series": []
     },
